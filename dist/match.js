@@ -4,10 +4,10 @@
   class Match {
     constructor(world,combat){this.world=world;this.combat=combat;this.start();}
     get score(){return this.combat.score;}
-    get winner(){return this.phase==='finished'?(this.score[0]>=WINS?'won':'lost'):null;}
-    lineup(){return {allies:this.score[0]===0?1:0,enemies:Math.max(1,Math.min(WINS-1,this.score[0]))};}
+    get winner(){return this.phase==='stage-over'?'won':this.phase==='finished'?'lost':null;}
+    lineup(stage=this.stage){return {allies:stage===0?1:0,enemies:Math.max(1,stage)};}
     start(){
-      this.combat.score=[0,0];this.history=[];this.round=0;this.prepareRound();
+      this.combat.score=[0,0];this.history=[];this.stage=0;this.round=0;this.prepareRound();
     }
     prepareRound(){
       const {allies,enemies}=this.lineup();
@@ -16,12 +16,12 @@
       this.round++;this.phase='ready';
     }
     recordResult(){
-      if(!this.combat.result||this.phase==='round-over'||this.phase==='finished')return;
+      if(!this.combat.result||!['ready','playing'].includes(this.phase))return;
       this.history.push(this.combat.result);
-      this.phase=this.score.some(n=>n>=WINS)?'finished':'round-over';
+      this.phase=this.score[0]>=WINS?'stage-over':this.score[1]>=WINS?'finished':'round-over';
     }
     step(input={},dt=1/60){
-      if(this.phase==='round-over'||this.phase==='finished')return;
+      if(!['ready','playing'].includes(this.phase))return;
       // Both the terrain and all pilots wait until the human is ready.
       if(this.phase==='ready'){
         if(!Object.values(input).some(Boolean))return;
@@ -30,7 +30,9 @@
       this.world.step();this.combat.step(input,dt);this.recordResult();
     }
     nextRound(){
-      if(this.phase!=='round-over')return false;
+      if(this.phase==='stage-over'){
+        this.stage++;this.combat.score=[0,0];this.round=0;
+      }else if(this.phase!=='round-over')return false;
       this.prepareRound();return true;
     }
     forfeit(){

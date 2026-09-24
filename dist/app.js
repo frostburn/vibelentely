@@ -129,7 +129,7 @@
     clearInput();
     if(match){
       if(match.phase==='finished')match.start();
-      else if(match.phase==='round-over')match.nextRound();
+      else if(match.phase==='round-over'||match.phase==='stage-over')match.nextRound();
       else match.forfeit();
       setPaused(false);
     }else combat.reset();
@@ -147,7 +147,7 @@
     $('game-app').hidden=true;$('main-menu').hidden=false;
     const saved=sessions.match?.match,canContinue=saved&&saved.phase!=='finished';
     $('continue-match').hidden=!canContinue;$('saved-match').hidden=!saved;
-    $('saved-match').textContent=saved?'Edellinen tilanne: '+saved.score.join(' : ')+' · erä '+saved.round:'';
+    $('saved-match').textContent=saved?'Taso '+(saved.stage+1)+' · '+saved.score.join(' : ')+' · erä '+saved.round:'';
     $('start-match').textContent=saved?'Uusi ottelu':'Aloita ottelu →';
     $('start-match').classList.toggle('primary',!canContinue);
     (canContinue?$('continue-match'):$('start-match')).focus({preventScroll:true});
@@ -266,24 +266,25 @@
     const watching=drone.dead&&!combat.result&&combat.living(0).length>0;
     $('combat-hint').textContent=combat.result?'Erä päättyi. Jatka kun olet valmis.':watching?'Sinut pudotettiin. Siipi taistelee vielä!':!combat.started?'Erä alkaa ensimmäisestä ohjauksesta.':match?'Tuhoa koko vihollisjoukkue.':combat.enabled?'Oranssi lennokki on vastustajasi.':'Vapaa harjoittelu · tekoäly pois päältä.';
     $('round-result').hidden=mode!=='fly'||!combat.result;
-    $('round-title').textContent=match?.winner?(match.winner==='won'?'Otteluvoitto!':'Ottelu hävitty'):combat.result==='won'?'Erävoitto!':combat.result==='draw'?'Tasapeli':combat.enabled?'Erä hävitty':'Lennokki hajosi';
-    const action=match?(match.phase==='finished'?'Uusi ottelu':combat.result?'Seuraava erä':'Luovuta erä'):'Uusi erä';
+    $('round-title').textContent=match?.winner?(match.winner==='won'?'Taso voitettu!':'Ottelu hävitty'):combat.result==='won'?'Erävoitto!':combat.result==='draw'?'Tasapeli':combat.enabled?'Erä hävitty':'Lennokki hajosi';
+    const action=match?(match.phase==='finished'?'Uusi ottelu':match.phase==='stage-over'?'Seuraava taso':combat.result?'Seuraava erä':'Luovuta erä'):'Uusi erä';
     $('respawn').textContent=action+' · R';$('respawn').title=match&&!combat.result?'Luovutus antaa eräpisteen vihollisille · R':action+' · R';
     $('next-round').textContent=action+' · R';
     if(match){
-      $('round-number').textContent='Erä '+match.round;
+      $('round-number').textContent='Taso '+(match.stage+1)+' · erä '+match.round;
       $('lineup-label').textContent=(combat.actors.some(a=>a.team===0&&a!==drone)?'Sinä + Siipi':'Sinä')+' vs '+combat.actors.filter(a=>a.team===1).length;
       for(const [i,id] of ['our-wins','their-wins'].entries()){
         $(id).textContent=Array.from({length:CaveMatch.WINS},(_,n)=>n<match.score[i]?'●':'○').join(' ');
         $(id).setAttribute('aria-label',(i?'Viholliset':'Oma joukkue')+': '+match.score[i]+' voittoa');
       }
-      const level=Math.min(4,match.score[0]-(combat.result==='won'?1:0));
+      const firstStage=Math.max(0,match.stage-2);
       for(const [i,el] of Array.from($('difficulty-ladder').children).entries()){
-        if(i===level)el.setAttribute('aria-current','step');else el.removeAttribute('aria-current');
-        el.classList.toggle('completed',i<match.score[0]);
+        const stage=firstStage+i;el.textContent=stage===0?'2v1':'1v'+stage;
+        if(stage===match.stage)el.setAttribute('aria-current','step');else el.removeAttribute('aria-current');
+        el.classList.toggle('completed',stage<match.stage||(stage===match.stage&&match.winner==='won'));
       }
-      const next=match.lineup(),lineup=next.allies?'sinä + Siipi vastaan 1':'sinä vastaan '+next.enemies;
-      $('round-description').textContent=match.winner?match.score.join(' : ')+' · '+(match.winner==='won'?'Viides voitto. Luola on teidän!':'Viholliset saivat viisi voittoa. Uusi yritys?'):
+      const next=match.lineup(match.stage+(match.winner==='won'?1:0)),lineup=next.allies?'sinä + Siipi vastaan 1':'sinä vastaan '+next.enemies;
+      $('round-description').textContent=match.winner?match.score.join(' : ')+' · '+(match.winner==='won'?'Viides voitto! Seuraavalla tasolla '+lineup+'. Pisteet alkavat nollasta.':'Viholliset saivat viisi voittoa. Uusi yritys?'):
         (combat.result==='draw'?'Ei eräpisteitä. ':'')+'Seuraavaksi '+lineup+'.';
     }else $('round-description').textContent='Maasto ja pisteet säilyvät. Uudet lennokit ja varusteet.';
   }

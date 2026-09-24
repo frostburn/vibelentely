@@ -10,18 +10,18 @@ Päävalikosta valitaan **Tiimitaistelu** tai **Luolalabra**. Valikko pysäyttä
 
 ## Tiimitaistelu
 
-Ensimmäisenä **viisi erävoittoa** saanut joukkue voittaa ottelun. Aluksi sinulla on tekoälykaveri **Siipi**. Oma erävoitto nostaa seuraavan erän vaikeutta; tappio säilyttää kokoonpanon ja tasapeli ei anna pisteitä.
+Jokaisella vaikeustasolla pelataan samalla kokoonpanolla, kunnes jompikumpi joukkue saa **viisi voittoa**. Kun voitat tason, seuraava kokoonpano vaikeutuu ja molempien pisteet nollataan. Yksittäinen voitto tai tappio ei vaihda kokoonpanoa; tasapeli ei anna pisteitä. Jos viholliset ehtivät ensin viiteen voittoon, ottelu päättyy.
 
-| Oman joukkueen voitot | Seuraava erä |
+| Taso | Kokoonpano koko viiden voiton sarjan ajan |
 | --- | --- |
-| 0 | Sinä + Siipi vastaan 1 vihollinen |
-| 1 | Sinä vastaan 1 vihollinen |
-| 2 | Sinä vastaan 2 vihollista |
-| 3 | Sinä vastaan 3 vihollista |
-| 4 | Sinä vastaan 4 vihollista |
-| 5 | Otteluvoitto |
+| 1 | Sinä + Siipi vastaan 1 vihollinen |
+| 2 | Sinä vastaan 1 vihollinen |
+| 3 | Sinä vastaan 2 vihollista |
+| 4 | Sinä vastaan 3 vihollista |
+| 5 | Sinä vastaan 4 vihollista |
+| … | Seuraavilla tasoilla aina yksi vihollinen lisää |
 
-Erä ratkeaa vasta koko joukkueen tuhouduttua. Jos putoat ensin, Siipi jatkaa taistelua ja kamera seuraa sitä. Erätauolla näkyvät pisteet ja seuraava kokoonpano. Seuraava erä palauttaa areenan ja kaikki varusteet; maasto ja lennokit odottavat ensimmäistä ohjausta. Ottelun aikana **R / Luovuta erä** antaa vihollisille yhden pisteen. Erätauolla R jatkaa, ottelun päätyttyä R aloittaa uuden ottelun.
+Erä ratkeaa vasta koko joukkueen tuhouduttua. Jos putoat ensin, Siipi jatkaa taistelua ja kamera seuraa sitä. Erätauolla näkyvät pisteet ja seuraava kokoonpano. Seuraava erä palauttaa areenan ja kaikki varusteet; maasto ja lennokit odottavat ensimmäistä ohjausta. Ottelun aikana **R / Luovuta erä** antaa vihollisille yhden pisteen. Erätauolla R jatkaa samalla tasolla. Viidennen voiton jälkeen **R / Seuraava taso** jatkaa seuraavaan kokoonpanoon. Häviön jälkeen R aloittaa uuden ottelun alusta.
 
 **Esc / Valikko** säilyttää tilanteen. Uusi ottelu aloitetaan valikosta. Välilyönti pysäyttää pelin, ja selainikkunan tai välilehden jättäminen pysäyttää taistelun automaattisesti. Maaston muokkaaminen, ajan nopeuttaminen ja vastustajan poistaminen kuuluvat Luolalabraan.
 

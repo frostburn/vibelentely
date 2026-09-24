@@ -16,42 +16,63 @@ function endRound(match,result){
   match.step({brake:true});
 }
 
-test('A series waits for input, climbs 2v1 → 1v1 → 1v2 → 1v3 → 1v4 and stops at five wins',()=>{
+test('Each lineup lasts five wins; only then does the next stage start at 0–0',()=>{
   const {world,combat,match}=game(),initial=world.cells.slice();
   for(let i=0;i<60;i++)match.step();
   assert.equal(world.tick,0);assert.equal(combat.time,0);assert.deepEqual(world.cells,initial);
   assert.equal(match.nextRound(),false);
-  for(let wins=0;wins<5;wins++){
-    assert.equal(combat.living(0).length,wins===0?2:1);
-    assert.equal(combat.living(1).length,Math.max(1,wins));
-    endRound(match,'won');assert.deepEqual(match.score,[wins+1,0]);
-    for(let i=0;i<10;i++)match.step({fire:true});
-    assert.deepEqual(match.score,[wins+1,0],'result must score only once');
-    assert.equal(match.nextRound(),wins<4);
+  // Continue beyond 1v4 as well: progression has no arbitrary final stage.
+  for(let stage=0;stage<7;stage++){
+    for(let wins=0;wins<5;wins++){
+      assert.equal(match.stage,stage);
+      assert.equal(combat.living(0).length,stage===0?2:1);
+      assert.equal(combat.living(1).length,Math.max(1,stage));
+      endRound(match,'won');assert.deepEqual(match.score,[wins+1,0]);
+      const tick=world.tick;
+      for(let i=0;i<10;i++)match.step({fire:true});
+      assert.equal(world.tick,tick);assert.deepEqual(match.score,[wins+1,0]);
+      assert.equal(match.phase,wins===4?'stage-over':'round-over');
+      assert.equal(match.winner,wins===4?'won':null);
+      assert.equal(match.forfeit(),false);
+      assert.equal(match.stage,stage,'the results screen still belongs to the completed stage');
+      assert.equal(match.nextRound(),true);
+      assert.equal(match.stage,stage+(wins===4?1:0));
+      assert.deepEqual(match.score,wins===4?[0,0]:[wins+1,0]);
+    }
+    assert.equal(match.round,1);assert.equal(match.phase,'ready');
   }
-  assert.equal(match.phase,'finished');assert.equal(match.winner,'won');
-  assert.equal(match.round,5);assert.equal(match.history.length,5);
-  const tick=world.tick;assert.equal(match.forfeit(),false);match.step({thrust:true});
-  assert.equal(world.tick,tick);assert.deepEqual(match.score,[5,0]);
-  match.start();assert.deepEqual(match.score,[0,0]);assert.equal(match.phase,'ready');assert.equal(match.round,1);
-  assert.equal(combat.living(0).length,2);
+  assert.equal(match.history.length,35);
+  match.start();assert.equal(match.stage,0);assert.equal(match.round,1);
+  assert.deepEqual(match.score,[0,0]);assert.equal(combat.living(0).length,2);
 });
 
-test('Losses keep the current lineup and five enemy wins finish the match',()=>{
-  const {combat,match}=game();endRound(match,'won');match.nextRound();endRound(match,'won');match.nextRound();
+test('Losses keep the current lineup and five enemy wins end the run',()=>{
+  const {combat,match}=game();
+  for(let n=0;n<5;n++){endRound(match,'won');match.nextRound();}
+  endRound(match,'won');match.nextRound();endRound(match,'won');match.nextRound();
   for(let n=0;n<5;n++){
-    assert.equal(combat.living(0).length,1);assert.equal(combat.living(1).length,2);
+    assert.equal(match.stage,1);
+    assert.equal(combat.living(0).length,1);assert.equal(combat.living(1).length,1);
     endRound(match,'lost');assert.deepEqual(match.score,[2,n+1]);
     assert.equal(match.nextRound(),n<4);
   }
-  assert.equal(match.winner,'lost');assert.equal(match.round,7);
+  assert.equal(match.winner,'lost');assert.equal(match.phase,'finished');assert.equal(match.round,7);
+  assert.equal(match.forfeit(),false);
+  match.step({fire:true});assert.deepEqual(match.score,[2,5]);
 });
 
-test('Simultaneous team elimination draws without points or a difficulty increase',()=>{
-  const {match}=game();endRound(match,'draw');
-  assert.deepEqual(match.score,[0,0]);assert.equal(match.phase,'round-over');
-  assert.deepEqual(match.history,['draw']);match.nextRound();
-  assert.deepEqual(match.lineup(),{allies:1,enemies:1});assert.equal(match.round,2);
+test('A draw at 4–4 neither advances the stage nor scores; a subsequent win resets both scores',()=>{
+  const {match}=game();
+  for(let n=0;n<4;n++){
+    endRound(match,'won');match.nextRound();endRound(match,'lost');match.nextRound();
+  }
+  endRound(match,'draw');
+  assert.deepEqual(match.score,[4,4]);assert.equal(match.phase,'round-over');assert.equal(match.stage,0);
+  assert.equal(match.history.at(-1),'draw');match.nextRound();
+  assert.deepEqual(match.lineup(),{allies:1,enemies:1});assert.equal(match.round,10);
+  endRound(match,'won');assert.deepEqual(match.score,[5,4]);assert.equal(match.phase,'stage-over');
+  match.nextRound();assert.deepEqual(match.score,[0,0]);assert.equal(match.stage,1);
+  assert.deepEqual(match.lineup(),{allies:0,enemies:1});assert.equal(match.round,1);
 });
 
 test('An ally continues after the human dies and can still win the round',()=>{
@@ -78,7 +99,8 @@ test('Every enemy must be eliminated; pilots retarget living opponents, never al
 
 test('Each difficulty spawns separate, healthy craft in clear, cool space',()=>{
   const {world,combat,match}=game();
-  for(let wins=0;wins<5;wins++){
+  for(let stage=0;stage<7;stage++){
+    match.stage=stage;combat.score=[0,0];match.prepareRound();
     for(const [i,actor] of combat.actors.entries()){
       assert.equal(actor.health,100);assert.equal(actor.safeSpawn(actor.x,actor.y),true);
       for(const other of combat.actors.slice(i+1))assert.ok(Math.hypot(actor.x-other.x,actor.y-other.y)>actor.radius+other.radius+4);
@@ -86,7 +108,7 @@ test('Each difficulty spawns separate, healthy craft in clear, cool space',()=>{
     const original=world.cells.slice();world.brush(260,165,9,M.ROCK,true);
     combat.player.gear.grenades=0;combat.player.gear.blink=3;
     endRound(match,'won');
-    if(wins<4){
+    {
       match.nextRound();assert.deepEqual(world.cells,original);
       assert.equal(combat.player.gear.grenades,3);assert.equal(combat.player.gear.blink,0);
       assert.equal(combat.started,false);
