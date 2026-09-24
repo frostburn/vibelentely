@@ -73,6 +73,8 @@ Kaksintaisteluareenan ja luolan rinnalla on neljän saman kokoisen altaan koeken
 
 Node.js 24 riittää tarkistuksiin ja vientiin. Riippuvuuksia ei tarvitse asentaa.
 
+GitHub Actions ajaa alla olevat tarkistukset yhdellä Node 24 -työllä PR:issä sekä `main`-haaran päivityksissä. Uusi päivitys peruuttaa saman haaran vanhentuneen ajon.
+
 ```
 npm run check
 npm test

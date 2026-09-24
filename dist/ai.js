@@ -20,11 +20,23 @@
     plan(goal,target=null){
       const a=this.combat.enemy,w=this.combat.world,grid=16,cols=Math.floor(w.width/grid),rows=Math.floor(w.height/grid),size=cols*rows;
       const pos=i=>({x:(i%cols)*grid+8,y:Math.floor(i/cols)*grid+8});
+      // Cache clearance only for nodes reached by this plan; edits invalidate it next time.
       const open=new Uint8Array(size);
-      let start=-1,near=Infinity;
-      for(let i=0;i<size;i++){
-        const p=pos(i);open[i]=this.clear(p.x,p.y);
-        if(open[i]){const d=Math.hypot(p.x-a.x,p.y-a.y);if(d<near&&this.passage(a.x,a.y,p.x,p.y)){near=d;start=i;}}
+      const isOpen=i=>{
+        if(!open[i]){const p=pos(i);open[i]=this.clear(p.x,p.y)?2:1;}
+        return open[i]===2;
+      };
+      // Connect to the nearest reachable local center. Never ray-march across the map
+      // just to find a start; a trapped craft can fall back to its existing blink logic.
+      const candidates=[],gx=Math.floor(a.x/grid),gy=Math.floor(a.y/grid);
+      for(let y=Math.max(0,gy-2);y<=Math.min(rows-1,gy+2);y++)for(let x=Math.max(0,gx-2);x<=Math.min(cols-1,gx+2);x++){
+        const i=y*cols+x,p=pos(i);candidates.push({i,d:(p.x-a.x)**2+(p.y-a.y)**2});
+      }
+      candidates.sort((a,b)=>a.d-b.d);
+      let start=-1;
+      for(const {i} of candidates){
+        if(!isOpen(i))continue;
+        const p=pos(i);if(this.passage(a.x,a.y,p.x,p.y)){start=i;break;}
       }
       if(start<0){this.route=[];return;}
       // Bounded breadth-first search is replanned against the editable cellular map.
@@ -36,7 +48,7 @@
         if(d<bestDistance){best=i;bestDistance=d;}
         if(d<10)break;
         for(const j of [i-cols,i+cols,i-1,i+1]){
-          if(j<0||j>=size||!open[j]||parent[j]!==-1||Math.abs(j%cols-i%cols)>1)continue;
+          if(j<0||j>=size||parent[j]!==-1||Math.abs(j%cols-i%cols)>1||!isOpen(j))continue;
           const next=pos(j);if(!this.passage(p.x,p.y,next.x,next.y))continue;
           parent[j]=i;queue.push(j);
         }
