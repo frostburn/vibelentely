@@ -10,3 +10,47 @@
 [hidden]{display:none!important}.stage-toolbar{height:auto;min-height:33px;flex-wrap:wrap}.weapons{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:3px 0 12px}.weapons button{--charge:100%;position:relative;display:flex;flex-direction:column;gap:6px;min-height:62px;padding:7px 3px 10px;overflow:hidden;touch-action:none;user-select:none}.weapons button:after{content:"";position:absolute;height:3px;width:var(--charge);bottom:0;left:0;background:#82bdc6}.weapons button[data-flight=grenade]:after{background:#eab268}.weapons button[data-flight=water]:after{background:#72b6e3}.weapons button span{white-space:nowrap}.weapons button kbd{font-size:.65rem;margin:0 0 0 2px;padding:0 3px}.weapons output{font-size:.75rem;color:var(--muted)}.weapons button.is-held{background:#35515a;border-color:#9bc2c6}.hull-label{display:flex;justify-content:space-between;color:#a7d9df;font-size:.8125rem}.enemy-label{color:#e8b28d;margin-top:15px}meter{display:block;width:100%;height:10px;margin:7px 0 0;accent-color:#8fc7cc}meter::-webkit-meter-bar{background:#28353b;border:0;border-radius:1px}meter::-webkit-meter-optimum-value{background:#8fc7cc}#enemy-health::-webkit-meter-optimum-value{background:#de9a74}.opponent-setting{display:flex;gap:7px;align-items:center;font-size:.875rem;margin-top:20px}.opponent-setting input{accent-color:#e7ba78}.combat-hint{font-size:.8125rem;color:#e3c694;line-height:1.55;min-height:40px;margin:16px 0}.combat-guide{font-size:.8125rem;color:var(--muted);line-height:1.6;margin:12px 0 18px}.combat-guide b{font-weight:500;color:#d3dddf}.round-result{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:14px;padding:20px 28px;border:1px solid #859f9e;background:#101a21ed;white-space:nowrap;box-shadow:0 6px 24px #0006}.round-result strong{font-size:1.15rem;font-weight:600;color:#f3deaf}#combat-panel .tool-heading{margin-bottom:22px}#score{color:#ead19e;font-size:1rem}
 @media(max-width:1000px){.modes{margin-left:0}.scenes button{padding:6px 8px}.statusbar{gap:4px}.weapons button{font-size:.75rem}.weapons output{font-size:.6875rem}}
 @media(max-width:680px){.weapons{gap:4px}.weapons button{min-height:67px;font-size:.6875rem;gap:9px}.weapons button kbd{display:none}.stage-toolbar{min-height:70px}#combat-panel{max-width:460px}.flight-controls{margin-bottom:10px}.statusbar #performance{display:none}}
+
+/* The shell stays crisp at the browser's native resolution. */
+.main-menu{width:min(960px,calc(100% - 48px));margin:0 auto;padding:72px 0 30px}
+.menu-eyebrow{display:flex;align-items:center;gap:10px;font:11px ui-monospace,monospace;letter-spacing:.18em;color:#9eaeb0}
+.status-light{width:7px;height:7px;background:#dfb66e;box-shadow:0 0 14px #dfb66e44}
+.main-menu h1{font-size:clamp(48px,8vw,82px);line-height:1.1;letter-spacing:-.07em;margin:22px 0 16px;color:#f1e3c7}
+.main-menu h1>span{color:#91c4c6}.menu-lead{font-size:20px;line-height:1.6;color:#adbcbe;margin:0 0 38px}
+.menu-cards{display:grid;grid-template-columns:1.12fr 1fr;gap:18px}
+.menu-card{display:flex;flex-direction:column;align-items:flex-start;border:1px solid #364348;background:#161f24;padding:28px;position:relative;overflow:hidden}
+.battle-card{border-top:3px solid #91c4c6}.lab-card{border-top:3px solid #deaa63;background:#1b2021}
+.card-number{font:11px ui-monospace,monospace;color:#8faaa9;letter-spacing:.1em}.lab-card .card-number{color:#c1a777}
+.menu-card h2{font-size:25px;letter-spacing:-.035em;color:#e4ece7;margin:20px 0 0}
+.menu-card p{font-size:14px;line-height:1.75;color:#a6b5b8;max-width:370px;margin:12px 0 22px}
+.menu-card button{width:100%;min-height:44px;justify-content:space-between;padding:11px 15px;margin-top:10px}
+.menu-card button.primary{background:#bddbd3;border-color:#bddbd3;color:#182c2b}.menu-card button.primary:hover{background:#dbf1e6}
+.menu-card button:not(.primary){background:transparent;color:#d6ceba;border-color:#62614f}
+.menu-detail{font:12px ui-monospace,monospace;color:#9aacaf;margin-top:12px}
+.menu-ladder{font:12px ui-monospace,monospace;color:#bdd0cb;padding-bottom:16px;margin-top:auto;white-space:nowrap;letter-spacing:-.02em}
+.menu-ladder span{color:#597570;padding:0 2px}.lab-detail{font-size:12px;color:#baa989;padding-bottom:16px;margin-top:auto}
+.menu-foot{font-size:12px;line-height:1.9;color:#829397;margin-top:26px}
+.pixel-squad{display:flex;gap:24px;align-items:center;height:40px;margin:28px 0 4px}
+.pixel-squad b{font:11px ui-monospace,monospace;color:#819395}.pixel-craft{width:31px;height:31px;background:#90c7ce;clip-path:polygon(40% 0,60% 0,60% 20%,80% 20%,80% 60%,100% 60%,100% 90%,60% 90%,60% 70%,40% 70%,40% 90%,0 90%,0 60%,20% 60%,20% 20%,40% 20%)}
+.pixel-craft.ally{background:#8ecd9c;transform:scale(.85)}.pixel-craft.enemy{background:#e9a277;transform:rotate(180deg)}
+.material-strip{height:40px;display:flex;gap:8px;align-items:flex-end;margin:28px 0 4px;width:160px}
+.material-strip i{width:32px;height:28px;background:#d5aa64;clip-path:polygon(0 100%,50% 0,100% 100%)}
+.material-strip i:nth-child(2){height:13px;background:#67aac6;clip-path:none}
+.material-strip i:nth-child(3){height:25px;background:#a57852;clip-path:none;border-radius:12px 12px 0 0}
+.material-strip i:nth-child(4){height:31px;background:#ee9553;clip-path:polygon(0 60%,45% 60%,45% 0,100% 0,100% 100%,0 100%)}
+.match-banner{display:flex;align-items:center;gap:12px;font-size:13px;color:#a6c3c4;flex-wrap:wrap}.match-banner strong{font-size:12px;color:#f0ce93;background:#302a22;padding:6px 9px;border:1px solid #5c503a;font-weight:500}
+.match-game .stage-toolbar{min-height:33px}.match-game .toolbox{padding-top:0}
+#combat-panel .tool-heading{margin-bottom:16px}#score{font-size:23px;letter-spacing:.08em;white-space:nowrap}
+.score-caption{display:flex;justify-content:space-between;font:9px ui-monospace,monospace;letter-spacing:.08em;color:#90a5aa}
+.win-track{display:flex;justify-content:space-between;gap:10px;margin:8px 0;font-size:15px;white-space:nowrap;color:#a6d7d4}.win-track>span:last-child{color:#e3ac83}
+.match-progress>p{font-size:11px;color:#8c9ea0;margin:0 0 16px}.difficulty-ladder{display:flex;list-style:none;gap:3px;margin:0 0 20px;padding:0}
+.difficulty-ladder li{flex:1;text-align:center;padding:5px 2px;font:11px ui-monospace,monospace;background:#1a2429;color:#798d91;border:1px solid #2d3c42}
+.difficulty-ladder li.completed{color:#a2c9b0}.difficulty-ladder li[aria-current]{border-color:#c7ab78;color:#f1d096;background:#332e23}
+.roster-actor{--team:#a7d9df;margin-bottom:14px}.roster-actor.ally{--team:#9ce4a6}.roster-actor.enemy{--team:#e8b28d}.roster-actor .hull-label{color:var(--team)}
+.roster-actor meter{accent-color:var(--team)}.roster-actor meter::-webkit-meter-optimum-value{background:var(--team)}.roster-actor meter::-moz-meter-bar{background:var(--team)}
+.roster-actor.eliminated{opacity:.45}.roster-actor.eliminated .hull-label>span{text-decoration:line-through}
+.round-result{white-space:normal;width:280px;max-width:calc(100% - 24px);text-align:center;padding:18px;gap:12px}
+.round-result p{font-size:13px;line-height:1.6;color:#b7ccca;margin:0}.round-result button{min-height:40px;font-size:13px}
+#open-menu{white-space:nowrap}.combat-hint{min-height:0}.match-game #respawn{font-size:12px}
+@media(max-width:780px){.masthead{height:auto;min-height:90px;flex-wrap:wrap;padding:16px 0;gap:14px}.identity{flex-wrap:wrap}.transport{gap:5px}.transport button{padding:7px 9px}.menu-cards{grid-template-columns:1fr}.main-menu{padding-top:40px;width:min(520px,calc(100% - 32px))}.menu-card{padding:24px}.menu-lead{font-size:18px;margin-bottom:26px}.menu-ladder{font-size:12px}.menu-card p{max-width:none}.menu-foot{font-size:11px}}
+@media(max-width:380px){.menu-card{padding:18px}.menu-ladder{font-size:10px}.menu-ladder span{padding:0}.match-banner{font-size:11px;gap:6px}.subtitle{padding-left:8px}.transport #open-menu kbd{display:none}}

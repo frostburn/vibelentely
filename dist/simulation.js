@@ -301,7 +301,7 @@
     }
     generate(scene='cave') {
       this.randomState=this.seed;this.clear();const w=this.width,h=this.height,c=this.cells;
-      this.enemySpawn=null;
+      this.enemySpawn=null;this.teamSpawns=null;
       if(scene==='arena') {
         // A wide central fight, two cover islands and lower routes through water.
         for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++) {
@@ -320,7 +320,11 @@
         this.brush(144,137,17,M.SAND);this.brush(491,120,11,M.LAVA);
         this.brush(187,206,9,M.POWDER);
         this.sources=[{x:151,y:85,material:M.SAND,radius:1,rate:5},{x:478,y:67,material:M.WATER,radius:1,rate:7}];
-        this.spawn={x:251,y:166};this.enemySpawn={x:394,y:163};return;
+        this.spawn={x:251,y:166};this.enemySpawn={x:394,y:163};
+        this.teamSpawns=[
+          [this.spawn,{x:208,y:145}],
+          [this.enemySpawn,{x:434,y:164},{x:395,y:227},{x:463,y:252}],
+        ];return;
       }
       if(scene==='empty') {
         for(let y=h-20;y<h-1;y++)for(let x=1;x<w-1;x++)c[y*w+x]=M.ROCK;

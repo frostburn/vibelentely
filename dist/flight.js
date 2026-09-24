@@ -36,13 +36,14 @@
       }
       return true;
     }
-    respawn(){
+    respawn(occupied=[]){
       const s=this.spawn||this.world.spawn||{x:this.world.width/2,y:this.world.height/2};
+      const safe=(x,y)=>this.safeSpawn(x,y)&&occupied.every(a=>Math.hypot(a.x-x,a.y-y)>this.radius+a.radius+4);
       let point=null;
-      if(this.safeSpawn(s.x,s.y))point=s;
+      if(safe(s.x,s.y))point=s;
       for(let r=4;!point&&r<180;r+=4)for(let a=0;a<32;a++) {
         const x=Math.round(s.x+Math.cos(a*Math.PI/16)*r),y=Math.round(s.y+Math.sin(a*Math.PI/16)*r);
-        if(this.safeSpawn(x,y)){point={x,y};break;}
+        if(safe(x,y)){point={x,y};break;}
       }
       this.x=point?point.x:s.x;this.y=point?point.y:s.y;
       this.vx=0;this.vy=0;this.angle=-Math.PI/2;this.spin=0;this.health=point?100:0;
@@ -60,7 +61,7 @@
     damage(amount){
       if(this.dead)return;
       this.health=Math.max(0,this.health-amount);
-      if(this.health===0){this.dead=true;this.throttle=0;this.world.explode(Math.round(this.x),Math.round(this.y),12);}
+      if(this.health===0){this.dead=true;this.throttle=0;this.world.explode(Math.round(this.x),Math.round(this.y),12).owner=this;}
     }
     unstick(){
       if(!this.collides(this.x,this.y))return true;

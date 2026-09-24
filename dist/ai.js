@@ -4,10 +4,10 @@
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));
   class Pilot {
-    constructor(combat){this.combat=combat;this.reset();}
-    reset(){this.route=[];this.planIn=0;this.senseIn=0;this.observed=null;this.stuck=0;this.last=null;this.intent={};this.plans=0;}
+    constructor(combat,actor=combat.enemy,slot=0){this.combat=combat;this.actor=actor;this.slot=slot;this.reset();}
+    reset(){this.route=[];this.planIn=this.slot*.13;this.senseIn=0;this.observed=null;this.target=null;this.stuck=0;this.last=null;this.intent={};this.plans=0;}
     clear(x,y){
-      const a=this.combat.enemy;
+      const a=this.actor;
       if(a.collides(x,y))return false;
       for(const [dx,dy] of [[0,0],[6,0],[-6,0],[0,6],[0,-6]])if(this.combat.cell(x+dx,y+dy)===M.LAVA)return false;
       return true;
@@ -18,7 +18,7 @@
       return true;
     }
     plan(goal,target=null){
-      const a=this.combat.enemy,w=this.combat.world,grid=16,cols=Math.floor(w.width/grid),rows=Math.floor(w.height/grid),size=cols*rows;
+      const a=this.actor,w=this.combat.world,grid=16,cols=Math.floor(w.width/grid),rows=Math.floor(w.height/grid),size=cols*rows;
       const pos=i=>({x:(i%cols)*grid+8,y:Math.floor(i/cols)*grid+8});
       // Cache clearance only for nodes reached by this plan; edits invalidate it next time.
       const open=new Uint8Array(size);
@@ -58,9 +58,13 @@
       this.route.reverse();this.plans++;
     }
     step(dt){
-      const c=this.combat,a=c.enemy,target=c.player;if(a.dead||target.dead)return {};
+      const c=this.combat,a=this.actor;if(a.dead)return {};
       this.planIn-=dt;this.senseIn-=dt;
-      if(this.senseIn<=0){
+      if(this.senseIn<=0||!this.target||this.target.dead){
+        const enemies=c.living(1-a.team).sort((b,d)=>Math.hypot(b.x-a.x,b.y-a.y)-Math.hypot(d.x-a.x,d.y-a.y));
+        const target=enemies[0];if(!target)return {};
+        if(target!==this.target){this.target=target;this.route=[];this.last=null;this.stuck=0;}
+
         // Aim reacts to a sampled observation, never to future inputs.
         this.senseIn=.14;this.observed={x:target.x,y:target.y,vx:target.vx,vy:target.vy};
       }
@@ -80,13 +84,13 @@
       let angle=Math.atan2(ay,ax),thrust=clamp(Math.hypot(ax,ay)/115,0,1),brake=false;
       const travel=distance/230,aim=Math.atan2(dy+p.vy*travel,dx+p.vx*travel);
       const visible=distance<210&&c.sight(a.x,a.y,p.x,p.y);
-      const attack=visible&&c.time%2.8<1.35&&a.vy<42&&this.clear(a.x,a.y+18);
+      const attack=visible&&(c.time+this.slot*.4)%2.8<1.35&&a.vy<42&&this.clear(a.x,a.y+18);
       if(attack){angle=aim;thrust=0;brake=true;}
       const error=wrap(angle-a.angle),aimError=Math.abs(wrap(aim-a.angle));
       if(Math.abs(error)>.6)thrust=0;
       let threatened=false;
       for(const shot of c.projectiles){
-        if(shot.owner===a||shot.kind==='water')continue;
+        if(shot.owner.team===a.team||shot.kind==='water')continue;
         const sx=shot.x-a.x,sy=shot.y-a.y,vx=shot.vx-a.vx,vy=shot.vy-a.vy;
         const t=clamp(-(sx*vx+sy*vy)/(vx*vx+vy*vy||1),0,.55);
         if(t>.06&&Math.hypot(sx+vx*t,sy+vy*t)<13&&(sx*Math.cos(a.angle)+sy*Math.sin(a.angle))>0){threatened=true;break;}

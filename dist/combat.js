@@ -5,23 +5,57 @@
   function equipment(){return {heat:0,overheated:false,pulse:0,grenades:3,reload:0,grenade:0,water:100,jet:0,energy:100,shield:false,shieldLock:0,blink:0,blinkHeld:false};}
   class Combat {
     constructor(world,player){
-      this.world=world;this.player=player;this.enemy=new root.CaveFlight.Drone(world,{team:1});
-      this.actors=[player,this.enemy];this.projectiles=[];this.effects=[];
-      this.enabled=true;this.score=[0,0];this.time=0;this.result=null;
-      this.ai=new root.CaveAI.Pilot(this);this.reset();
+      this.world=world;this.player=player;player.team=0;player.name='Sinä';
+      this.projectiles=[];this.effects=[];this.enabled=true;this.score=[0,0];
+      this.setRoster(0,1);this.reset();
+    }
+    get enemy(){return this.actors.find(a=>a.team===1);}
+    get ai(){return this.enemy?.pilot;}
+    setRoster(allies,enemies){
+      this.actors=[this.player];
+      // Give each pilot its own observation, route and staggered planning clock.
+      for(let i=0;i<enemies;i++){
+        const actor=new root.CaveFlight.Drone(this.world,{team:1});
+        actor.name='Vihollinen '+(i+1);actor.slot=i;
+        actor.pilot=new root.CaveAI.Pilot(this,actor,i);this.actors.push(actor);
+      }
+      for(let i=0;i<allies;i++){
+        const actor=new root.CaveFlight.Drone(this.world,{team:0});
+        actor.name=allies===1?'Siipi':'Siipi '+(i+1);actor.slot=i+1;
+        actor.pilot=new root.CaveAI.Pilot(this,actor,enemies+i);this.actors.push(actor);
+      }
     }
     reset(clearScore=false){
-      this.enemy.spawn=this.world.enemySpawn||{x:this.world.spawn.x+110,y:this.world.spawn.y-15};
-      for(const actor of this.actors){actor.respawn();actor.gear=equipment();}
-      this.projectiles.length=0;this.effects.length=0;this.time=0;this.result=null;
-      this.seenBlasts=new WeakSet(this.world.effects);this.ai.reset();
+      const w=this.world,occupied=[];
+      for(const actor of this.actors){
+        const base=actor.team?(w.enemySpawn||{x:w.spawn.x+110,y:w.spawn.y-15}):w.spawn;
+        actor.spawn=w.teamSpawns?.[actor.team]?.[actor.slot||0]||
+          {x:base.x+(actor.slot||0)*(actor.team?24:-24),y:base.y};
+        actor.respawn(occupied);actor.gear=equipment();actor.pilot?.reset();
+        if(!actor.dead)occupied.push(actor);
+      }
+      this.projectiles.length=0;this.effects.length=0;this.time=0;this.result=null;this.started=false;
+      this.seenBlasts=new WeakSet(this.world.effects);
       if(clearScore)this.score=[0,0];
     }
     setOpponent(value){
-      this.enabled=value;this.projectiles=this.projectiles.filter(p=>p.owner!==this.enemy);
-      if(value){this.enemy.respawn();this.enemy.gear=equipment();this.ai.reset();}
+      this.enabled=value;this.projectiles=this.projectiles.filter(p=>p.owner===this.player);
+      if(value)for(const actor of this.actors)if(actor!==this.player){
+        actor.respawn(this.actors.filter(a=>a!==actor&&!a.dead));actor.gear=equipment();actor.pilot.reset();
+      }
     }
     active(){return this.enabled?this.actors:[this.player];}
+    living(team){return this.active().filter(a=>a.team===team&&!a.dead);}
+    finish(result){
+      if(this.result)return;
+      this.result=result;
+      if(this.enabled&&result!=='draw')this.score[result==='won'?0:1]++;
+      for(const actor of this.actors){actor.throttle=0;actor.gear.shield=false;}
+    }
+    resolve(){
+      const ours=this.living(0).length,theirs=this.enabled?this.living(1).length:1;
+      if(!ours||!theirs)this.finish(!ours?(!theirs?'draw':'lost'):'won');
+    }
     cell(x,y){
       const w=this.world;
       if(x<1||y<1||x>=w.width-1||y>=w.height-1)return M.ROCK;
@@ -110,7 +144,7 @@
       }
       w.brush(x,y,1,M.WATER);
     }
-    detonate(p){this.world.explode(Math.round(p.x),Math.round(p.y),19);}
+    detonate(p){this.world.explode(Math.round(p.x),Math.round(p.y),19).owner=p.owner;}
     projectileStep(p,dt){
       p.life-=dt;p.age+=dt;
       if(p.life<=0){if(p.kind==='grenade')this.detonate(p);else if(p.kind==='water')this.waterImpact(p);return false;}
@@ -142,7 +176,7 @@
         }
         p.x=nx;p.y=ny;
         for(const actor of this.active()){
-          if(actor.dead||(actor===p.owner&&(p.kind!=='grenade'||p.age<.2)))continue;
+          if(actor.dead||(actor!==p.owner&&actor.team===p.owner.team)||(actor===p.owner&&(p.kind!=='grenade'||p.age<.2)))continue;
           const r=actor.radius+(actor.gear.shield?3:0);
           if(Math.hypot(actor.x-p.x,actor.y-p.y)>r)continue;
           if(this.guard(actor,p.x,p.y,p.kind==='pulse'?12:p.kind==='grenade'?30:3)){
@@ -164,7 +198,7 @@
       for(const e of this.world.effects){
         if(this.seenBlasts.has(e))continue;this.seenBlasts.add(e);
         for(const actor of this.active()){
-          if(actor.dead)continue;
+          if(actor.dead||(e.owner&&actor!==e.owner&&actor.team===e.owner.team))continue;
           const dx=actor.x-e.x,dy=actor.y-e.y,d=Math.hypot(dx,dy),reach=e.radius+12;
           if(d>=reach)continue;
           const power=1-d/reach;
@@ -174,23 +208,26 @@
       }
     }
     bump(){
-      if(!this.enabled||this.enemy.dead||this.player.dead)return;
-      const a=this.player,b=this.enemy,dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),r=a.radius+b.radius;
-      if(d>=r)return;
-      const nx=d?dx/d:1,ny=d?dy/d:0,push=(r-d)/2+.1;
-      if(!a.collides(a.x-nx*push,a.y-ny*push)){a.x-=nx*push;a.y-=ny*push;}
-      if(!b.collides(b.x+nx*push,b.y+ny*push)){b.x+=nx*push;b.y+=ny*push;}
-      const closing=(a.vx-b.vx)*nx+(a.vy-b.vy)*ny;
-      if(closing>0){a.vx-=nx*closing*.6;a.vy-=ny*closing*.6;b.vx+=nx*closing*.6;b.vy+=ny*closing*.6;}
+      const actors=this.active().filter(a=>!a.dead);
+      for(let i=0;i<actors.length;i++)for(let j=i+1;j<actors.length;j++){
+        const a=actors[i],b=actors[j],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),r=a.radius+b.radius;
+        if(d>=r)continue;
+        const nx=d?dx/d:1,ny=d?dy/d:0,push=(r-d)/2+.1;
+        if(!a.collides(a.x-nx*push,a.y-ny*push)){a.x-=nx*push;a.y-=ny*push;}
+        if(!b.collides(b.x+nx*push,b.y+ny*push)){b.x+=nx*push;b.y+=ny*push;}
+        const closing=(a.vx-b.vx)*nx+(a.vy-b.vy)*ny;
+        if(closing>0){a.vx-=nx*closing*.6;a.vy-=ny*closing*.6;b.vx+=nx*closing*.6;b.vy+=ny*closing*.6;}
+      }
     }
     step(input={},dt=1/60){
       if(this.result)return;
-      if(Object.values(input).some(Boolean))this.player.started=true;
-      if(!this.player.started&&!this.player.dead)return;
+      this.resolve();if(this.result)return;
+      if(this.player.started||this.player.dead||Object.values(input).some(Boolean))this.started=true;
+      if(!this.started)return;
       this.time+=dt;
-      const enemyInput=this.enabled?this.ai.step(dt):{},inputs=[input,enemyInput],actors=this.active();
-      if(this.enabled)this.enemy.started=true;
-      for(const [i,actor] of actors.entries())this.prepare(actor,inputs[i],dt);
+      const actors=this.active().filter(a=>!a.dead);
+      const inputs=actors.map(a=>a===this.player?input:a.pilot.step(dt));
+      for(const [i,actor] of actors.entries()){actor.started=true;this.prepare(actor,inputs[i],dt);}
       for(const [i,actor] of actors.entries())actor.step(inputs[i],dt);
       this.bump();
       for(const [i,actor] of actors.entries()){
@@ -201,11 +238,7 @@
       }
       this.projectiles=this.projectiles.filter(p=>this.projectileStep(p,dt));this.blasts();
       for(const e of this.effects)e.life-=dt;this.effects=this.effects.filter(e=>e.life>0).slice(-128);
-      if(this.player.dead||(this.enabled&&this.enemy.dead)){
-        this.result=this.player.dead?(this.enabled&&this.enemy.dead?'draw':'lost'):'won';
-        if(this.enabled&&this.result!=='draw')this.score[this.result==='won'?0:1]++;
-        for(const actor of actors){actor.throttle=0;actor.gear.shield=false;}
-      }
+      this.resolve();
     }
   }
   root.CaveCombat={Combat};
