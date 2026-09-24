@@ -13,9 +13,10 @@
   ];
   const names=['Ilma','Kivi','Hiekka','Vesi','Muta','Laava','Höyry','Ruuti','Tuli','Savu','Jäähtynyt laava'];
   const screen=$('screen'),world=new World(),renderer=new CaveRenderer(world,screen,$('minimap'));
-  const drone=new CaveFlight.Drone(world),held=new Set();
+  world.generate('arena');
+  const drone=new CaveFlight.Drone(world),combat=new CaveCombat.Combat(world,drone),held=new Set();
   const camera={x:16,y:34},keys=new Set(),pointer={inside:false,down:false,x:0,y:0,panning:false,erase:false};
-  let selected=0,radius=5,paused=false,scene='cave',panTool=false,speed=1,mode='fly';
+  let selected=0,radius=5,paused=false,scene='arena',panTool=false,speed=1,mode='fly';
   let accumulator=0,lastTime=0,statTime=0,frameCount=0,stepCount=0,raf=0,simMS=0,lastBrush=null;
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   function clampCamera(){camera.x=clamp(Math.round(camera.x),0,world.width-320);camera.y=clamp(Math.round(camera.y),0,world.height-200);}
@@ -26,6 +27,8 @@
     $('fly-mode').setAttribute('aria-pressed',String(mode==='fly'));
     $('edit-mode').setAttribute('aria-pressed',String(mode==='edit'));
     $('flight-controls').hidden=mode!=='fly';$('flight-note').hidden=mode!=='fly';$('edit-note').hidden=mode!=='edit';
+    $('weapons').hidden=mode!=='fly';$('combat-panel').hidden=mode!=='fly';$('editor-controls').hidden=mode!=='edit';
+    $('round-result').hidden=mode!=='fly'||!combat.result;
     if(mode==='fly'){$('follow').checked=true;camera.x=drone.x-160;camera.y=drone.y-100;clampCamera();}
     else{$('pointer-status').textContent='Valitse aine ja piirrä luolaan.';$('pointer-status').classList.remove('damaged');}
   }
@@ -48,7 +51,7 @@
     $('performance').textContent=value?'Tauolla':'60 askelta/s';
   }
   function reset(){
-    pointer.down=false;pointer.inside=false;keys.clear();held.clear();lastBrush=null;world.generate(scene);world.emitting=$('sources').checked;drone.respawn();
+    clearInput();pointer.inside=false;world.generate(scene);world.emitting=$('sources').checked;combat.reset(true);battleReadout();
     camera.x=drone.x-160;camera.y=drone.y-100;clampCamera();accumulator=0;
     $('follow').checked=true;if(mode==='edit')$('pointer-status').textContent='Valitse aine ja piirrä luolaan.';
     $('sources').disabled=scene==='empty';
@@ -56,7 +59,7 @@
   function resize(){
     const compact=window.innerWidth<=680;
     const maxWidth=window.innerWidth-(compact?24:64+264);
-    const scale=Math.max(1,Math.min(5,Math.floor(maxWidth/320),compact?2:Math.max(1,Math.floor((window.innerHeight-320)/200))));
+    const scale=Math.max(1,Math.min(5,Math.floor(maxWidth/320),compact?2:Math.max(1,Math.floor((window.innerHeight-350)/200))));
     // Only whole CSS-pixel multiples; the backing buffer remains exactly 320 × 200.
     document.documentElement.style.setProperty('--screen-w',320*scale+'px');
     document.documentElement.style.setProperty('--screen-h',200*scale+'px');
@@ -85,6 +88,7 @@
     pointer.panning=e.shiftKey||e.button===1||panTool;lastBrush=null;
     screen.setPointerCapture(e.pointerId);
     if(pointer.panning){$('follow').checked=false;dragOrigin={x:e.clientX,y:e.clientY,cx:camera.x,cy:camera.y};screen.classList.add('dragging');}
+    else if(mode==='fly')held.add(e.button===2?'mouse-shield':'mouse-fire');
     else if(mode==='edit'&&materials[selected].id===-1&&!pointer.erase){world.explode(pointer.x,pointer.y,8+radius);}
     else paint();
   });
@@ -92,7 +96,7 @@
     if(pointer.down&&pointer.panning&&dragOrigin){const scale=screen.getBoundingClientRect().width/320;camera.x=dragOrigin.cx+(dragOrigin.x-e.clientX)/scale;camera.y=dragOrigin.cy+(dragOrigin.y-e.clientY)/scale;clampCamera();}
     locate(e);if(pointer.down&&!pointer.panning)paint();
   });
-  const release=()=>{pointer.down=false;pointer.panning=false;dragOrigin=null;lastBrush=null;screen.classList.remove('dragging');};
+  const release=()=>{pointer.down=false;pointer.panning=false;held.delete('mouse-fire');held.delete('mouse-shield');dragOrigin=null;lastBrush=null;screen.classList.remove('dragging');};
   screen.addEventListener('pointerup',release);screen.addEventListener('pointercancel',release);screen.addEventListener('lostpointercapture',release);
   screen.addEventListener('pointerleave',()=>{if(!pointer.down)pointer.inside=false;});screen.addEventListener('contextmenu',e=>e.preventDefault());
   screen.addEventListener('wheel',e=>{e.preventDefault();setRadius(radius+(e.deltaY<0?1:-1));},{passive:false});
@@ -103,8 +107,10 @@
   $('reset').addEventListener('click',reset);
   $('fly-mode').addEventListener('click',()=>setMode('fly'));
   $('edit-mode').addEventListener('click',()=>setMode('edit'));
-  function respawn(){drone.respawn();keys.clear();held.clear();$('follow').checked=true;camera.x=drone.x-160;camera.y=drone.y-100;clampCamera();}
+  function respawn(){combat.reset();clearInput();battleReadout();$('follow').checked=true;camera.x=drone.x-160;camera.y=drone.y-100;clampCamera();}
   $('respawn').addEventListener('click',respawn);
+  $('next-round').addEventListener('click',respawn);
+  $('opponent').addEventListener('change',e=>{combat.setOpponent(e.target.checked);battleReadout();});
   for(const button of document.querySelectorAll('[data-flight]')) {
     const control=button.dataset.flight;
     const releaseButton=()=>{held.delete(control);button.classList.remove('is-held');};
@@ -127,9 +133,10 @@
   async function fullscreen(){try{if(document.fullscreenElement)await document.exitFullscreen();else await document.querySelector('.app').requestFullscreen();}catch{$('pointer-status').textContent='Selain ei salli koko näytön tilaa.';}}
   $('fullscreen').addEventListener('click',fullscreen);document.addEventListener('fullscreenchange',resize);
   $('help-button').addEventListener('click',()=>{$('help').hidden=!$('help').hidden;$('help-button').setAttribute('aria-expanded',String(!$('help').hidden));});
-  const movement=['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'];
+  const movement=['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyJ','KeyK','KeyL','KeyI','KeyQ'];
   window.addEventListener('keydown',e=>{
-    if(e.target.matches('input,select,textarea')||e.ctrlKey||e.metaKey||e.altKey)return;
+    if(e.target.matches('input:not([type=checkbox]),select,textarea')||e.ctrlKey||e.metaKey||e.altKey)return;
+    if(e.code==='Space'&&e.target.matches('button,input'))return;
     if(movement.includes(e.code)){e.preventDefault();keys.add(e.code);return;}
     if(e.repeat)return;
     if(e.code==='Space'){e.preventDefault();setPaused(!paused);}
@@ -151,11 +158,29 @@
     thrust:keys.has('KeyW')||keys.has('ArrowUp')||held.has('thrust'),
     turn:(keys.has('KeyD')||keys.has('ArrowRight')||held.has('right')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')||held.has('left')?1:0),
     brake:keys.has('KeyS')||keys.has('ArrowDown')||held.has('brake'),
+    fire:keys.has('KeyJ')||held.has('fire')||held.has('mouse-fire'),
+    grenade:keys.has('KeyK')||held.has('grenade'),water:keys.has('KeyL')||held.has('water'),
+    shield:keys.has('KeyI')||held.has('shield')||held.has('mouse-shield'),blink:keys.has('KeyQ')||held.has('blink'),
   };}
-  function simulate(){world.step();if(mode==='fly')drone.step(flightInput());}
+  function simulate(){world.step();if(mode==='fly')combat.step(flightInput());}
+  function battleReadout(){
+    const g=drone.gear;
+    $('pulse-status').textContent=g.overheated?'Jäähtyy':Math.round(g.heat*100)+' % lämpö';
+    $('grenade-status').textContent=g.grenades+' / 3';$('water-status').textContent=Math.floor(g.water)+' %';
+    $('shield-status').textContent=g.shieldLock?'Latautuu':Math.ceil(g.energy)+' %';
+    $('blink-status').textContent=g.blink?g.blink.toFixed(1)+' s':combat.blinkTarget(drone)?'Valmis':'Ei tilaa';
+    const charge={fire:1-g.heat,grenade:g.grenades/3,water:g.water/100,shield:g.energy/100,blink:1-g.blink/4};
+    for(const b of $('weapons').querySelectorAll('button'))b.style.setProperty('--charge',charge[b.dataset.flight]*100+'%');
+    $('player-health').value=drone.health;$('player-hull').textContent=Math.ceil(drone.health)+' %';
+    $('enemy-health').value=combat.enabled?combat.enemy.health:0;$('enemy-hull').textContent=combat.enabled?Math.ceil(combat.enemy.health)+' %':'Pois';
+    $('score').textContent=combat.score.join(' : ');
+    $('combat-hint').textContent=!drone.started?'Erä alkaa ensimmäisestä ohjauksesta.':combat.result?'R aloittaa heti uuden erän.':combat.enabled?'Oranssi lennokki on vastustajasi.':'Vapaa harjoittelu · tekoäly pois päältä.';
+    $('round-result').hidden=mode!=='fly'||!combat.result;
+    $('round-title').textContent=combat.result==='won'?'Erävoitto!':combat.result==='draw'?'Tasapeli':combat.enabled?'Erä hävitty':'Lennokki hajosi';
+  }
   function flightReadout(){
     const text=drone.blocked?'Lähtöpaikka tukossa · kaiva tilaa muokkaustilassa':drone.dead?'Lennokki hajosi · R tuo uuden lennokin':!drone.started?'Valmiina · ↑ tai W käynnistää moottorin':Math.round(drone.speed)+' px/s · Runko '+Math.ceil(drone.health)+' %'+(drone.wet>.25?' · Vedessä':'');
-    $('pointer-status').textContent=text;$('pointer-status').classList.toggle('damaged',drone.health<40);
+    $('pointer-status').textContent=text;$('pointer-status').classList.toggle('damaged',drone.health<40);battleReadout();
   }
   function frame(now){
     const dt=lastTime?Math.min(100,now-lastTime):16.67;lastTime=now;
@@ -176,8 +201,8 @@
         if(Math.abs(oy)>28)camera.y+=oy-Math.sign(oy)*28;
         clampCamera();
       }
-      renderer.render(camera.x,camera.y,mode==='edit'?pointer:null,materials[selected].id,radius,drone);
-      if(frameCount%6===0){renderer.minimap(camera.x,camera.y,drone);if(mode==='fly')flightReadout();}
+      renderer.render(camera.x,camera.y,mode==='edit'?pointer:null,materials[selected].id,radius,drone,combat);
+      if(frameCount%6===0){renderer.minimap(camera.x,camera.y,drone,combat);if(mode==='fly')flightReadout();}
       frameCount++;
       if(now-statTime>1000){$('performance').textContent=paused?'Tauolla':Math.round(stepCount*1000/(now-statTime))+' askelta/s';stepCount=0;statTime=now;}
     }
@@ -185,5 +210,5 @@
   }
   selectMaterial(0);reset();setMode('fly');resize();raf=requestAnimationFrame(frame);
   // Deliberately inspectable: no build tools or hidden server state are required.
-  window.vibelentely=window.luolalabra={world,drone,camera,materials,pause:setPaused,reset,respawn,setMode,renderer,get scene(){return scene;},get state(){return{paused,selected,radius,speed,mode,simMS,screen:[screen.width,screen.height],camera:{...camera}};}};
+  window.vibelentely=window.luolalabra={world,drone,combat,camera,materials,pause:setPaused,reset,respawn,setMode,renderer,get scene(){return scene;},get state(){return{paused,selected,radius,speed,mode,simMS,screen:[screen.width,screen.height],camera:{...camera}};}};
 })();

@@ -5,7 +5,7 @@ let html=await readFile(new URL('dist/index.html',root),'utf8');
 const css=await readFile(new URL('dist/style.css',root),'utf8');
 html=html.replace('<link rel="stylesheet" href="style.css">','<style>\n'+css+'\n</style>');
 const scripts=[];
-for(const name of ['simulation','flight','render','app']) {
+for(const name of ['simulation','flight','ai','combat','render','app']) {
   html=html.replace(`  <script defer src="${name}.js"></script>\n`,'');
   scripts.push(await readFile(new URL(`dist/${name}.js`,root),'utf8'));
 }

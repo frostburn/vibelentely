@@ -2,6 +2,7 @@
   'use strict';
   const {M}=CaveSim;
   const rgb=(r,g,b)=>((255<<24)|(b<<16)|(g<<8)|r)>>>0;
+  const enemyPalette={'1':'#834840','2':'#e59067','3':'#fff0c1','4':'#4c2339'};
   const palettes={
     [M.ROCK]:[[40,47,59],[44,51,64],[47,54,66],[50,57,69],[54,61,72]],
     [M.SAND]:[[179,129,61],[203,157,77],[218,176,91],[234,197,115],[200,153,78]],
@@ -19,7 +20,7 @@
       this.mapImage=this.mapCtx.createImageData(160,100);this.mapPixels=new Uint32Array(this.mapImage.data.buffer);
       this.mapColors=[rgb(10,16,23),rgb(47,56,67),rgb(217,175,99),rgb(37,113,170),rgb(123,83,57),rgb(250,107,37),rgb(112,140,153),rgb(137,140,122),rgb(255,204,96),rgb(69,71,72),rgb(83,57,52)];
     }
-    render(cx,cy,pointer,tool,radius,drone){
+    render(cx,cy,pointer,tool,radius,drone,combat){
       const w=this.world.width,c=this.world.cells,h=this.world.heat,life=this.world.life,t=this.world.tick,p=this.pixels,light=this.light;
       light.fill(0);
       // Light is computed on the same pixel grid as the simulation.
@@ -78,6 +79,10 @@
         this.ctx.fillRect(x-1,y,3,1);this.ctx.fillRect(x,y+1,1,1);
       }
       if(drone)this.drone(cx,cy,drone);
+      if(combat){
+        if(combat.enabled)this.drone(cx,cy,combat.enemy);
+        this.combat(cx,cy,combat);
+      }
       if(pointer&&pointer.inside&&!pointer.panning){
         const x=pointer.x-cx,y=pointer.y-cy;
         this.ring(x,y,radius,tool===M.AIR?'#ef998e':'#e1e3c9',false);
@@ -98,6 +103,7 @@
     drone(cx,cy,drone){
       if(drone.dead)return;
       const {SPRITE,PALETTE}=CaveFlight,ctx=this.ctx;
+      const palette=drone.team?enemyPalette:PALETTE;
       const cxp=Math.round(drone.x)-cx,cyp=Math.round(drone.y)-cy;
       const co=Math.cos(drone.angle),si=Math.sin(drone.angle);
       for(let y=-12;y<=12;y++)for(let x=-12;x<=12;x++) {
@@ -106,17 +112,61 @@
           ctx.fillStyle=u>-8?'#ffe5a3':'#ed8b48';ctx.fillRect(cxp+x,cyp+y,1,1);
         }
         const sx=Math.round(u+6),sy=Math.round(v+5);
-        const color=PALETTE[SPRITE[sy]?.[sx]];
+        const key=SPRITE[sy]?.[sx];
+        const color=palette[key];
         if(color){ctx.fillStyle=color;ctx.fillRect(cxp+x,cyp+y,1,1);}
       }
+      if(drone.health<100){
+        ctx.fillStyle='#25353d';ctx.fillRect(cxp-6,cyp-12,12,2);
+        ctx.fillStyle=drone.team?'#efaa79':'#9cdcdf';ctx.fillRect(cxp-6,cyp-12,Math.ceil(drone.health*.12),2);
+      }
+      if(drone.gear?.shield){
+        ctx.fillStyle='#b8f5ee';
+        for(let a=-1.21;a<=1.21;a+=.07){const angle=drone.angle+a;ctx.fillRect(cxp+Math.round(Math.cos(angle)*10),cyp+Math.round(Math.sin(angle)*10),1,1);}
+      }
     }
-    minimap(cx,cy,drone){
+    combat(cx,cy,combat){
+      const ctx=this.ctx;
+      for(const p of combat.projectiles){
+        const x=Math.round(p.x)-cx,y=Math.round(p.y)-cy;
+        if(p.kind==='pulse'){
+          const length=Math.hypot(p.vx,p.vy)||1;
+          ctx.fillStyle=p.owner.team?'#ffc383':'#bff7f1';
+          for(let n=0;n<4;n++)ctx.fillRect(x-Math.round(p.vx/length*n),y-Math.round(p.vy/length*n),1,1);
+        }else if(p.kind==='grenade'){
+          ctx.fillStyle='#131922';ctx.fillRect(x-2,y-2,5,5);
+          ctx.fillStyle=Math.floor(p.age/(p.life<.4?.05:.15))%2?'#ffcb6c':'#e76c51';ctx.fillRect(x-1,y-1,3,3);
+        }else {ctx.fillStyle='#9adfff';ctx.fillRect(x,y,2,2);}
+      }
+      for(const e of combat.effects){
+        const x=Math.round(e.x)-cx,y=Math.round(e.y)-cy;
+        this.ring(x,y,Math.round(e.kind==='blink'?5+(1-e.life/e.max)*11:e.kind==='shield'?11:2),e.kind==='hit'?'#ffe4a3':'#a1e8eb',e.kind==='blink');
+      }
+      const enemy=combat.enemy;
+      if(combat.enabled&&!enemy.dead&&(enemy.x<cx+8||enemy.x>cx+312||enemy.y<cy+8||enemy.y>cy+192)){
+        const dx=enemy.x-cx-160,dy=enemy.y-cy-100,f=1/Math.max(Math.abs(dx)/151,Math.abs(dy)/91);
+        const x=Math.round(160+dx*f),y=Math.round(100+dy*f);
+        ctx.fillStyle='#ffbd8b';ctx.fillRect(x-2,y-2,5,5);ctx.fillStyle='#572b28';ctx.fillRect(x-1,y-1,3,3);
+      }
+      if(!combat.result&&!combat.player.dead&&combat.player.gear.blink===0){
+        const target=combat.blinkTarget(combat.player);
+        if(target){
+          const x=Math.round(target.x)-cx,y=Math.round(target.y)-cy;
+          ctx.fillStyle='#50868c';ctx.fillRect(x-3,y,2,1);ctx.fillRect(x+2,y,2,1);ctx.fillRect(x,y-3,1,2);ctx.fillRect(x,y+2,1,2);
+        }
+      }
+    }
+    minimap(cx,cy,drone,combat){
       const c=this.world.cells,w=this.world.width;
       for(let y=0;y<100;y++)for(let x=0;x<160;x++)this.mapPixels[y*160+x]=this.mapColors[c[y*4*w+x*4]];
       this.mapCtx.putImageData(this.mapImage,0,0);
       this.mapCtx.strokeStyle='#f1d598';this.mapCtx.lineWidth=1;
       this.mapCtx.strokeRect(Math.floor(cx/4)+.5,Math.floor(cy/4)+.5,79,49);
       if(drone&&!drone.dead){this.mapCtx.fillStyle='#b5f1ec';this.mapCtx.fillRect(Math.round(drone.x/4)-1,Math.round(drone.y/4)-1,3,3);}
+      if(combat?.enabled&&!combat.enemy.dead){
+        const x=Math.round(combat.enemy.x/4),y=Math.round(combat.enemy.y/4);this.mapCtx.fillStyle='#ffb784';
+        this.mapCtx.fillRect(x-2,y,5,1);this.mapCtx.fillRect(x,y-2,1,5);
+      }
     }
   }
   root.CaveRenderer=Renderer;
