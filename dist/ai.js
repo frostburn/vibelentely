@@ -17,6 +17,10 @@
       for(let k=0;k<=n;k++)if(!this.clear(ax+(bx-ax)*k/n,ay+(by-ay)*k/n))return false;
       return true;
     }
+    firingSpot(x,y,target){
+      // Aiming cuts thrust. Reserve falling room plus the waypoint arrival tolerance.
+      return this.clear(x,y+18)&&this.clear(x,y+32)&&this.combat.sight(x,y,target.x,target.y);
+    }
     plan(goal,target=null){
       const a=this.actor,w=this.combat.world,grid=16,cols=Math.floor(w.width/grid),rows=Math.floor(w.height/grid),size=cols*rows;
       const pos=i=>({x:(i%cols)*grid+8,y:Math.floor(i/cols)*grid+8});
@@ -44,7 +48,7 @@
       let best=start,bestDistance=Infinity;
       for(let head=0;head<queue.length;head++){
         const i=queue[head],p=pos(i);
-        const d=Math.hypot(p.x-goal.x,p.y-goal.y)+(target&&!this.combat.sight(p.x,p.y,target.x,target.y)?500:0);
+        const d=Math.hypot(p.x-goal.x,p.y-goal.y)+(target&&!this.firingSpot(p.x,p.y,target)?500:0);
         if(d<bestDistance){best=i;bestDistance=d;}
         if(d<10)break;
         for(const j of [i-cols,i+cols,i-1,i+1]){
@@ -79,7 +83,7 @@
       let waypoint=this.route[0]||{x:a.x,y:a.y-10};
       // Skip only waypoints connected by a hull-width, hazard-free corridor.
       for(let k=Math.min(6,this.route.length-1);k>0;k--)if(this.passage(a.x,a.y,this.route[k].x,this.route[k].y)){waypoint=this.route[k];break;}
-      if(this.passage(a.x,a.y,goal.x,goal.y)&&c.sight(goal.x,goal.y,p.x,p.y))waypoint=goal;
+      if(this.passage(a.x,a.y,goal.x,goal.y)&&this.firingSpot(goal.x,goal.y,p))waypoint=goal;
       const ax=clamp((waypoint.x-a.x)*2.1-a.vx*3,-95,95),ay=clamp((waypoint.y-a.y)*2.1-a.vy*3-34,-105,70);
       let angle=Math.atan2(ay,ax),thrust=clamp(Math.hypot(ax,ay)/115,0,1),brake=false;
       const travel=distance/230,aim=Math.atan2(dy+p.vy*travel,dx+p.vx*travel);

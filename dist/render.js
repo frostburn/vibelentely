@@ -21,9 +21,23 @@
       this.light=new Uint8Array(64000);this.map=minimap;this.mapCtx=minimap.getContext('2d',{alpha:false});
       this.mapImage=this.mapCtx.createImageData(160,100);this.mapPixels=new Uint32Array(this.mapImage.data.buffer);
       this.mapColors=[rgb(10,16,23),rgb(47,56,67),rgb(217,175,99),rgb(37,113,170),rgb(123,83,57),rgb(250,107,37),rgb(112,140,153),rgb(137,140,122),rgb(255,204,96),rgb(69,71,72),rgb(83,57,52)];
+      this.defaultMapColors=this.mapColors.slice();this.syncTheme();
+    }
+    syncTheme(){
+      const theme=this.world.theme||null;if(theme===this.theme)return;
+      this.theme=theme;this.palettes={...palettes,...theme?.palettes};
+      this.sky=theme?.sky||[10,15,23];this.surface=theme?.surface||[83,166,199];
+      this.mapColors=this.defaultMapColors.slice();this.mapColors[M.AIR]=rgb(...this.sky);
+      for(const [kind,colors] of Object.entries(this.palettes))this.mapColors[kind]=rgb(...colors[2]);
+      this.sourceColors={
+        [M.SAND]:'rgb('+this.palettes[M.SAND][4].join(',')+')',
+        [M.WATER]:'rgb('+this.surface.join(',')+')',[M.LAVA]:'#ffae5a',
+      };
     }
     render(cx,cy,pointer,tool,radius,drone,combat){
+      this.syncTheme();
       const w=this.world.width,c=this.world.cells,h=this.world.heat,life=this.world.life,t=this.world.tick,p=this.pixels,light=this.light;
+      const theme=this.theme,colors=this.palettes,sky=this.sky;
       light.fill(0);
       // Light is computed on the same pixel grid as the simulation.
       for(let y=0;y<200;y+=3)for(let x=0;x<320;x+=3){
@@ -41,7 +55,7 @@
         let r,g,b;
         if(k===M.AIR){
           const band=(Math.sin(wx/27+wy/31)+Math.sin(wx/61-wy/22))*1.3;
-          r=10+band+(n%11===0?2:0);g=15+band;b=23+band*1.4;
+          r=sky[0]+band+(n%11===0?2:0);g=sky[1]+band;b=sky[2]+band*1.4;
         }else if(k===M.LAVA){
           const cool=Math.max(0,Math.min(1,(h[i]-480)/650)),flicker=(Math.sin((wy-t*.12)/4+wx/9)+1)/2;
           r=151+cool*103;g=41+cool*90+flicker*35;b=22+cool*15;
@@ -52,16 +66,29 @@
         else if(k===M.SMOKE){r=41+n%14;g=40+n%13;b=46+n%11;}
         else if(k===M.FIRE){r=247;g=94+hash(wx+t,wy)%135;b=30+hash(wx,wy+t)%67;}
         else{
-          const colors=palettes[k]||palettes[M.ROCK];
-          let v=colors[n%5];[r,g,b]=v;
+          let palette=colors[k]||colors[M.ROCK],shade=0;
+          if(k===M.ROCK&&theme){
+            let vein=false;
+            switch(theme.texture){
+              case 'granite':vein=(wx+wy+Math.round(6*Math.sin(wy/23)))%47<3;shade=n%17===0?10:0;break;
+              case 'sandstone':vein=(wy+Math.round(5*Math.sin(wx/35)))%26<5;break;
+              case 'chalk':vein=(wy+Math.floor(wx/18))%37<2;shade=n%29===0?-15:0;break;
+              case 'basalt':vein=(wx+Math.floor(wy/48)*3)%23<2;shade=(wx%23===7)?-9:0;break;
+              case 'slate':vein=(wy+Math.floor(wx/8))%15<3;break;
+              case 'crystal':vein=((Math.floor((wx+wy)/22)+Math.floor((wx-wy)/29))%4+4)%4===0;break;
+              case 'gneiss':vein=(wy+Math.round(10*Math.sin(wx/31)))%18<4;break;
+            }
+            if(vein)palette=theme.vein;
+          }
+          [r,g,b]=palette[n%5];r+=shade;g+=shade;b+=shade;
           if(k===M.ROCK){
             const stratum=(wy+Math.round(5*Math.sin(wx/23)))%17;
-            if(stratum===0){r-=7;g-=7;b-=6;}
+            if(!theme&&stratum===0){r-=7;g-=7;b-=6;}
             if(c[i-w]===M.AIR){r+=27;g+=29;b+=29;}
             else if(c[i+w]===M.AIR){r-=13;g-=13;b-=13;}
             else if(c[i-1]===M.AIR){r+=9;g+=10;b+=11;}
           }else if(k===M.WATER){
-            if(c[i-w]!==M.WATER){r=83;g=166;b=199;}
+            if(c[i-w]!==M.WATER){[r,g,b]=this.surface;}
             else if(c[i-w*3]===M.WATER){r-=6;g-=9;b-=6;}
           }else if(k===M.MUD&&c[i-w]!==M.MUD){r+=27;g+=24;b+=16;}
           else if(k===M.BASALT&&c[i-w]!==M.BASALT){r+=20;g+=10;b+=5;}
@@ -77,7 +104,7 @@
       }
       if(this.world.emitting)for(const s of this.world.sources){
         const x=s.x-cx,y=s.y-cy-4;
-        this.ctx.fillStyle=s.material===M.WATER?'#76bada':s.material===M.LAVA?'#ffae5a':'#e8cb8c';
+        this.ctx.fillStyle=this.sourceColors[s.material]||'#e8cb8c';
         this.ctx.fillRect(x-1,y,3,1);this.ctx.fillRect(x,y+1,1,1);
       }
       if(drone)this.drone(cx,cy,drone);
@@ -139,7 +166,7 @@
         }else if(p.kind==='grenade'){
           ctx.fillStyle='#131922';ctx.fillRect(x-2,y-2,5,5);
           ctx.fillStyle=Math.floor(p.age/(p.life<.4?.05:.15))%2?'#ffcb6c':'#e76c51';ctx.fillRect(x-1,y-1,3,3);
-        }else {ctx.fillStyle='#9adfff';ctx.fillRect(x,y,2,2);}
+        }else {ctx.fillStyle=this.sourceColors[M.WATER];ctx.fillRect(x,y,2,2);}
       }
       for(const e of combat.effects){
         const x=Math.round(e.x)-cx,y=Math.round(e.y)-cy;
@@ -162,6 +189,7 @@
       }
     }
     minimap(cx,cy,drone,combat){
+      this.syncTheme();
       const c=this.world.cells,w=this.world.width;
       for(let y=0;y<100;y++)for(let x=0;x<160;x++)this.mapPixels[y*160+x]=this.mapColors[c[y*4*w+x*4]];
       this.mapCtx.putImageData(this.mapImage,0,0);

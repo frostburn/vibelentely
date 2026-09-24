@@ -21,13 +21,30 @@ Jokaisella vaikeustasolla pelataan samalla kokoonpanolla, kunnes jompikumpi jouk
 | 5 | Sinä vastaan 4 vihollista |
 | … | Seuraavilla tasoilla aina yksi vihollinen lisää |
 
-Erä ratkeaa vasta koko joukkueen tuhouduttua. Jos putoat ensin, Siipi jatkaa taistelua ja kamera seuraa sitä. Erätauolla näkyvät pisteet ja seuraava kokoonpano. Seuraava erä palauttaa areenan ja kaikki varusteet; maasto ja lennokit odottavat ensimmäistä ohjausta. Ottelun aikana **R / Luovuta erä** antaa vihollisille yhden pisteen. Erätauolla R jatkaa samalla tasolla. Viidennen voiton jälkeen **R / Seuraava taso** jatkaa seuraavaan kokoonpanoon. Häviön jälkeen R aloittaa uuden ottelun alusta.
+Erä ratkeaa vasta koko joukkueen tuhouduttua. Jos putoat ensin, Siipi jatkaa taistelua ja kamera seuraa sitä. Erätauolla näkyvät pisteet, seuraava kokoonpano ja seuraavan kentän nimi. Seuraava erä vaihtaa luolan ja palauttaa kaikki varusteet; maasto ja lennokit odottavat ensimmäistä ohjausta. Ottelun aikana **R / Luovuta erä** antaa vihollisille yhden pisteen. Erätauolla R jatkaa samalla tasolla. Viidennen voiton jälkeen **R / Seuraava taso** jatkaa seuraavaan kokoonpanoon. Häviön jälkeen R aloittaa uuden ottelun alusta.
 
 **Esc / Valikko** säilyttää tilanteen. Uusi ottelu aloitetaan valikosta. Välilyönti pysäyttää pelin, ja selainikkunan tai välilehden jättäminen pysäyttää taistelun automaattisesti. Maaston muokkaaminen, ajan nopeuttaminen ja vastustajan poistaminen kuuluvat Luolalabraan.
 
+## Kahdeksan taistelukenttää
+
+Kenttä vaihtuu **joka erässä**: voiton, tappion, tasapelin ja luovutuksen jälkeen. Kierto jatkuu vaikeustason vaihtuessa samasta kohdasta, joten viiden voiton laskuri ei määrää karttaa. Kahdeksannen kentän jälkeen palataan ensimmäiseen. Uusi ottelu alkaa Graniittisillalta.
+
+| Kenttä | Reitit ja vaarat | Ulkoasu |
+| --- | --- | --- |
+| Graniittisilta | Kaaren ylä- ja alapuoliset lentoreitit, vesiallas alla | Graniitti, kultahiekka, sininen vesi |
+| Ruostekuilu | Eri korkeuksilla olevat kammiot ja kolme kiertoreittiä | Punainen hiekkakivi ja hiekka, turkoosi vesi |
+| Kalkkiholvit | Kolme holvia, kaksi kulkukorkeutta, pienet altaat | Kalkkikivi, valkoinen hiekka, kirkas vesi |
+| Mustat portaat | Viistot laavakielekkeet, viileä vesitasku vasemmalla | Basaltti, tumma hiekka |
+| Smaragdialtaat | Saarekkeet ja suuri yhteinen vesiallas | Vihreä liuske ja vesi, vaalea hiekka |
+| Tiimalasi | Ylä- ja alakammio, hiekkasateinen kurkku ja sivutunnelit | Kerroshiekkakivi, okrahiekka |
+| Ametistipesä | Teräviä kideharjanteita ja keskellä kierrettävä suoja | Ametisti ja kvartsi, hopeahiekka, violetti vesi |
+| Ruutilouhos | Räjähtäviä ruutitaskuja eri korkeuksilla olevilla hyllyillä | Poimuttunut gneissi, harmaa hiekka |
+
+Kivilajien kuviot sekä hiekan ja veden värit ovat kenttäkohtaisia. Fysiikan säännöt säilyvät samoina: vihreä ja violetti vesi ovat tavallista vettä, kivi rikkoutuu räjähdyksissä ja hiekan läpi pääsee sen pudotessa. Jäähtynyt laava erottuu muusta kivestä. Myös pienoiskartta, lähteet, vesisuihku ja labran materiaalivärit seuraavat teemaa. Lennokkien joukkuevärit säilyvät samoina.
+
 ## Luolalabra
 
-Vapaa lentely ja maaston muokkaus neljällä kartalla. **Lennä**-tilassa kamera seuraa lennokkia. **Muokkaa**-tilassa taistelu ja lennokit pysähtyvät; maastosimulaatio jatkuu ja maastoa voi maalata. Materiaalin valitseminen vaihtaa suoraan muokkaustilaan. Tekoälyvastustajan voi kytkeä päälle harjoittelua varten. **R** palauttaa lennokit ja varusteet; muokattu maasto ja harjoittelupisteet säilyvät. **Shift+R / Alusta** palauttaa myös kartan ja pisteet.
+Vapaa lentely ja maaston muokkaus neljällä alkuperäisellä kartalla sekä kahdeksalla uudella taistelukentällä. Valitse uusi luola **Taistelukenttä**-valikosta; valinta ei muuta keskeneräistä ottelua. **Lennä**-tilassa kamera seuraa lennokkia. **Muokkaa**-tilassa taistelu ja lennokit pysähtyvät; maastosimulaatio jatkuu ja maastoa voi maalata. Materiaalin valitseminen vaihtaa suoraan muokkaustilaan. Tekoälyvastustajan voi kytkeä päälle harjoittelua varten. **R** palauttaa lennokit ja varusteet; muokattu maasto ja harjoittelupisteet säilyvät. **Shift+R / Alusta** palauttaa myös kartan ja pisteet.
 
 ## Ohjaimet
 
@@ -80,7 +97,7 @@ Tiimitaistelussa erä päättyy joukkueen viimeisen lennokin hajotessa. Luolalab
 
 Sekä Siipi että viholliset käyttävät samaa `Drone`-fysiikkaa ja samoja ase-, kilpi- ja siirtymäfunktioita kuin pelaaja. Tekoälyllä ei ole ylimääräisiä runkopisteitä tai panoksia. Lentäminen perustuu ohjauskomentoihin, ei suoraan sijainnin muuttamiseen.
 
-Ohjaaja etsii muokattavasta kartasta lennokin levyisiä reittejä ja ampumapaikkoja, väistää laavaa sekä laskee reitin uudelleen noin 0,65 sekunnin välein. Tähtäys käyttää 0,14 sekunnin välein havaittua sijaintia ja nopeutta. Se vuorottelee lentämistä ja tähtäämistä, torjuu lähestyviä ammuksia, käyttää vettä lähietäisyydeltä, pudottaa kranaatteja alaspäin ja yrittää siirtyä pois jumista tai vaarasta. Kartta ja pelaajan sijainti ovat sen tiedossa myös seinän takana, mutta se ei ammu ilman avointa näkölinjaa. Jokaisella lennokilla on oma ohjaaja, havainto ja reitti. Ohjaaja valitsee lähimmän elossa olevan vastajoukkueen lennokin ja vaihtaa kohdetta sen tuhouduttua. Usean ohjaajan reitinhaut ja tähtäysjaksot on porrastettu. Vaikeus kasvaa vihollisten määrällä, ei vahinkobonuksilla.
+Ohjaaja etsii muokattavasta kartasta lennokin levyisiä reittejä ja ampumapaikkoja, joissa on tilaa pudota tähtäämisen aikana, väistää laavaa sekä laskee reitin uudelleen noin 0,65 sekunnin välein. Tähtäys käyttää 0,14 sekunnin välein havaittua sijaintia ja nopeutta. Se vuorottelee lentämistä ja tähtäämistä, torjuu lähestyviä ammuksia, käyttää vettä lähietäisyydeltä, pudottaa kranaatteja alaspäin ja yrittää siirtyä pois jumista tai vaarasta. Kartta ja pelaajan sijainti ovat sen tiedossa myös seinän takana, mutta se ei ammu ilman avointa näkölinjaa. Jokaisella lennokilla on oma ohjaaja, havainto ja reitti. Ohjaaja valitsee lähimmän elossa olevan vastajoukkueen lennokin ja vaihtaa kohdetta sen tuhouduttua. Usean ohjaajan reitinhaut ja tähtäysjaksot on porrastettu. Vaikeus kasvaa vihollisten määrällä, ei vahinkobonuksilla.
 
 ## Materiaalit
 
@@ -91,7 +108,7 @@ Ohjaaja etsii muokattavasta kartasta lennokin levyisiä reittejä ja ampumapaikk
 - **Höyry:** nousee ja hajoaa 1,5–2,5 sekunnissa. Kylmään kattoon osuvasta höyrystä pieni osa tiivistyy pisaroiksi; muu höyry poistuu simulaatiosta.
 - **Ruuti:** valuu ja syttyy laavasta tai räjähdyksestä ketjureaktioksi.
 
-Taisteluareenan ja luolan rinnalla on neljän saman kokoisen altaan koekenttä sekä tyhjä rakennuskenttä. Materiaalilähteet voi kytkeä pois vertailukokeita varten. Räjähdykset poistavat materiaalia tarkoituksella.
+Luolalabrassa säilyvät alkuperäinen areena, luola, neljän altaan koekenttä ja tyhjä rakennuskenttä sekä valittavat uudet taisteluluolat. Materiaalilähteet voi kytkeä pois vertailukokeita varten. Räjähdykset poistavat materiaalia tarkoituksella.
 
 ## Kehitys
 
@@ -112,9 +129,10 @@ Vienti tuottaa yhden itsenäisen HTML-tiedoston. `dist/`-hakemiston voi myös pa
 | Tiedosto | Vastuu |
 | --- | --- |
 | `dist/simulation.js` | Siementetty kartta, materiaalit, lämpö ja virtaus |
+| `dist/levels.js` | Kahdeksan luolaa, geometriat, lähtöpaikat, kierto ja materiaaliteemat |
 | `dist/flight.js` | Lennokin fysiikka, ainevastus, törmäykset ja lähtöpaikan etsintä |
 | `dist/combat.js` | Joukkueet, aseet, ammusten törmäykset, kilpi, siirtymä ja eräpisteet |
-| `dist/match.js` | Viiden voiton ottelu, vaikeusportaat, erätauot ja luovutus |
+| `dist/match.js` | Viiden voiton sarjat, vaikeusportaat, jokaisen erän kenttävaihto ja luovutus |
 | `dist/ai.js` | Reitinhaku, tähtäys, lentäminen ja tekoälyn varustevalinnat |
 | `dist/render.js` | Pikselipiirto, lennokin rasterisprite ja pienoiskartta |
 | `dist/app.js` | Päävalikko, erilliset pelitilanteet, ohjaimet, kamera ja kiinteä aika-askel |

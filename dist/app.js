@@ -64,7 +64,7 @@
   }
   function reset(){
     if(view!=='lab')return;
-    clearInput();pointer.inside=false;world.generate(scene);world.emitting=$('sources').checked;combat.reset(true);battleReadout();
+    clearInput();pointer.inside=false;world.generate(scene);world.emitting=$('sources').checked;combat.reset(true);levelReadout();battleReadout();
     camera.x=drone.x-160;camera.y=drone.y-100;clampCamera();accumulator=0;
     $('follow').checked=true;if(mode==='edit')$('pointer-status').textContent='Valitse aine ja piirrä luolaan.';
     $('sources').disabled=scene==='empty';
@@ -72,7 +72,7 @@
   function resize(){
     const compact=window.innerWidth<=680;
     const maxWidth=window.innerWidth-(compact?24:64+264);
-    const scale=Math.max(1,Math.min(5,Math.floor(maxWidth/320),compact?2:Math.max(1,Math.floor((window.innerHeight-350)/200))));
+    const scale=Math.max(1,Math.min(5,Math.floor(maxWidth/320),compact?2:Math.max(1,Math.floor((window.innerHeight-395)/200))));
     // Only whole CSS-pixel multiples; the backing buffer remains exactly 320 × 200.
     document.documentElement.style.setProperty('--screen-w',320*scale+'px');
     document.documentElement.style.setProperty('--screen-h',200*scale+'px');
@@ -133,7 +133,7 @@
       else match.forfeit();
       setPaused(false);
     }else combat.reset();
-    accumulator=0;centerCamera();battleReadout();
+    accumulator=0;centerCamera();levelReadout();battleReadout();
   }
   $('respawn').addEventListener('click',respawn);
   $('next-round').addEventListener('click',respawn);
@@ -147,7 +147,7 @@
     $('game-app').hidden=true;$('main-menu').hidden=false;
     const saved=sessions.match?.match,canContinue=saved&&saved.phase!=='finished';
     $('continue-match').hidden=!canContinue;$('saved-match').hidden=!saved;
-    $('saved-match').textContent=saved?'Taso '+(saved.stage+1)+' · '+saved.score.join(' : ')+' · erä '+saved.round:'';
+    $('saved-match').textContent=saved?'Vaikeus '+(saved.stage+1)+' · '+saved.score.join(' : ')+' · erä '+saved.round:'';
     $('start-match').textContent=saved?'Uusi ottelu':'Aloita ottelu →';
     $('start-match').classList.toggle('primary',!canContinue);
     (canContinue?$('continue-match'):$('start-match')).focus({preventScroll:true});
@@ -171,12 +171,35 @@
     $('material-hint').textContent=materials[selected].hint;
     setMode(mode,false);setPaused(paused);$('follow').checked=session.follow;
     if(!session.opened){centerCamera();session.opened=true;}
-    battleReadout();resize();screen.focus({preventScroll:true});
+    levelReadout();battleReadout();resize();screen.focus({preventScroll:true});
   }
   $('open-menu').addEventListener('click',openMenu);
   $('start-match').addEventListener('click',()=>enterSession('match',true));
   $('continue-match').addEventListener('click',()=>enterSession('match'));
   $('open-lab').addEventListener('click',()=>enterSession('lab'));
+  for(const level of CaveLevels.list){
+    const option=document.createElement('option');option.value=level.id;option.textContent=level.name;
+    $('level-select').append(option);
+  }
+  $('level-select').addEventListener('change',e=>{
+    if(view!=='lab'||!CaveLevels.get(e.target.value))return;
+    scene=e.target.value;
+    document.querySelectorAll('[data-scene]').forEach(el=>el.setAttribute('aria-pressed','false'));
+    reset();
+  });
+  function levelReadout(){
+    const level=world.level,theme=world.theme;
+    const basic={arena:'Areena',cave:'Luola',lab:'Koekenttä',empty:'Tyhjä kenttä'};
+    $('level-name').textContent=level?.name||basic[scene];
+    $('level-theme').textContent=theme?.name||'Kivi · kultahiekka · sininen vesi';
+    $('level-hint').textContent=level?.hint||'Muokkaa luolaa tai kokeile aineita ja lennokin varusteita.';
+    $('level-select').value=level?.id||'';
+    for(const b of document.querySelectorAll('.material')){
+      const material=materials.find(m=>m.id===+b.dataset.material),color=theme?.palettes[material.id]?.[2];
+      b.querySelector('.swatch').style.background=color?'rgb('+color.join(',')+')':material.color;
+    }
+  }
+
   for(const button of document.querySelectorAll('[data-flight]')) {
     const control=button.dataset.flight;
     const releaseButton=()=>{held.delete(control);button.classList.remove('is-held');};
@@ -271,7 +294,7 @@
     $('respawn').textContent=action+' · R';$('respawn').title=match&&!combat.result?'Luovutus antaa eräpisteen vihollisille · R':action+' · R';
     $('next-round').textContent=action+' · R';
     if(match){
-      $('round-number').textContent='Taso '+(match.stage+1)+' · erä '+match.round;
+      $('round-number').textContent='Vaikeus '+(match.stage+1)+' · erä '+match.round;
       $('lineup-label').textContent=(combat.actors.some(a=>a.team===0&&a!==drone)?'Sinä + Siipi':'Sinä')+' vs '+combat.actors.filter(a=>a.team===1).length;
       for(const [i,id] of ['our-wins','their-wins'].entries()){
         $(id).textContent=Array.from({length:CaveMatch.WINS},(_,n)=>n<match.score[i]?'●':'○').join(' ');
@@ -286,6 +309,7 @@
       const next=match.lineup(match.stage+(match.winner==='won'?1:0)),lineup=next.allies?'sinä + Siipi vastaan 1':'sinä vastaan '+next.enemies;
       $('round-description').textContent=match.winner?match.score.join(' : ')+' · '+(match.winner==='won'?'Viides voitto! Seuraavalla tasolla '+lineup+'. Pisteet alkavat nollasta.':'Viholliset saivat viisi voittoa. Uusi yritys?'):
         (combat.result==='draw'?'Ei eräpisteitä. ':'')+'Seuraavaksi '+lineup+'.';
+      if(match.phase!=='finished')$('round-description').textContent+=' Kenttä: '+match.nextLevel.name+'.';
     }else $('round-description').textContent='Maasto ja pisteet säilyvät. Uudet lennokit ja varusteet.';
   }
   function flightReadout(){
@@ -324,6 +348,6 @@
   window.vibelentely=window.luolalabra={
     get world(){return world;},get drone(){return drone;},get combat(){return combat;},get match(){return match;},
     get camera(){return camera;},materials,pause:setPaused,reset,respawn,setMode,renderer,openMenu,enterSession,
-    get scene(){return scene;},get state(){return{view,paused,selected,radius,speed,mode,simMS,screen:[screen.width,screen.height],camera:{...camera}};},
+    get scene(){return world.level?.id||scene;},get state(){return{view,paused,selected,radius,speed,mode,simMS,screen:[screen.width,screen.height],camera:{...camera}};},
   };
 })();
