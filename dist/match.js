@@ -1,17 +1,19 @@
 (function(root){
   'use strict';
-  const WINS=5;
+  const WINS=5,Levels=root.CaveLevels;
   class Match {
     constructor(world,combat){this.world=world;this.combat=combat;this.start();}
+    get nextLevel(){return Levels.at(this.battle);}
     get score(){return this.combat.score;}
     get winner(){return this.phase==='stage-over'?'won':this.phase==='finished'?'lost':null;}
     lineup(stage=this.stage){return {allies:stage===0?1:0,enemies:Math.max(1,stage)};}
     start(){
-      this.combat.score=[0,0];this.history=[];this.stage=0;this.round=0;this.prepareRound();
+      this.combat.score=[0,0];this.history=[];this.stage=0;this.round=0;this.battle=0;this.prepareRound();
     }
     prepareRound(){
       const {allies,enemies}=this.lineup();
-      this.world.generate('arena');this.world.emitting=true;
+      this.level=Levels.at(this.battle++);
+      this.world.generate(this.level.id);this.world.emitting=true;
       this.combat.enabled=true;this.combat.setRoster(allies,enemies);this.combat.reset();
       this.round++;this.phase='ready';
     }

@@ -1,6 +1,7 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const {World,M}=require('../dist/simulation.js');
+require('../dist/levels.js');
 const {Drone}=require('../dist/flight.js');
 require('../dist/ai.js');
 const {Combat}=require('../dist/combat.js');
@@ -105,14 +106,15 @@ test('Each difficulty spawns separate, healthy craft in clear, cool space',()=>{
       assert.equal(actor.health,100);assert.equal(actor.safeSpawn(actor.x,actor.y),true);
       for(const other of combat.actors.slice(i+1))assert.ok(Math.hypot(actor.x-other.x,actor.y-other.y)>actor.radius+other.radius+4);
     }
-    const original=world.cells.slice();world.brush(260,165,9,M.ROCK,true);
+    const nextLevel=match.nextLevel.id;world.brush(260,165,9,M.ROCK,true);
     combat.player.gear.grenades=0;combat.player.gear.blink=3;
     endRound(match,'won');
-    {
-      match.nextRound();assert.deepEqual(world.cells,original);
-      assert.equal(combat.player.gear.grenades,3);assert.equal(combat.player.gear.blink,0);
-      assert.equal(combat.started,false);
-    }
+    match.nextRound();
+    const pristine=new World();pristine.generate(nextLevel);
+    assert.equal(world.level.id,nextLevel);
+    assert.ok(Buffer.from(world.cells).equals(Buffer.from(pristine.cells)),'the next map must be pristine');
+    assert.equal(combat.player.gear.grenades,3);assert.equal(combat.player.gear.blink,0);
+    assert.equal(combat.started,false);
   }
 });
 

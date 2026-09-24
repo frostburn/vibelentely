@@ -25,7 +25,7 @@
       }
       this.tick = 0; this.seed = seed; this.randomState = seed;
       this.blasts = []; this.sources = []; this.emitting = false;
-      this.effects = []; this.moves = 0;
+      this.effects = []; this.moves = 0;this.level=null;this.theme=null;
       this.clear();
     }
     random() {
@@ -300,6 +300,8 @@
       return Array.from(counts);
     }
     generate(scene='cave') {
+      this.level=null;this.theme=null;
+      if(root.CaveLevels?.get(scene)){root.CaveLevels.build(this,scene);return;}
       this.randomState=this.seed;this.clear();const w=this.width,h=this.height,c=this.cells;
       this.enemySpawn=null;this.teamSpawns=null;
       if(scene==='arena') {

@@ -54,3 +54,12 @@
 #open-menu{white-space:nowrap}.combat-hint{min-height:0}.match-game #respawn{font-size:12px}
 @media(max-width:780px){.masthead{height:auto;min-height:90px;flex-wrap:wrap;padding:16px 0;gap:14px}.identity{flex-wrap:wrap}.transport{gap:5px}.transport button{padding:7px 9px}.menu-cards{grid-template-columns:1fr}.main-menu{padding-top:40px;width:min(520px,calc(100% - 32px))}.menu-card{padding:24px}.menu-lead{font-size:18px;margin-bottom:26px}.menu-ladder{font-size:12px}.menu-card p{max-width:none}.menu-foot{font-size:11px}}
 @media(max-width:380px){.menu-card{padding:18px}.menu-ladder{font-size:10px}.menu-ladder span{padding:0}.match-banner{font-size:11px;gap:6px}.subtitle{padding-left:8px}.transport #open-menu kbd{display:none}}
+
+.level-info{margin:0 0 12px;max-width:var(--screen-w)}
+.level-info>div{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px}
+.level-info strong{font-size:14px;font-weight:600;color:#e4dac6}.level-info span{font-size:11px;color:#8fa8a9}
+.level-info p{font-size:12px;line-height:1.5;color:#9cabae;margin:5px 0 0}
+.level-picker{display:flex;flex-direction:column;gap:8px;margin:0 0 22px;font-size:12px;color:#b8c9c8}
+.level-picker select{width:100%;min-height:36px}
+
+.round-result{max-height:calc(100% - 16px);overflow-y:auto}
