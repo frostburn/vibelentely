@@ -10,6 +10,8 @@
   <link rel="stylesheet" href="style.css">
   <script defer src="simulation.js"></script>
   <script defer src="flight.js"></script>
+  <script defer src="ai.js"></script>
+  <script defer src="combat.js"></script>
   <script defer src="render.js"></script>
   <script defer src="app.js"></script>
 </head>
@@ -28,7 +30,7 @@
       <section class="play-area" aria-label="Maastosimulaatio">
         <div class="stage-toolbar">
           <div class="scenes" role="group" aria-label="Kartta">
-            <button data-scene="cave" aria-pressed="true">Luola</button><button data-scene="lab" aria-pressed="false">Koekenttä</button><button data-scene="empty" aria-pressed="false">Tyhjä</button>
+            <button data-scene="arena" aria-pressed="true">Areena</button><button data-scene="cave" aria-pressed="false">Luola</button><button data-scene="lab" aria-pressed="false">Koekenttä</button><button data-scene="empty" aria-pressed="false">Tyhjä</button>
           </div>
           <div class="modes" role="group" aria-label="Toimintatila"><button id="fly-mode" aria-pressed="true">Lennä</button><button id="edit-mode" aria-pressed="false">Muokkaa</button></div>
           <span id="resolution">320 × 200 · 3×</span>
@@ -36,8 +38,16 @@
         <div id="screen-frame" class="screen-frame">
           <canvas id="screen" width="320" height="200" tabindex="0" aria-label="Luolakartta. Nuoli ylös käynnistää moottorin, vasen ja oikea kääntävät. Muokkaa-tilassa voit maalata maastoa."></canvas>
           <div id="paused-label" class="paused-label" hidden>Tauolla</div>
+          <div id="round-result" class="round-result" role="status" hidden><strong id="round-title"></strong><button id="next-round">Uusi erä <kbd>R</kbd></button></div>
         </div>
         <div class="statusbar"><span id="pointer-status">Valmiina · ↑ tai W käynnistää moottorin</span><span id="performance">60 askelta/s</span></div>
+        <div id="weapons" class="weapons" role="group" aria-label="Aseet ja kyvyt">
+          <button data-flight="fire" title="Pulssitykki · J tai vasen hiiri. Kuumenee sarjatulessa."><span>Pulssi <kbd>J</kbd></span><output id="pulse-status">Valmis</output></button>
+          <button data-flight="grenade" title="Kranaatti · K. Pomppii ja räjähtää 1,4 sekunnin kuluttua. Oma räjähdyskin sattuu."><span>Kranaatti <kbd>K</kbd></span><output id="grenade-status">3 / 3</output></button>
+          <button data-flight="water" title="Painevesi · L. Työntää, jäähdyttää laavaa. Säiliö täyttyy vedessä."><span>Vesi <kbd>L</kbd></span><output id="water-status">100 %</output></button>
+          <button data-flight="shield" title="Pidä keulakilpeä · I tai oikea hiiri. Torjuu edestä, estää oman tulituksen."><span>Kilpi <kbd>I</kbd></span><output id="shield-status">100 %</output></button>
+          <button data-flight="blink" title="Lähisiirtymä · Q. Enintään 54 pikseliä keulan suuntaan, vain vapaaseen tilaan. Liikemäärä säilyy."><span>Siirry <kbd>Q</kbd></span><output id="blink-status">Valmis</output></button>
+        </div>
         <div id="flight-controls" class="flight-controls">
           <div class="pilot-buttons" role="group" aria-label="Lennokin ohjaimet">
             <button data-flight="left" title="Käännä vasemmalle · A / ←" aria-label="Käännä vasemmalle"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3 5 8l6 5"/></svg></button>
@@ -45,17 +55,28 @@
             <button data-flight="right" title="Käännä oikealle · D / →" aria-label="Käännä oikealle"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m5 3 6 5-6 5"/></svg></button>
             <button data-flight="brake" title="Jarruta · S / ↓">Jarru</button>
           </div>
-          <div class="flight-options"><button id="respawn" title="Palauta lennokki lähtöön · R">Lähtöön <kbd>R</kbd></button><label><input id="follow" type="checkbox" checked> Seuraa lennokkia</label></div>
+          <div class="flight-options"><button id="respawn" title="Uusi erä samalla maastolla · R">Uusi erä <kbd>R</kbd></button><label><input id="follow" type="checkbox" checked> Seuraa lennokkia</label></div>
         </div>
         <div id="flight-note" class="controls-note"><span><kbd>↑ W</kbd> moottori</span><span><kbd>← A</kbd> <kbd>→ D</kbd> käännä</span><span><kbd>↓ S</kbd> jarruta</span><span><kbd>E</kbd> muokkaa</span></div>
         <div id="edit-note" class="controls-note" hidden><span><kbd>W A S D</kbd> / <kbd>↑ ↓ ← →</kbd> siirrä näkymää</span><span><kbd>Oikea hiiri</kbd> kaiva</span><span><kbd>Shift</kbd> + vedä siirtää</span><span><kbd>E</kbd> lennä</span></div>
       </section>
       <aside class="toolbox" aria-label="Maaston työkalut">
+        <section id="combat-panel" aria-label="Kaksintaistelu">
+          <div class="tool-heading"><h2>Kaksintaistelu</h2><span id="score">0 : 0</span></div>
+          <div class="hull-label"><span>Sinä</span><output id="player-hull">100 %</output></div><meter id="player-health" min="0" max="100" value="100" aria-label="Oma runko"></meter>
+          <div class="hull-label enemy-label"><span>Vastustaja</span><output id="enemy-hull">100 %</output></div><meter id="enemy-health" min="0" max="100" value="100" aria-label="Vastustajan runko"></meter>
+          <label class="opponent-setting"><input id="opponent" type="checkbox" checked> Tekoälyvastustaja</label>
+          <p id="combat-hint" class="combat-hint">Erä alkaa ensimmäisestä ohjauksesta.</p>
+          <p class="combat-guide"><b>Keula määrää suunnan.</b> Kilpi torjuu edestä. Lähisiirtymä säilyttää vauhdin ja voi ylittää ohuen seinän.</p>
+          <p class="combat-guide">Vesi täyttää säiliön. Kranaatteja palautuu yksi 4 sekunnissa. <kbd>R</kbd> uusi erä, <kbd>Shift R</kbd> myös maasto alusta.</p>
+        </section>
+        <section id="editor-controls" hidden>
         <div class="tool-heading"><h2>Materiaalit</h2><span>1–8</span></div>
         <div id="materials" class="materials" role="group" aria-label="Materiaali"></div>
         <p id="material-hint" class="material-hint" aria-live="polite"></p>
         <div class="brush-label"><label for="brush">Siveltimen säde</label><output id="brush-value" for="brush">5 px</output></div>
         <input id="brush" type="range" min="1" max="18" value="5">
+        </section>
         <div class="sim-settings">
           <label class="setting" for="speed">Ajan kulku <select id="speed"><option value="0.25">¼×</option><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option></select></label>
           <label class="setting source-setting" for="sources"><span>Materiaalilähteet</span><input id="sources" type="checkbox" checked><span class="toggle" aria-hidden="true"></span></label>
@@ -66,8 +87,8 @@
         <p class="map-help">Siirry napsauttamalla karttaa.</p>
       </aside>
     </main>
-    <footer><span>Vesi + laava = höyryä ja kiveä. Ruuti syttyy laavasta tai räjähdyksestä.</span><button id="help-button" aria-expanded="false">Näppäimet <span>?</span></button></footer>
-    <div id="help" class="help" hidden><p><kbd>1–8</kbd> materiaali · <kbd>Space</kbd> tauko · <kbd>.</kbd> yksi askel · <kbd>R</kbd> lennokki lähtöön · <kbd>Shift+R</kbd> kartta alusta · <kbd>E</kbd> lennä / muokkaa · <kbd>C</kbd> kameran seuranta · <kbd>F</kbd> koko näyttö · <kbd>[ ]</kbd> siveltimen koko · <kbd>Hiiren rulla</kbd> siveltimen koko</p><p>Hiekka valuu 45° rinteeksi. Vesi etsii vapaan pinnan. Muta muotoutuu vain myötörajan yli. Laava hidastuu jäähtyessään ja kivettää virtansa. Höyry nousee ja hajoaa nopeasti; kylmään kattoon voi tiivistyä pisaroita. Lennokilla on painovoima ja liikemäärä. Vesi hidastaa, laava vaurioittaa ja kova törmäys rikkoo rungon.</p></div>
+    <footer><span>Putoavan hiekan läpi voi lentää. Laava hidastaa ja polttaa. Vesi jäähdyttää sen kiveksi.</span><button id="help-button" aria-expanded="false">Näppäimet <span>?</span></button></footer>
+    <div id="help" class="help" hidden><p><kbd>J / vasen hiiri</kbd> pulssi · <kbd>K</kbd> kranaatti · <kbd>L</kbd> painevesi · <kbd>I / oikea hiiri</kbd> keulakilpi · <kbd>Q</kbd> lähisiirtymä. Pieni risti näyttää siirtymän vapaan päätepisteen. Pidä ase- ja kilpinappeja pohjassa; lähisiirtymä vaatii uuden painalluksen.</p><p><kbd>1–8</kbd> materiaali · <kbd>Space</kbd> tauko · <kbd>.</kbd> yksi askel · <kbd>R</kbd> uusi erä samalla maastolla · <kbd>Shift+R</kbd> kartta alusta · <kbd>E</kbd> lennä / muokkaa · <kbd>C</kbd> kameran seuranta · <kbd>F</kbd> koko näyttö · <kbd>[ ]</kbd> siveltimen koko · <kbd>Hiiren rulla</kbd> siveltimen koko</p><p>Hiekka valuu 45° rinteeksi. Vesi etsii vapaan pinnan. Muta muotoutuu vain myötörajan yli. Laava hidastuu jäähtyessään ja kivettää virtansa. Höyry nousee ja hajoaa nopeasti; kylmään kattoon voi tiivistyä pisaroita. Lennokilla on painovoima ja liikemäärä. Putoava hiekka päästää lennokin läpi, asettunut kasa pysäyttää sen. Vesi hidastaa ja täyttää säiliön, laava vastustaa liikettä voimakkaasti ja vaurioittaa runkoa. Kova törmäyskin sattuu. Tekoäly käyttää samoja aseita, latauksia ja lentofysiikkaa; muokkaustilassa molemmat lennokit ja taistelu pysähtyvät.</p></div>
   </div>
 </body>
 </html>

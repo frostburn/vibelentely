@@ -33,3 +33,18 @@ test('Respawn finds free space without resetting edited terrain',()=>{
   assert.ok(drone.respawn());assert.ok(!drone.collides(drone.x,drone.y));assert.equal(drone.health,100);
   assert.deepEqual(world.cells,before);
 });
+test('Falling sand can be crossed without deleting grains; a settled pile remains solid',()=>{
+  const {world,drone}=scene();
+  for(let y=30;y<190;y++)for(let x=111;x<120;x++)world.set(y*240+x,M.SAND);
+  const mass=world.count()[M.SAND];drone.started=true;drone.vx=90;
+  for(let i=0;i<32;i++){world.step();drone.step({});}
+  assert.ok(drone.x>130);assert.equal(drone.health,100);assert.equal(world.count()[M.SAND],mass);
+  for(let y=70;y<239;y++)for(let x=175;x<205;x++)world.set(y*240+x,M.SAND);
+  assert.ok(drone.collides(185,120));
+});
+test('Lava resists flight more strongly than water and reduces engine thrust',()=>{
+  const air=scene(),water=scene(),lava=scene();
+  for(const [s,mat] of [[water,M.WATER],[lava,M.LAVA]])for(let y=20;y<220;y++)for(let x=20;x<220;x++)s.world.set(y*240+x,mat);
+  for(const s of [air,water,lava]){s.drone.started=true;s.drone.vx=90;s.drone.angle=0;fly(s.drone,{thrust:true},20);}
+  assert.ok(lava.drone.vx<water.drone.vx*.5);assert.ok(water.drone.vx<air.drone.vx);assert.ok(lava.drone.health<100);
+});

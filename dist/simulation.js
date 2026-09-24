@@ -10,6 +10,7 @@
       this.heat = new Float32Array(this.size);
       this.life = new Uint16Array(this.size);
       this.moved = new Uint32Array(this.size);
+      this.sandMoved = new Uint32Array(this.size);
       // Lava carries fractional volume (1/256 cell), temperature and persistent flux.
       this.lavaFill = new Uint16Array(this.size);
       this.lavaFlux = new Float32Array(this.size);
@@ -33,6 +34,7 @@
     }
     clear() {
       this.cells.fill(0); this.heat.fill(0); this.life.fill(0); this.moved.fill(0);
+      this.sandMoved.fill(0);
       this.lavaFill.fill(0); this.lavaFlux.fill(0); this.lavaCells.length=0;
       this.tick = 0; this.blasts.length = 0; this.effects.length = 0; this.sources.length = 0;
       for (let x = 0; x < this.width; x++) { this.cells[x] = M.ROCK; this.cells[(this.height-1)*this.width+x] = M.ROCK; }
@@ -44,6 +46,7 @@
       this.lavaFlux[i] = 0;
       this.life[i] = material === M.STEAM ? 90 + (this.random()*60|0) : material === M.FIRE ? 30 + (this.random()*60|0) : material === M.SMOKE ? 160 + (this.random()*120|0) : 0;
       this.moved[i] = this.tick;
+      this.sandMoved[i] = 0;
     }
     swap(a, b) {
       let v = this.cells[a]; this.cells[a] = this.cells[b]; this.cells[b] = v;
@@ -52,6 +55,16 @@
       v = this.lavaFill[a]; this.lavaFill[a] = this.lavaFill[b]; this.lavaFill[b] = v;
       v = this.lavaFlux[a]; this.lavaFlux[a] = this.lavaFlux[b]; this.lavaFlux[b] = v;
       this.moved[a] = this.moved[b] = this.tick; this.moves++;
+      this.sandMoved[a] = this.cells[a] === M.SAND ? this.tick + 1 : 0;
+      this.sandMoved[b] = this.cells[b] === M.SAND ? this.tick + 1 : 0;
+    }
+    looseSand(i) {
+      if(this.cells[i]!==M.SAND)return false;
+      // Recently moving grains form a penetrable stream; a settled pile is terrain.
+      if(this.sandMoved[i]&&this.tick+1-this.sandMoved[i]<=6)return true;
+      const w=this.width;
+      return this.isGas(i+w)||this.cells[i+w]===M.WATER||
+        (this.isGas(i-1)&&this.isGas(i+w-1))||(this.isGas(i+1)&&this.isGas(i+w+1));
     }
     isGas(i) { const v = this.cells[i]; return v === M.AIR || v === M.STEAM || v === M.SMOKE || v === M.FIRE; }
     fall(i, j, kind) {
@@ -230,7 +243,7 @@
         else if(k===M.ROCK || k===M.BASALT) this.set(i,M.SAND);
         else if(this.random()<0.25)this.set(i,M.FIRE);
       }
-      this.effects.push({x,y,radius,age:0});
+      const effect={x,y,radius,age:0};this.effects.push(effect);return effect;
     }
     brush(x,y,radius,material,replace=false) {
       const w=this.width;
@@ -288,6 +301,27 @@
     }
     generate(scene='cave') {
       this.randomState=this.seed;this.clear();const w=this.width,h=this.height,c=this.cells;
+      this.enemySpawn=null;
+      if(scene==='arena') {
+        // A wide central fight, two cover islands and lower routes through water.
+        for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++) {
+          const nx=(x-w/2)/(w*.46),ny=(y-h*.49)/(h*.42);
+          const edge=1+.035*Math.sin(x/13)+.025*Math.sin(y/9+x/22);
+          if(nx*nx+ny*ny>edge)c[y*w+x]=M.ROCK;
+        }
+        const shelf=(x0,x1,y0,slope,depth)=>{
+          for(let x=x0;x<x1;x++)for(let y=Math.round(y0+(x-x0)*slope);y<y0+(x-x0)*slope+depth;y++)c[y*w+x]=M.ROCK;
+        };
+        shelf(112,203,217,.16,10);shelf(424,520,215,-.12,10);
+        shelf(301,340,204,-.04,20);shelf(278,369,99,0,9);
+        shelf(480,544,134,.18,8);
+        for(let y=293;y<h-2;y++)for(let x=75;x<435;x++)if(c[y*w+x]===M.AIR)this.set(y*w+x,M.WATER);
+        for(let y=305;y<340;y++)for(let x=443;x<548;x++)if(c[y*w+x]===M.AIR)this.set(y*w+x,M.LAVA);
+        this.brush(144,137,17,M.SAND);this.brush(491,120,11,M.LAVA);
+        this.brush(187,206,9,M.POWDER);
+        this.sources=[{x:151,y:85,material:M.SAND,radius:1,rate:5},{x:478,y:67,material:M.WATER,radius:1,rate:7}];
+        this.spawn={x:251,y:166};this.enemySpawn={x:394,y:163};return;
+      }
       if(scene==='empty') {
         for(let y=h-20;y<h-1;y++)for(let x=1;x<w-1;x++)c[y*w+x]=M.ROCK;
         this.spawn={x:160,y:h-100};return;
