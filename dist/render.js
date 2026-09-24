@@ -2,6 +2,8 @@
   'use strict';
   const {M}=CaveSim;
   const rgb=(r,g,b)=>((255<<24)|(b<<16)|(g<<8)|r)>>>0;
+  const allyPalette={'1':'#396b57','2':'#82cea0','3':'#e5ffca','4':'#254737'};
+  const actorColor=a=>a.team?'#ffb784':a.pilot?'#9ce4a6':'#b5f1ec';
   const enemyPalette={'1':'#834840','2':'#e59067','3':'#fff0c1','4':'#4c2339'};
   const palettes={
     [M.ROCK]:[[40,47,59],[44,51,64],[47,54,66],[50,57,69],[54,61,72]],
@@ -80,7 +82,7 @@
       }
       if(drone)this.drone(cx,cy,drone);
       if(combat){
-        if(combat.enabled)this.drone(cx,cy,combat.enemy);
+        for(const actor of combat.active())if(actor!==drone)this.drone(cx,cy,actor);
         this.combat(cx,cy,combat);
       }
       if(pointer&&pointer.inside&&!pointer.panning){
@@ -103,7 +105,7 @@
     drone(cx,cy,drone){
       if(drone.dead)return;
       const {SPRITE,PALETTE}=CaveFlight,ctx=this.ctx;
-      const palette=drone.team?enemyPalette:PALETTE;
+      const palette=drone.team?enemyPalette:drone.pilot?allyPalette:PALETTE;
       const cxp=Math.round(drone.x)-cx,cyp=Math.round(drone.y)-cy;
       const co=Math.cos(drone.angle),si=Math.sin(drone.angle);
       for(let y=-12;y<=12;y++)for(let x=-12;x<=12;x++) {
@@ -116,9 +118,10 @@
         const color=palette[key];
         if(color){ctx.fillStyle=color;ctx.fillRect(cxp+x,cyp+y,1,1);}
       }
+      if(drone.pilot&&!drone.team){ctx.fillStyle=actorColor(drone);ctx.fillRect(cxp-2,cyp-16,5,1);ctx.fillRect(cxp,cyp-18,1,5);}
       if(drone.health<100){
         ctx.fillStyle='#25353d';ctx.fillRect(cxp-6,cyp-12,12,2);
-        ctx.fillStyle=drone.team?'#efaa79':'#9cdcdf';ctx.fillRect(cxp-6,cyp-12,Math.ceil(drone.health*.12),2);
+        ctx.fillStyle=actorColor(drone);ctx.fillRect(cxp-6,cyp-12,Math.ceil(drone.health*.12),2);
       }
       if(drone.gear?.shield){
         ctx.fillStyle='#b8f5ee';
@@ -142,11 +145,13 @@
         const x=Math.round(e.x)-cx,y=Math.round(e.y)-cy;
         this.ring(x,y,Math.round(e.kind==='blink'?5+(1-e.life/e.max)*11:e.kind==='shield'?11:2),e.kind==='hit'?'#ffe4a3':'#a1e8eb',e.kind==='blink');
       }
-      const enemy=combat.enemy;
-      if(combat.enabled&&!enemy.dead&&(enemy.x<cx+8||enemy.x>cx+312||enemy.y<cy+8||enemy.y>cy+192)){
-        const dx=enemy.x-cx-160,dy=enemy.y-cy-100,f=1/Math.max(Math.abs(dx)/151,Math.abs(dy)/91);
+      for(const actor of combat.active())if(actor!==combat.player&&!actor.dead&&
+          (actor.x<cx+8||actor.x>cx+312||actor.y<cy+8||actor.y>cy+192)){
+        const dx=actor.x-cx-160,dy=actor.y-cy-100,f=1/Math.max(Math.abs(dx)/151,Math.abs(dy)/91);
         const x=Math.round(160+dx*f),y=Math.round(100+dy*f);
-        ctx.fillStyle='#ffbd8b';ctx.fillRect(x-2,y-2,5,5);ctx.fillStyle='#572b28';ctx.fillRect(x-1,y-1,3,3);
+        ctx.fillStyle=actorColor(actor);
+        if(actor.team){ctx.fillRect(x-2,y-2,5,5);ctx.fillStyle='#572b28';ctx.fillRect(x-1,y-1,3,3);}
+        else{ctx.fillRect(x-2,y,5,1);ctx.fillRect(x,y-2,1,5);}
       }
       if(!combat.result&&!combat.player.dead&&combat.player.gear.blink===0){
         const target=combat.blinkTarget(combat.player);
@@ -163,9 +168,10 @@
       this.mapCtx.strokeStyle='#f1d598';this.mapCtx.lineWidth=1;
       this.mapCtx.strokeRect(Math.floor(cx/4)+.5,Math.floor(cy/4)+.5,79,49);
       if(drone&&!drone.dead){this.mapCtx.fillStyle='#b5f1ec';this.mapCtx.fillRect(Math.round(drone.x/4)-1,Math.round(drone.y/4)-1,3,3);}
-      if(combat?.enabled&&!combat.enemy.dead){
-        const x=Math.round(combat.enemy.x/4),y=Math.round(combat.enemy.y/4);this.mapCtx.fillStyle='#ffb784';
-        this.mapCtx.fillRect(x-2,y,5,1);this.mapCtx.fillRect(x,y-2,1,5);
+      if(combat)for(const actor of combat.active())if(actor!==drone&&!actor.dead){
+        const x=Math.round(actor.x/4),y=Math.round(actor.y/4);this.mapCtx.fillStyle=actorColor(actor);
+        if(actor.team){this.mapCtx.fillRect(x-2,y-2,5,5);this.mapCtx.fillStyle='#572b28';this.mapCtx.fillRect(x-1,y-1,3,3);}
+        else{this.mapCtx.fillRect(x-2,y,5,1);this.mapCtx.fillRect(x,y-2,1,5);}
       }
     }
   }

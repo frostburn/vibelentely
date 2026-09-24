@@ -6,7 +6,30 @@ Luolalennokki ja muokattava soluautomaattimaasto selaimessa. Peliruutu on aina *
 
 Avaa `dist/index.html` selaimessa. Asennuksia, palvelinta, ulkoisia kirjastoja tai verkkoyhteyttä ei tarvita.
 
-Areena avautuu kaksintaisteluun tekoälyä vastaan. Molemmat lennokit odottavat ensimmäistä ohjausta. Tekoälyn voi kytkeä pois vapaata harjoittelua varten. **Lennä**-tilassa kamera seuraa sitä. **Muokkaa**-tilassa taistelu ja molemmat lennokit pysähtyvät; maastosimulaatio jatkuu ja maastoa voi maalata. Materiaalin valitseminen vaihtaa suoraan muokkaustilaan.
+Päävalikosta valitaan **Tiimitaistelu** tai **Luolalabra**. Valikko pysäyttää molemmat; keskeneräistä ottelua voi jatkaa ja labran rakennelmat säilyvät erikseen niin kauan kuin sivu on auki. Sivun lataaminen uudelleen aloittaa alusta.
+
+## Tiimitaistelu
+
+Ensimmäisenä **viisi erävoittoa** saanut joukkue voittaa ottelun. Aluksi sinulla on tekoälykaveri **Siipi**. Oma erävoitto nostaa seuraavan erän vaikeutta; tappio säilyttää kokoonpanon ja tasapeli ei anna pisteitä.
+
+| Oman joukkueen voitot | Seuraava erä |
+| --- | --- |
+| 0 | Sinä + Siipi vastaan 1 vihollinen |
+| 1 | Sinä vastaan 1 vihollinen |
+| 2 | Sinä vastaan 2 vihollista |
+| 3 | Sinä vastaan 3 vihollista |
+| 4 | Sinä vastaan 4 vihollista |
+| 5 | Otteluvoitto |
+
+Erä ratkeaa vasta koko joukkueen tuhouduttua. Jos putoat ensin, Siipi jatkaa taistelua ja kamera seuraa sitä. Erätauolla näkyvät pisteet ja seuraava kokoonpano. Seuraava erä palauttaa areenan ja kaikki varusteet; maasto ja lennokit odottavat ensimmäistä ohjausta. Ottelun aikana **R / Luovuta erä** antaa vihollisille yhden pisteen. Erätauolla R jatkaa, ottelun päätyttyä R aloittaa uuden ottelun.
+
+**Esc / Valikko** säilyttää tilanteen. Uusi ottelu aloitetaan valikosta. Välilyönti pysäyttää pelin, ja selainikkunan tai välilehden jättäminen pysäyttää taistelun automaattisesti. Maaston muokkaaminen, ajan nopeuttaminen ja vastustajan poistaminen kuuluvat Luolalabraan.
+
+## Luolalabra
+
+Vapaa lentely ja maaston muokkaus neljällä kartalla. **Lennä**-tilassa kamera seuraa lennokkia. **Muokkaa**-tilassa taistelu ja lennokit pysähtyvät; maastosimulaatio jatkuu ja maastoa voi maalata. Materiaalin valitseminen vaihtaa suoraan muokkaustilaan. Tekoälyvastustajan voi kytkeä päälle harjoittelua varten. **R** palauttaa lennokit ja varusteet; muokattu maasto ja harjoittelupisteet säilyvät. **Shift+R / Alusta** palauttaa myös kartan ja pisteet.
+
+## Ohjaimet
 
 | Ohjain | Toiminto |
 | --- | --- |
@@ -18,14 +41,15 @@ Areena avautuu kaksintaisteluun tekoälyä vastaan. Molemmat lennokit odottavat 
 | L | Painevesitykki |
 | I / oikea hiiri lentotilassa | Pidä keulakilpeä |
 | Q | Lähisiirtymä keulan suuntaan |
-| R | Uusi erä: lennokit ja varusteet lähtötilaan; muokattu maasto ja pisteet säilyvät |
-| E | Vaihda lentämisen ja muokkaamisen välillä |
+| R | Taistelussa luovuta / seuraava erä / uusi ottelu; labrassa uusi lennokki |
+| Esc | Päävalikko; tilanne säilyy |
+| E | Labrassa vaihda lentämisen ja muokkaamisen välillä |
 | C | Kameran seuranta päälle / pois |
 | Välilyönti | Tauko |
-| Piste | Yksi simulaatioaskel |
-| Shift+R / Alusta | Koko kartta, lennokit ja pisteet alusta |
+| Piste | Labrassa yksi simulaatioaskel |
+| Shift+R / Alusta | Labran kartta, lennokit ja pisteet alusta |
 | F | Koko näyttö |
-| 1–8 | Valitse materiaali ja siirry muokkaamaan |
+| 1–8 | Labrassa valitse materiaali ja siirry muokkaamaan |
 | Vasen hiiri / kosketus | Maalaa muokkaustilassa |
 | Oikea hiiri | Kaiva muokkaustilassa |
 | Hiiren rulla / [ ] | Siveltimen koko |
@@ -38,7 +62,7 @@ Lennokilla on painovoima, liikemäärä, ilmanvastus ja runkovauriot. Vesi hidas
 
 ## Taistelu
 
-Sininen lennokki on pelaaja, oranssi vastustaja. Keula määrää sekä työntövoiman että aseiden ja kilven suunnan. Vastustajan merkki näkyy myös pienoiskartalla ja peliruudun reunassa sen lentäessä näkymän ulkopuolelle.
+Sininen lennokki on pelaaja, vihreä plussalla merkitty Siipi on kaveri ja oranssit ovat vihollisia. Keula määrää sekä työntövoiman että aseiden ja kilven suunnan. Kaikki kaverit ja viholliset näkyvät pienoiskartalla ja peliruudun reunassa niiden lentäessä näkymän ulkopuolelle. Joukkuepaneeli näyttää myös pudotetut lennokit. Oman joukkueen ammukset kulkevat kavereiden läpi. Kranaattien ja lennokkien suorat räjähdysvauriot eivät osu kavereihin; oma kranaatti sattuu edelleen, ja maastoon syntyvät tuli, ruudin ketjureaktiot ja muut vaarat vahingoittavat kaikkia.
 
 | Varuste | Toiminta ja rajoitukset |
 | --- | --- |
@@ -50,13 +74,13 @@ Sininen lennokki on pelaaja, oranssi vastustaja. Keula määrää sekä työntö
 
 Pieni risti näyttää lähisiirtymän vapaan päätepisteen sen ollessa valmis. Asepainikkeet näyttävät lämpötilan, panokset ja lataukset. Näppäimistön lisäksi kaikkia aseita ja kykyjä voi käyttää ruudun alapuolisista painikkeista.
 
-Erä päättyy lennokin hajotessa. **R** aloittaa heti uuden erän samalla muokatulla maastolla ja päivittää molempien varusteet. **Shift+R** palauttaa myös kartan ja nollaa pisteet. Aineiden lähteet voi sulkea ja taistelun voi pysäyttää välilyönnillä; piste etenee yhden simulaatioaskeleen.
+Tiimitaistelussa erä päättyy joukkueen viimeisen lennokin hajotessa. Luolalabran harjoitusvastustajan kanssa erät ovat yksittäisiä kaksintaisteluja. Aineiden lähteitä ja simulaation nopeutta voi säätää labrassa.
 
 ### Tekoäly
 
-Vastustaja käyttää samaa `Drone`-fysiikkaa ja samoja ase-, kilpi- ja siirtymäfunktioita kuin pelaaja. Sillä ei ole ylimääräisiä runkopisteitä tai panoksia. Lentäminen perustuu ohjauskomentoihin, ei suoraan sijainnin muuttamiseen.
+Sekä Siipi että viholliset käyttävät samaa `Drone`-fysiikkaa ja samoja ase-, kilpi- ja siirtymäfunktioita kuin pelaaja. Tekoälyllä ei ole ylimääräisiä runkopisteitä tai panoksia. Lentäminen perustuu ohjauskomentoihin, ei suoraan sijainnin muuttamiseen.
 
-Ohjaaja etsii muokattavasta kartasta lennokin levyisiä reittejä ja ampumapaikkoja, väistää laavaa sekä laskee reitin uudelleen noin 0,65 sekunnin välein. Tähtäys käyttää 0,14 sekunnin välein havaittua sijaintia ja nopeutta. Se vuorottelee lentämistä ja tähtäämistä, torjuu lähestyviä ammuksia, käyttää vettä lähietäisyydeltä, pudottaa kranaatteja alaspäin ja yrittää siirtyä pois jumista tai vaarasta. Kartta ja pelaajan sijainti ovat sen tiedossa myös seinän takana, mutta se ei ammu ilman avointa näkölinjaa. Tämä on ensimmäinen pelattava vastustaja, ei vaikeustasojärjestelmä.
+Ohjaaja etsii muokattavasta kartasta lennokin levyisiä reittejä ja ampumapaikkoja, väistää laavaa sekä laskee reitin uudelleen noin 0,65 sekunnin välein. Tähtäys käyttää 0,14 sekunnin välein havaittua sijaintia ja nopeutta. Se vuorottelee lentämistä ja tähtäämistä, torjuu lähestyviä ammuksia, käyttää vettä lähietäisyydeltä, pudottaa kranaatteja alaspäin ja yrittää siirtyä pois jumista tai vaarasta. Kartta ja pelaajan sijainti ovat sen tiedossa myös seinän takana, mutta se ei ammu ilman avointa näkölinjaa. Jokaisella lennokilla on oma ohjaaja, havainto ja reitti. Ohjaaja valitsee lähimmän elossa olevan vastajoukkueen lennokin ja vaihtaa kohdetta sen tuhouduttua. Usean ohjaajan reitinhaut ja tähtäysjaksot on porrastettu. Vaikeus kasvaa vihollisten määrällä, ei vahinkobonuksilla.
 
 ## Materiaalit
 
@@ -67,7 +91,7 @@ Ohjaaja etsii muokattavasta kartasta lennokin levyisiä reittejä ja ampumapaikk
 - **Höyry:** nousee ja hajoaa 1,5–2,5 sekunnissa. Kylmään kattoon osuvasta höyrystä pieni osa tiivistyy pisaroiksi; muu höyry poistuu simulaatiosta.
 - **Ruuti:** valuu ja syttyy laavasta tai räjähdyksestä ketjureaktioksi.
 
-Kaksintaisteluareenan ja luolan rinnalla on neljän saman kokoisen altaan koekenttä sekä tyhjä rakennuskenttä. Materiaalilähteet voi kytkeä pois vertailukokeita varten. Räjähdykset poistavat materiaalia tarkoituksella.
+Taisteluareenan ja luolan rinnalla on neljän saman kokoisen altaan koekenttä sekä tyhjä rakennuskenttä. Materiaalilähteet voi kytkeä pois vertailukokeita varten. Räjähdykset poistavat materiaalia tarkoituksella.
 
 ## Kehitys
 
@@ -89,10 +113,11 @@ Vienti tuottaa yhden itsenäisen HTML-tiedoston. `dist/`-hakemiston voi myös pa
 | --- | --- |
 | `dist/simulation.js` | Siementetty kartta, materiaalit, lämpö ja virtaus |
 | `dist/flight.js` | Lennokin fysiikka, ainevastus, törmäykset ja lähtöpaikan etsintä |
-| `dist/combat.js` | Aseet, ammusten törmäykset, kilpi, siirtymä, erät ja pisteet |
+| `dist/combat.js` | Joukkueet, aseet, ammusten törmäykset, kilpi, siirtymä ja eräpisteet |
+| `dist/match.js` | Viiden voiton ottelu, vaikeusportaat, erätauot ja luovutus |
 | `dist/ai.js` | Reitinhaku, tähtäys, lentäminen ja tekoälyn varustevalinnat |
 | `dist/render.js` | Pikselipiirto, lennokin rasterisprite ja pienoiskartta |
-| `dist/app.js` | Ohjaimet, kamera ja kiinteän aika-askeleen päivitys |
+| `dist/app.js` | Päävalikko, erilliset pelitilanteet, ohjaimet, kamera ja kiinteä aika-askel |
 | `test/` | Materiaalien, lentämisen, taistelun ja tekoälyn regressiotestit |
 
 Simulaatio käyttää 60 kiinteää aika-askelta sekunnissa myös näkymän ulkopuolella. Lennokin liike tarkistetaan alle solun pituisina osina, jotta ohut seinä ei jää nopean liikkeen väliin. Raskaimmissa tilanteissa simulaatio hidastuu rajattoman aikavelan keräämisen sijaan. Piirtonopeus ei muuta fysiikan askelpituutta. Konsolin `vibelentely`-olio tarjoaa maailman, lennokin, `combat`-taistelutilan, kameran ja ohjaustilan tarkasteltavaksi.
