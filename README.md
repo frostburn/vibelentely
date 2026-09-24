@@ -75,6 +75,8 @@ Node.js 24 riittää tarkistuksiin ja vientiin. Riippuvuuksia ei tarvitse asenta
 
 GitHub Actions ajaa alla olevat tarkistukset yhdellä Node 24 -työllä PR:issä sekä `main`-haaran päivityksissä. Uusi päivitys peruuttaa saman haaran vanhentuneen ajon.
 
+Valmiin CI-ajon **Artifacts**-osiosta voi ladata `vibelentely`-paketin. Pura ZIP ja avaa sen sisältämä itsenäinen `vibelentely.html` selaimessa.
+
 ```
 npm run check
 npm test
