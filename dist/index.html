@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="fi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101416">
+  <meta name="description" content="Vibelentely: luolalennokki ja soluautomaattimaasto. Hiekka, vesi, muta ja jäähtyvä laava aidolla 320 × 200 pikselin peliruudulla.">
+  <title>Vibelentely — luolalennokki</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23f0bc60' d='M12 4h8v8h8v8H4v-8h8zM4 24h24v4H4z'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="simulation.js"></script>
+  <script defer src="flight.js"></script>
+  <script defer src="render.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="masthead">
+      <div class="identity"><span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><h1>Vibelentely</h1><span class="subtitle">Luolalabra</span></div>
+      <div class="transport">
+        <button id="pause" class="primary" title="Pysäytä tai jatka · välilyönti"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3v10M11 3v10"/></svg><span>Tauko</span></button>
+        <button id="step" title="Yksi simulaatioaskel · piste" aria-label="Yksi askel"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 3 7 5-7 5zM13 3v10"/></svg></button>
+        <button id="reset" title="Aloita koko kartta alusta · Shift+R"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 6a5 5 0 1 1 0 5M3 2v4h4"/></svg><span>Alusta</span></button>
+        <button id="fullscreen" title="Koko näyttö · F" aria-label="Koko näyttö"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg></button>
+      </div>
+    </header>
+    <main>
+      <section class="play-area" aria-label="Maastosimulaatio">
+        <div class="stage-toolbar">
+          <div class="scenes" role="group" aria-label="Kartta">
+            <button data-scene="cave" aria-pressed="true">Luola</button><button data-scene="lab" aria-pressed="false">Koekenttä</button><button data-scene="empty" aria-pressed="false">Tyhjä</button>
+          </div>
+          <div class="modes" role="group" aria-label="Toimintatila"><button id="fly-mode" aria-pressed="true">Lennä</button><button id="edit-mode" aria-pressed="false">Muokkaa</button></div>
+          <span id="resolution">320 × 200 · 3×</span>
+        </div>
+        <div id="screen-frame" class="screen-frame">
+          <canvas id="screen" width="320" height="200" tabindex="0" aria-label="Luolakartta. Nuoli ylös käynnistää moottorin, vasen ja oikea kääntävät. Muokkaa-tilassa voit maalata maastoa."></canvas>
+          <div id="paused-label" class="paused-label" hidden>Tauolla</div>
+        </div>
+        <div class="statusbar"><span id="pointer-status">Valmiina · ↑ tai W käynnistää moottorin</span><span id="performance">60 askelta/s</span></div>
+        <div id="flight-controls" class="flight-controls">
+          <div class="pilot-buttons" role="group" aria-label="Lennokin ohjaimet">
+            <button data-flight="left" title="Käännä vasemmalle · A / ←" aria-label="Käännä vasemmalle"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3 5 8l6 5"/></svg></button>
+            <button data-flight="thrust" title="Moottori · W / ↑">Moottori</button>
+            <button data-flight="right" title="Käännä oikealle · D / →" aria-label="Käännä oikealle"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m5 3 6 5-6 5"/></svg></button>
+            <button data-flight="brake" title="Jarruta · S / ↓">Jarru</button>
+          </div>
+          <div class="flight-options"><button id="respawn" title="Palauta lennokki lähtöön · R">Lähtöön <kbd>R</kbd></button><label><input id="follow" type="checkbox" checked> Seuraa lennokkia</label></div>
+        </div>
+        <div id="flight-note" class="controls-note"><span><kbd>↑ W</kbd> moottori</span><span><kbd>← A</kbd> <kbd>→ D</kbd> käännä</span><span><kbd>↓ S</kbd> jarruta</span><span><kbd>E</kbd> muokkaa</span></div>
+        <div id="edit-note" class="controls-note" hidden><span><kbd>W A S D</kbd> / <kbd>↑ ↓ ← →</kbd> siirrä näkymää</span><span><kbd>Oikea hiiri</kbd> kaiva</span><span><kbd>Shift</kbd> + vedä siirtää</span><span><kbd>E</kbd> lennä</span></div>
+      </section>
+      <aside class="toolbox" aria-label="Maaston työkalut">
+        <div class="tool-heading"><h2>Materiaalit</h2><span>1–8</span></div>
+        <div id="materials" class="materials" role="group" aria-label="Materiaali"></div>
+        <p id="material-hint" class="material-hint" aria-live="polite"></p>
+        <div class="brush-label"><label for="brush">Siveltimen säde</label><output id="brush-value" for="brush">5 px</output></div>
+        <input id="brush" type="range" min="1" max="18" value="5">
+        <div class="sim-settings">
+          <label class="setting" for="speed">Ajan kulku <select id="speed"><option value="0.25">¼×</option><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option></select></label>
+          <label class="setting source-setting" for="sources"><span>Materiaalilähteet</span><input id="sources" type="checkbox" checked><span class="toggle" aria-hidden="true"></span></label>
+          <button id="pan" class="pan-button" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1v14M1 8h14M5 4l3-3 3 3M5 12l3 3 3-3M4 5 1 8 4 11M12 5l3 3-3 3"/></svg>Siirrä näkymää</button>
+        </div>
+        <div class="map-heading"><h2>Kartta</h2><span>640 × 400</span></div>
+        <canvas id="minimap" width="160" height="100" tabindex="0" aria-label="Koko kartta. Napsauta siirtyäksesi, tai käytä nuolinäppäimiä."></canvas>
+        <p class="map-help">Siirry napsauttamalla karttaa.</p>
+      </aside>
+    </main>
+    <footer><span>Vesi + laava = höyryä ja kiveä. Ruuti syttyy laavasta tai räjähdyksestä.</span><button id="help-button" aria-expanded="false">Näppäimet <span>?</span></button></footer>
+    <div id="help" class="help" hidden><p><kbd>1–8</kbd> materiaali · <kbd>Space</kbd> tauko · <kbd>.</kbd> yksi askel · <kbd>R</kbd> lennokki lähtöön · <kbd>Shift+R</kbd> kartta alusta · <kbd>E</kbd> lennä / muokkaa · <kbd>C</kbd> kameran seuranta · <kbd>F</kbd> koko näyttö · <kbd>[ ]</kbd> siveltimen koko · <kbd>Hiiren rulla</kbd> siveltimen koko</p><p>Hiekka valuu 45° rinteeksi. Vesi etsii vapaan pinnan. Muta muotoutuu vain myötörajan yli. Laava hidastuu jäähtyessään ja kivettää virtansa. Höyry nousee ja hajoaa nopeasti; kylmään kattoon voi tiivistyä pisaroita. Lennokilla on painovoima ja liikemäärä. Vesi hidastaa, laava vaurioittaa ja kova törmäys rikkoo rungon.</p></div>
+  </div>
+</body>
+</html>
