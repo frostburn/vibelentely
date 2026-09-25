@@ -1,7 +1,8 @@
 /* A particle occupies one cell. Movement swaps cell state; no frame interpolation. */
 (function (root) {
   'use strict';
-  const M = Object.freeze({ AIR: 0, ROCK: 1, SAND: 2, WATER: 3, MUD: 4, LAVA: 5, STEAM: 6, POWDER: 7, FIRE: 8, SMOKE: 9, BASALT: 10 });
+  const M = Object.freeze({ AIR: 0, ROCK: 1, SAND: 2, WATER: 3, MUD: 4, LAVA: 5, STEAM: 6, POWDER: 7, FIRE: 8, SMOKE: 9, BASALT: 10, HARDROCK: 11 });
+  const materialCount = Math.max(...Object.values(M)) + 1;
   const dynamic = new Set([M.SAND, M.WATER, M.MUD, M.LAVA, M.STEAM, M.POWDER, M.FIRE, M.SMOKE]);
   class World {
     constructor(width = 640, height = 400, seed = 7321) {
@@ -151,7 +152,7 @@
         else if(k===M.POWDER) {this.blasts.push(j);this.set(j,M.FIRE);}
         else if(k===M.MUD) {this.set(j,M.SAND);h[i]-=15;}
         else if(k===M.AIR||k===M.STEAM||k===M.SMOKE)cooling+=0.28;
-        else if(k===M.ROCK||k===M.BASALT)cooling+=0.12;
+        else if(k===M.ROCK||k===M.HARDROCK||k===M.BASALT)cooling+=0.12;
         else if(k===M.LAVA) {
           // Exchange heat by volume; a thin film cannot heat a full reservoir for free.
           const exchange=(h[i]-h[j])*0.018*Math.min(this.lavaFill[i],this.lavaFill[j]);
@@ -217,7 +218,7 @@
       const w=this.width,c=this.cells;
       if(this.life[i]>0) this.life[i]--;
       if(!this.life[i]) {
-        const ceiling=c[i-w]===M.ROCK||c[i-w]===M.BASALT;
+        const ceiling=c[i-w]===M.ROCK||c[i-w]===M.HARDROCK||c[i-w]===M.BASALT;
         this.set(i,kind===M.STEAM&&ceiling&&this.random()<0.18?M.WATER:M.AIR);return;
       }
       if(kind===M.FIRE) {
@@ -237,10 +238,11 @@
         const d2=dx*dx+dy*dy,xx=x+dx,yy=y+dy;
         if(d2>radius*radius || xx<2 || xx>=w-2 || yy<2 || yy>=this.height-2) continue;
         const i=yy*w+xx,k=c[i];
+        if(k===M.HARDROCK&&radius<28)continue;
         if(k===M.POWDER && d2>16) this.blasts.push(i);
         if(k===M.WATER) {if(this.random()<0.35)this.set(i,M.STEAM);else this.set(i,M.AIR);}
         else if(d2<(radius-2)*(radius-2)) this.set(i,this.random()<0.16?M.FIRE:this.random()<0.18?M.SMOKE:M.AIR);
-        else if(k===M.ROCK || k===M.BASALT) this.set(i,M.SAND);
+        else if(k===M.ROCK || k===M.HARDROCK || k===M.BASALT) this.set(i,M.SAND);
         else if(this.random()<0.25)this.set(i,M.FIRE);
       }
       const effect={x,y,radius,age:0};this.effects.push(effect);return effect;
@@ -278,7 +280,7 @@
         let i=y*w+(right?1:w-2), end=y*w+(right?w-1:0), inc=right?1:-1;
         for(;i!==end;i+=inc) {
           const k=c[i];
-          if(k===M.AIR||k===M.ROCK||k===M.BASALT||this.moved[i]===this.tick)continue;
+          if(k===M.AIR||k===M.ROCK||k===M.HARDROCK||k===M.BASALT||this.moved[i]===this.tick)continue;
           const direction=this.random()<0.5?-1:1;
           if(k===M.SAND||k===M.POWDER)this.powder(i,k,direction);
           else if(k===M.WATER)this.water(i,direction);
@@ -296,7 +298,7 @@
       this.effects=this.effects.filter(e=>e.age<18).slice(-64);
     }
     count() {
-      const counts=new Uint32Array(11);for(const k of this.cells)counts[k]++;
+      const counts=new Uint32Array(materialCount);for(const k of this.cells)counts[k]++;
       return Array.from(counts);
     }
     generate(scene='cave') {

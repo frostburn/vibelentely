@@ -10,15 +10,34 @@ Päävalikosta valitaan **Tiimitaistelu**, **Soolokeikat** tai **Luolalabra**. V
 
 ## Soolokeikat
 
-Kolme vapaasti valittavaa tehtävää omilla kartoillaan. Maasto, lennokki ja kello käynnistyvät ensimmäisestä ohjauksesta. Tavoite, eteneminen ja toimintaohje näkyvät peliruudun vieressä. Kohteet näkyvät pienoiskartalla ja ruudun reunoilla; vihreä **H** on kotiasema, keltainen henkilö on noutopaikka ja oranssi risti on avattava luukku.
+Kahdeksan vapaasti valittavaa tehtävää omilla kartoillaan. Maasto, lennokki ja kello käynnistyvät ensimmäisestä ohjauksesta. Tavoite, eteneminen ja toimintaohje näkyvät peliruudun vieressä. Kohteet näkyvät pienoiskartalla ja ruudun reunoilla; vihreä **H** on kotiasema, keltainen henkilö tai paketti on noutopaikka, oranssi risti on avattava luukku ja ruskea plus on paikattava vuoto. Punainen huutomerkki ja ympyrä osoittavat räjähdyksille herkän koneiston.
 
 | Tehtävä | Tavoite | Ratkaisu ja vaarat |
 | --- | --- | --- |
 | Pelastuspartio | Kolme kaivostyöläistä kahdelta suojalta kotiin 3 minuutissa | Laskeudu tai hidasta merkille 0,75 sekunniksi; nouto ja purku toimivat automaattisesti. Kyytiin mahtuu kaksi. Yksi matkustaja vähentää moottorin kiihtyvyyden noin 82 prosenttiin, kaksi noin 69 prosenttiin. Laava tai tuli miehitetyllä suojalla päättää tehtävän. |
 | Luolaputkimies | Vähintään 1 200 solua vettä rajattuun keräysaltaaseen ja lennokki kotiin | Avaa yläsäiliön pohjapato louhintapanoksella. Vesi valuu todellista kanavaa pitkin. Älä räjäytä keräysaltaan pohjaa. |
 | Hallittu sortuma | Vähintään 1 800 solua hiekkaa rajattuun kuiluun ja lennokki kotiin | Avaa alempi luukku ennen ylempää. Irtonainen hiekka päästää lennokin läpi, laskeutunut kasa tukkii reitin. Kallio pysyy paikallaan; sortuva materiaali on hiekkaa. |
+| Vuotava pato | Mutapaikka sekä 1 200 solua vettä altaaseen | Mutapommi tarvitsee tuekseen vuodon alla olevan kielekkeen. Jatkuva vedensyöttö paljastaa vuotavan korjauksen. |
+| Pumppaamo tukossa | Ime vesi ja muta pois; enintään 35 solua saa jäädä | Koneisto ei kestä räjähdyksiä. Imu ei kulje kiviseinän läpi. |
+| Kuivatelakka | Paikkaa syöttöputki mudalla ja ime telakka kuivaksi | Mutapaikan ja kuivan altaan pitää säilyä yhtä aikaa. Räjäyttäminen rikkoo telakan. |
+| Kova kuori | Nouda ydinmoduuli lujan kallion sisältä | Tavallinen kranaatti ei riko juovaista lujaa kiveä. Avaa lennokin levyinen reitti täysillä blasterilaukauksilla. |
+| Uusi vesireitti | Paikkaa alavuoto ja avaa luja yläpato; kerää 1 100 solua vettä | Mutapommi ja blasteri toimivat työparina. Tee paikka ennen veden vapauttamista. |
 
-Soolokeikoilla **K / Panos** ampuu maastoon tarttuvan louhintapanoksen. Sulake kestää 1,4 sekuntia laukaisusta, panoksia on kolme ja yksi palautuu neljässä sekunnissa. Oma räjähdys sattuu. Tiimitaistelussa ja Luolalabrassa K käyttää edelleen pomppivaa kranaattia. Muut varusteet, kuten painevesi ja lähisiirtymä, toimivat kaikissa pelimuodoissa.
+Soolokeikoilla **Kranaatti / panos** ampuu maastoon tarttuvan louhintapanoksen. Sulake kestää 1,4 sekuntia laukaisusta, panoksia on kolme ja yksi palautuu neljässä sekunnissa. Oma räjähdys sattuu. Tiimitaistelussa ja Luolalabrassa tämä varuste käyttää pomppivaa kranaattia.
+
+### Kaksi varustepaikkaa
+
+**J** käyttää aina pulssitykkiä, **I** kilpeä ja **Q** lähisiirtymää. **K** ja **L** käyttävät kahta valittua varustetta: kranaatti/panos, painevesi, mutapommi, imutykki tai blasteri. Sama varuste ei voi täyttää molempia paikkoja; toisen paikan varusteen valinta vaihtaa niiden järjestyksen.
+
+Vaihda varusteita ennen lähtöä, taisteluerien välissä tai soolokeikalla pysähtymällä kotiasemalle. Labrassa vaihtaminen on vapaata. Varusteen vaihtaminen ei palauta ammuksia eikä poista lämpöä, ja se peruuttaa blasterin latauksen. Uusintayritys säilyttää oman valinnan; seuraava soolotehtävä tarjoaa sille sopivan oletusparin. Tekoäly käyttää tuttuja kranaatti- ja vesivarusteita.
+
+| Uusi varuste | Toiminta |
+| --- | --- |
+| Mutapommi | Räjähtää mudaksi osumasta tai 1,1 s kuluttua. Jättää enintään 377 solua oikeaa mutaa; kiveä ja laavaa se ei korvaa. Vedessä muta syrjäyttää vastaavan määrän vettä. Kaksi latausta, yksi palautuu 6 sekunnissa. Muta voi tukkia myös oman tien. |
+| Imutykki | Tuhoaa hiekan, veden ja mudan keulan edestä enintään 46 solun päästä. Ei säiliötä tai lastia. Kivi ja muu kiinteä maasto pysäyttävät imun. Laavasolun imeminen ylikuumentaa heti; imuri pysähtyy noin 3,3 sekunnin jäähdytyksen ajaksi. |
+| Ladattava blasteri | Pidä ja vapauta: myös vajaa lataus ampuu. Vajaan laukauksen enimmäisvahinko on latauksesta riippuen 12–45 ja räjähdyssäde 5–14 solua; se ei riko lujaa kalliota. Täysi lataus syntyy 1,2 sekunnissa ja antaa selvän tehopiikin (enimmäisvahinko 125). Täysi ammus lentää 430 solua/s ja räjähtää osumasta 30 solun säteellä; myös oma lennokki voi tuhoutua. Rikkoo lujaa kiveä. Täytenä pitäminen nostaa lämpöä ja ylikuumentaa kylmän aseen 1,6 sekunnissa. Ylikuumeneminen hukkaa latauksen: vapauta nappi ja odota jäähdytystä. Laukauskin lämmittää asetta, joten valmiiksi lämpimän blasterin varoaika on lyhyempi. |
+
+Lataus ja lämpö näkyvät varustenapissa sekä blasterin keulavalossa. Tauko, valikko, ikkunan tai välilehden jättäminen ja varusteen vaihtaminen peruuttavat latauksen ampumatta. Jäähdytys ja lataus käyttävät samaa pysähtyvää peliaikaa kuin muutkin aseet.
 
 Altaan tai kuilun tavoitemäärän pitää säilyä vähintään sekunti. Pelkkä täyttö ei riitä: palaa elossa kotiasemalle ja hidasta. Jos täyttö laskee alle tavoitteen ennen paluuta, sitä pitää korjata. Kotiasema tai suojan merkki toimii alle 19 solun etäisyydeltä, alle 18 solun sekuntinopeudella ja esteettömällä näkölinjalla. Noudon ja purun eteneminen näkyy tilatekstissä.
 
@@ -70,8 +89,8 @@ Vapaa lentely ja maaston muokkaus neljällä alkuperäisellä kartalla sekä kah
 | ← / A, → / D | Käännä lennokkia |
 | ↓ / S | Ilmajarru |
 | J / vasen hiiri lentotilassa | Pulssitykki |
-| K | Soolokeikoilla tarttuva louhintapanos, muualla pomppiva kranaatti |
-| L | Painevesitykki |
+| K | Valittu varuste paikassa 1; blasterilla pidä ja vapauta |
+| L | Valittu varuste paikassa 2; blasterilla pidä ja vapauta |
 | I / oikea hiiri lentotilassa | Pidä keulakilpeä |
 | Q | Lähisiirtymä keulan suuntaan |
 | R | Soolokeikalla yritä alusta / seuraava tehtävä; taistelussa luovuta / seuraava erä / uusi ottelu; labrassa uusi lennokki |
@@ -148,8 +167,9 @@ Vienti tuottaa yhden itsenäisen HTML-tiedoston. `dist/`-hakemiston voi myös pa
 | `dist/levels.js` | Kahdeksan luolaa, geometriat, lähtöpaikat, kierto ja materiaaliteemat |
 | `dist/flight.js` | Lennokin fysiikka, ainevastus, törmäykset ja lähtöpaikan etsintä |
 | `dist/combat.js` | Joukkueet, aseet, ammusten törmäykset, kilpi, siirtymä ja eräpisteet |
+| `dist/tools.js` | Kaksi varustepaikkaa, mutapommi, imu, blasterin lataus ja ylikuumeneminen |
 | `dist/match.js` | Viiden voiton sarjat, vaikeusportaat, jokaisen erän kenttävaihto ja luovutus |
-| `dist/solo.js` | Kolmen soolotehtävän kartat, tavoitteet, lasti, nouto, purku, määräaika ja tulokset |
+| `dist/solo.js` | Kahdeksan soolotehtävää, yhdistetyt maastotavoitteet, herkkä koneisto, lasti ja tulokset |
 | `dist/ai.js` | Reitinhaku, tähtäys, lentäminen ja tekoälyn varustevalinnat |
 | `dist/render.js` | Pikselipiirto, lennokin rasterisprite ja pienoiskartta |
 | `dist/app.js` | Päävalikko, erilliset pelitilanteet, ohjaimet, kamera ja kiinteä aika-askel |

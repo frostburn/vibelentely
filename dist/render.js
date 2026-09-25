@@ -11,6 +11,7 @@
     [M.WATER]:[[34,90,143],[33,92,149],[34,101,156],[34,95,151],[39,110,166]],
     [M.MUD]:[[110,73,54],[119,81,57],[124,85,60],[130,90,62],[113,76,54]],
     [M.BASALT]:[[51,44,48],[60,49,50],[64,52,52],[69,55,53],[57,49,51]],
+    [M.HARDROCK]:[[47,68,91],[54,77,98],[63,87,109],[72,96,119],[82,107,127]],
     [M.POWDER]:[[105,109,104],[121,124,109],[140,139,117],[99,108,105],[117,122,110]],
   };
   function hash(x,y){let v=Math.imul(x,374761393)+Math.imul(y,668265263);v=Math.imul(v^(v>>>13),1274126177);return(v^(v>>>16))>>>0;}
@@ -81,6 +82,8 @@
             if(vein)palette=theme.vein;
           }
           [r,g,b]=palette[n%5];r+=shade;g+=shade;b+=shade;
+          if(k===M.HARDROCK&&(wx+wy)%11<2){r+=37;g+=39;b+=42;}
+          if(k===M.HARDROCK&&(wx-wy)%17===0){r-=22;g-=22;b-=22;}
           if(k===M.ROCK){
             const stratum=(wy+Math.round(5*Math.sin(wx/23)))%17;
             if(!theme&&stratum===0){r-=7;g-=7;b-=6;}
@@ -122,11 +125,17 @@
     marker(ctx,x,y,kind,active=false){
       x=Math.round(x);y=Math.round(y);
       ctx.fillStyle='#111c22';ctx.fillRect(x-5,y-6,11,13);
-      ctx.fillStyle=kind==='base'?(active?'#cdffbb':'#83cba3'):kind==='person'?'#ffe099':kind==='gate'?'#ffac77':'#84d8e4';
+      ctx.fillStyle=kind==='base'?(active?'#cdffbb':'#83cba3'):kind==='person'||kind==='parcel'?'#ffe099':kind==='gate'?'#ffac77':kind==='repair'?'#e3ab71':kind==='fragile'?'#ed9a8e':'#84d8e4';
       if(kind==='base'){
         ctx.fillRect(x-3,y-4,2,9);ctx.fillRect(x+2,y-4,2,9);ctx.fillRect(x-1,y,3,2);
       }else if(kind==='person'){
         ctx.fillRect(x-1,y-5,3,3);ctx.fillRect(x-2,y-1,5,4);ctx.fillRect(x-2,y+3,2,3);ctx.fillRect(x+1,y+3,2,3);
+      }else if(kind==='parcel'){
+        ctx.fillRect(x-3,y-3,7,7);ctx.fillStyle='#614a39';ctx.fillRect(x,y-3,1,7);
+      }else if(kind==='repair'){
+        ctx.fillRect(x-4,y-1,9,3);ctx.fillRect(x-1,y-4,3,9);
+      }else if(kind==='fragile'){
+        ctx.fillRect(x-1,y-4,3,5);ctx.fillRect(x-1,y+3,3,2);
       }else if(kind==='gate'){
         for(let i=-3;i<=3;i++){ctx.fillRect(x+i,y+i,1,1);ctx.fillRect(x+i,y-i,1,1);}
       }else{
@@ -134,12 +143,13 @@
       }
     }
     missions(cx,cy,solo){
-      const ctx=this.ctx,z=solo.mission.zone;
-      if(z){
-        ctx.fillStyle=solo.mission.material===M.SAND?'#d9b568':'#78ccd9';
+      const ctx=this.ctx;
+      for(const g of solo.goals){
+        const z=g.zone;ctx.fillStyle=g.materials.includes(M.MUD)&&!g.clear?'#ce9c70':g.materials.includes(M.SAND)?'#d9b568':'#78ccd9';
         for(let x=z.x;x<z.x+z.width;x+=4){ctx.fillRect(x-cx,z.y-cy,2,1);ctx.fillRect(x-cx,z.y+z.height-1-cy,2,1);}
         for(let y=z.y;y<z.y+z.height;y+=4){ctx.fillRect(z.x-cx,y-cy,1,2);ctx.fillRect(z.x+z.width-1-cx,y-cy,1,2);}
       }
+      const fragile=solo.mission.fragile;if(fragile)this.ring(fragile.x-cx,fragile.y-cy,fragile.radius,'#9c635e',true);
       for(const point of solo.markers()){
         let x=point.x-cx,y=point.y-cy;
         if(x<9||x>310||y<9||y>190){
@@ -147,7 +157,7 @@
           x=160+dx*f;y=100+dy*f;
           this.marker(ctx,x,y,point.kind,point.active);
         }else{
-          if(point.kind==='base'||point.kind==='person'){
+          if(point.kind==='base'||point.kind==='person'||point.kind==='parcel'){
             ctx.fillStyle=point.kind==='base'?'#83cba3':'#d8ad62';ctx.fillRect(Math.round(x)-15,Math.round(y)+13,31,2);
             // Keep the landing spot visible beneath a hovering craft.
             this.marker(ctx,x,y-19,point.kind,point.active);
@@ -188,6 +198,14 @@
         ctx.fillStyle=actorColor(drone);ctx.fillRect(cxp-6,cyp-12,Math.ceil(drone.health*.12),2);
       }
       if(drone.payload){ctx.fillStyle='#ffe099';for(let n=0;n<drone.payload;n++)ctx.fillRect(cxp-4+n*5,cyp+13,3,3);}
+      if(drone.gear?.charge){
+        const g=drone.gear;this.ring(cxp+Math.round(co*9),cyp+Math.round(si*9),Math.ceil(g.charge*4),g.charge===1?'#fff4cd':'#9fd5ff',false);
+        if(g.charge===1&&g.blasterHeat>.6&&this.world.tick%12<6)this.ring(cxp,cyp,11,'#ff9476',true);
+      }
+      for(const [i,tip] of (drone.gear?.vacuumRays||[]).entries())if(i%4===0){
+        ctx.fillStyle='#9dccba';
+        for(let n=0;n<4;n++){const f=((n*9+this.world.tick)%36)/36;ctx.fillRect(Math.round((tip.x-drone.x)*f)+cxp,Math.round((tip.y-drone.y)*f)+cyp,1,1);}
+      }
       if(drone.gear?.shield){
         ctx.fillStyle='#b8f5ee';
         for(let a=-1.21;a<=1.21;a+=.07){const angle=drone.angle+a;ctx.fillRect(cxp+Math.round(Math.cos(angle)*10),cyp+Math.round(Math.sin(angle)*10),1,1);}
@@ -197,18 +215,20 @@
       const ctx=this.ctx;
       for(const p of combat.projectiles){
         const x=Math.round(p.x)-cx,y=Math.round(p.y)-cy;
-        if(p.kind==='pulse'){
-          const length=Math.hypot(p.vx,p.vy)||1;
+        if(p.kind==='pulse'||p.kind==='blaster'){
+          const length=Math.hypot(p.vx,p.vy)||1,full=p.blast?.charge===1;
           ctx.fillStyle=p.owner.team?'#ffc383':'#bff7f1';
-          for(let n=0;n<4;n++)ctx.fillRect(x-Math.round(p.vx/length*n),y-Math.round(p.vy/length*n),1,1);
+          for(let n=0;n<(full?11:p.kind==='blaster'?6:4);n++)ctx.fillRect(x-Math.round(p.vx/length*n),y-Math.round(p.vy/length*n),full?2:1,1);
+          if(p.kind==='blaster'){const r=full?2:1;ctx.fillStyle=full?'#fff7d7':'#d4edff';ctx.fillRect(x-r,y-r,r*2+1,r*2+1);}
         }else if(p.kind==='grenade'){
           ctx.fillStyle='#131922';ctx.fillRect(x-2,y-2,5,5);
           ctx.fillStyle=Math.floor(p.age/(p.life<.4?.05:.15))%2?'#ffcb6c':'#e76c51';ctx.fillRect(x-1,y-1,3,3);
-        }else {ctx.fillStyle=this.sourceColors[M.WATER];ctx.fillRect(x,y,2,2);}
+        }else if(p.kind==='mud'){ctx.fillStyle='#d4a377';ctx.fillRect(x-2,y-2,4,4);ctx.fillStyle='#694b39';ctx.fillRect(x,y,2,2);}
+        else {ctx.fillStyle=this.sourceColors[M.WATER];ctx.fillRect(x,y,2,2);}
       }
       for(const e of combat.effects){
         const x=Math.round(e.x)-cx,y=Math.round(e.y)-cy;
-        this.ring(x,y,Math.round(e.kind==='blink'?5+(1-e.life/e.max)*11:e.kind==='shield'?11:2),e.kind==='hit'?'#ffe4a3':'#a1e8eb',e.kind==='blink');
+        this.ring(x,y,Math.round(e.kind==='blink'?5+(1-e.life/e.max)*11:e.kind==='mud'?11:e.kind==='shield'?11:2),e.kind==='mud'?'#d4a377':e.kind==='hit'?'#ffe4a3':'#a1e8eb',e.kind==='blink');
       }
       for(const actor of combat.active())if(actor!==combat.player&&!actor.dead&&
           (actor.x<cx+8||actor.x>cx+312||actor.y<cy+8||actor.y>cy+192)){
@@ -232,14 +252,17 @@
       for(let y=0;y<100;y++)for(let x=0;x<160;x++)this.mapPixels[y*160+x]=this.mapColors[c[y*4*w+x*4]];
       this.mapCtx.putImageData(this.mapImage,0,0);
       if(solo){
-        const ctx=this.mapCtx,z=solo.mission.zone;
-        if(z){ctx.strokeStyle=solo.mission.material===M.SAND?'#d9b568':'#78ccd9';ctx.lineWidth=1;ctx.strokeRect(Math.floor(z.x/4)+.5,Math.floor(z.y/4)+.5,Math.floor(z.width/4),Math.floor(z.height/4));}
+        const ctx=this.mapCtx;
+        for(const g of solo.goals){const z=g.zone;ctx.strokeStyle=g.materials.includes(M.MUD)&&!g.clear?'#ce9c70':g.materials.includes(M.SAND)?'#d9b568':'#78ccd9';ctx.lineWidth=1;ctx.strokeRect(Math.floor(z.x/4)+.5,Math.floor(z.y/4)+.5,Math.floor(z.width/4),Math.floor(z.height/4));}
         for(const p of solo.markers())if(p.kind!=='target'){
           const x=Math.round(p.x/4),y=Math.round(p.y/4);
           ctx.fillStyle='#101820';ctx.fillRect(x-3,y-3,7,7);
-          ctx.fillStyle=p.kind==='base'?'#9de4ab':p.kind==='person'?'#ffe099':'#ffac77';
+          ctx.fillStyle=p.kind==='base'?'#9de4ab':p.kind==='person'||p.kind==='parcel'?'#ffe099':p.kind==='fragile'?'#ed9a8e':'#ffac77';
           if(p.kind==='base'){ctx.fillRect(x-2,y-2,1,5);ctx.fillRect(x+2,y-2,1,5);ctx.fillRect(x-1,y,3,1);}
           else if(p.kind==='person'){ctx.fillRect(x,y-2,1,1);ctx.fillRect(x-1,y,3,3);}
+          else if(p.kind==='parcel'){ctx.fillRect(x-2,y-2,5,5);ctx.fillStyle='#614a39';ctx.fillRect(x,y-2,1,5);}
+          else if(p.kind==='repair'){ctx.fillRect(x-2,y,5,1);ctx.fillRect(x,y-2,1,5);}
+          else if(p.kind==='fragile'){ctx.fillRect(x,y-2,1,3);ctx.fillRect(x,y+2,1,1);}
           else for(let n=-2;n<=2;n++){ctx.fillRect(x+n,y+n,1,1);ctx.fillRect(x+n,y-n,1,1);}
         }
       }

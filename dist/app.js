@@ -11,7 +11,7 @@
     {id:M.AIR,name:'Pyyhi',color:'#26323b',hint:'Kaiva tunneleita tai avaa pato. Oikea hiirennappi kaivaa aina.'},
     {id:-1,name:'Räjäytä',color:'#ebbf86',hint:'Napsauta räjäyttääksesi. Siveltimen koko määrää räjähdyksen säteen.'},
   ];
-  const names=['Ilma','Kivi','Hiekka','Vesi','Muta','Laava','Höyry','Ruuti','Tuli','Savu','Jäähtynyt laava'];
+  const names=['Ilma','Kivi','Hiekka','Vesi','Muta','Laava','Höyry','Ruuti','Tuli','Savu','Jäähtynyt laava','Luja kallio'];
   const screen=$('screen'),held=new Set(),keys=new Set();
   const pointer={inside:false,down:false,x:0,y:0,panning:false,erase:false};
   function createSession(kind,missionIndex=0,records={}){
@@ -34,6 +34,7 @@
   function setMode(value,recenter=true){
     if((view==='match'||view==='solo')&&value!=='fly')return;
     mode=value;keys.clear();held.clear();document.querySelectorAll('[data-flight]').forEach(b=>b.classList.remove('is-held'));pointer.down=false;pointer.panning=false;pointer.inside=false;lastBrush=null;
+    CaveTools.cancel(drone);$('loadout').hidden=mode!=='fly';
     panTool=false;$('pan').setAttribute('aria-pressed','false');screen.classList.remove('panning','dragging');
     screen.classList.toggle('flying',mode==='fly');
     $('fly-mode').setAttribute('aria-pressed',String(mode==='fly'));
@@ -58,6 +59,7 @@
     b.append(swatch,label,shortcut);b.addEventListener('click',()=>selectMaterial(i));$('materials').append(b);
   });
   function setPaused(value){
+    if(value)clearInput();
     paused=value;accumulator=0;$('pause').querySelector('span').textContent=value?'Jatka':'Tauko';
     $('pause').querySelector('path').setAttribute('d',value?'M4 2l9 6-9 6z':'M5 3v10M11 3v10');
     $('paused-label').hidden=!value;
@@ -178,8 +180,6 @@
     $('match-banner').hidden=!match;$('match-progress').hidden=!match;
     $('solo-banner').hidden=!solo;$('mission-progress').hidden=!solo;
     $('score').hidden=!!solo;$('team-guide').hidden=!!solo;
-    $('grenade-name').textContent=solo?'Panos':'Kranaatti';
-    $('grenade-control').title=solo?'Louhintapanos · K. Tarttuu maastoon, räjähtää 1,4 s laukaisusta. Väistä omaa räjähdystä.':'Kranaatti · K. Pomppii, räjähtää 1,4 s laukaisusta. Oma räjähdys sattuu.';
     $('speed').value=String(speed);$('sources').checked=world.emitting;$('sources').disabled=scene==='empty';
     $('opponent').checked=combat.enabled;setRadius(radius);
     document.querySelectorAll('[data-scene]').forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.scene===scene)));
@@ -202,6 +202,19 @@
   $('mission-select').addEventListener('change',missionPreview);missionPreview();
   $('start-solo').addEventListener('click',()=>enterSession('solo',true));
   $('continue-solo').addEventListener('click',()=>enterSession('solo'));
+  function canEquip(){return view==='lab'||(solo?solo.canEquip:match&&match.phase!=='playing');}
+  for(let slot=1;slot<=2;slot++){
+    const select=$('slot'+slot);
+    for(const tool of CaveTools.list){const option=document.createElement('option');option.value=tool.id;option.textContent=tool.name;select.append(option);}
+    select.addEventListener('change',()=>{
+      if(canEquip()){
+        const slots=drone.loadout.slice(),i=slot-1;
+        if(slots[1-i]===select.value)slots[1-i]=slots[i];slots[i]=select.value;
+        clearInput();CaveTools.setLoadout(drone,slots);
+      }
+      battleReadout();
+    });
+  }
   for(const level of CaveLevels.list){
     const option=document.createElement('option');option.value=level.id;option.textContent=level.name;
     $('level-select').append(option);
@@ -267,7 +280,7 @@
     else if(e.key==='?')$('help-button').click();
   });
   window.addEventListener('keyup',e=>keys.delete(e.code));
-  function clearInput(){keys.clear();held.clear();mapDown=false;release();document.querySelectorAll('[data-flight]').forEach(b=>b.classList.remove('is-held'));}
+  function clearInput(){keys.clear();held.clear();CaveTools.cancel(drone);mapDown=false;release();document.querySelectorAll('[data-flight]').forEach(b=>b.classList.remove('is-held'));}
   window.addEventListener('blur',()=>{clearInput();if((view==='match'||view==='solo')&&!combat.result)setPaused(true);});
   document.addEventListener('visibilitychange',()=>{clearInput();lastTime=0;accumulator=0;if(document.hidden&&(view==='match'||view==='solo')&&!combat.result)setPaused(true);});
   window.addEventListener('resize',resize);
@@ -276,7 +289,7 @@
     turn:(keys.has('KeyD')||keys.has('ArrowRight')||held.has('right')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')||held.has('left')?1:0),
     brake:keys.has('KeyS')||keys.has('ArrowDown')||held.has('brake'),
     fire:keys.has('KeyJ')||held.has('fire')||held.has('mouse-fire'),
-    grenade:keys.has('KeyK')||held.has('grenade'),water:keys.has('KeyL')||held.has('water'),
+    tool1:keys.has('KeyK')||held.has('tool1'),tool2:keys.has('KeyL')||held.has('tool2'),
     shield:keys.has('KeyI')||held.has('shield')||held.has('mouse-shield'),blink:keys.has('KeyQ')||held.has('blink'),
   };}
   function simulate(){
@@ -305,10 +318,16 @@
   function battleReadout(){
     const g=drone.gear;
     $('pulse-status').textContent=g.overheated?'Jäähtyy':Math.round(g.heat*100)+' % lämpö';
-    $('grenade-status').textContent=g.grenades+' / 3';$('water-status').textContent=Math.floor(g.water)+' %';
     $('shield-status').textContent=g.shieldLock?'Latautuu':Math.ceil(g.energy)+' %';
     $('blink-status').textContent=drone.dead?'Poissa':g.blink?g.blink.toFixed(1)+' s':combat.blinkTarget(drone)?'Valmis':'Ei tilaa';
-    const charge={fire:1-g.heat,grenade:g.grenades/3,water:g.water/100,shield:g.energy/100,blink:1-g.blink/4};
+    const charge={fire:1-g.heat,shield:g.energy/100,blink:1-g.blink/4};
+    for(let slot=1;slot<=2;slot++){
+      const id=drone.loadout[slot-1],info=CaveTools.readout(id,g,combat.terrainCharges);
+      $('tool'+slot+'-name').textContent=info.name;$('tool'+slot+'-status').textContent=info.status;
+      $('tool'+slot+'-control').title=info.hint;charge['tool'+slot]=info.charge;
+      $('slot'+slot).value=id;$('slot'+slot).disabled=!canEquip();
+    }
+    $('loadout-hint').textContent=canEquip()?'Valitse kaksi varustetta. J pulssi · I kilpi · Q siirtymä pysyvät mukana.':solo?'Vaihda varusteita pysähtymällä kotiasemalle.':'Varusteet voi vaihtaa erien välissä.';
     for(const b of $('weapons').querySelectorAll('button'))b.style.setProperty('--charge',charge[b.dataset.flight]*100+'%');
     for(const b of document.querySelectorAll('[data-flight]'))b.disabled=drone.dead||!!combat.result;
     renderRoster();$('score').textContent=combat.score.join(' : ');
@@ -341,13 +360,13 @@
   }
   function clock(seconds){const s=Math.max(0,Math.ceil(seconds));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
   function soloReadout(){
-    const m=solo.mission,rescue=m.id==='rescue',won=solo.phase==='won';
+    const m=solo.mission,rescue=solo.delivery,won=solo.phase==='won';
     $('mission-number').textContent=(solo.index+1)+' / '+CaveSolo.list.length;
     $('mission-objective').textContent=m.objective;
-    $('mission-count').textContent=rescue?solo.rescued+' / 3 turvassa':Math.min(100,Math.floor(solo.progress*100))+' % · '+(solo.stable>=1?'Valmis':solo.amount>=m.goal?'Tasaantuu…':'Täytä allas');
+    $('mission-count').textContent=rescue?solo.rescued+' / '+solo.total+' perillä':Math.min(100,Math.floor(solo.progress*100))+' % · '+(solo.stable>=1?'Valmis':solo.readings.every(r=>r.done)?'Tasaantuu…':'Työ kesken');
     $('mission-time').textContent=(m.limit?'Aikaa ':'Aika ')+clock(m.limit?solo.remaining:solo.elapsed);
     $('mission-meter').value=solo.progress;
-    $('mission-cargo').textContent=rescue?'Kyydissä '+solo.cargo+' / 2 · moottorin kiihtyvyys '+Math.round(100/(1+solo.cargo*.22))+' %':'Tavoite: '+m.goal+' solua '+(m.material===M.WATER?'vettä':'hiekkaa')+' vähintään sekunnin ajan.';
+    $('mission-cargo').textContent=rescue?(m.cargoLabel||'Matkustajia')+' kyydissä '+solo.cargo+' / 2 · kiihtyvyys '+Math.round(100/(1+solo.cargo*.22))+' %':solo.goals.map((g,i)=>g.label+': '+solo.readings[i].count+' / '+(g.clear?'enintään ':'vähintään ')+g.amount).join(' · ');
     $('mission-advice').textContent=m.hint;
     $('combat-hint').textContent=solo.status;
     $('round-result').hidden=solo.phase!=='won'&&solo.phase!=='lost';

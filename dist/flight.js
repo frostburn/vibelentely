@@ -1,7 +1,7 @@
 (function(root){
   'use strict';
   const {M}=root.CaveSim;
-  const solid=new Set([M.ROCK,M.BASALT,M.SAND,M.MUD,M.POWDER]);
+  const solid=new Set([M.ROCK,M.HARDROCK,M.BASALT,M.SAND,M.MUD,M.POWDER]);
   const SPRITE=[
     '             ',
     '  33         ',

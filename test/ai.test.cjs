@@ -3,6 +3,7 @@ const assert=require('node:assert/strict');
 const {World,M}=require('../dist/simulation.js');
 const {Drone}=require('../dist/flight.js');
 require('../dist/ai.js');
+require('../dist/tools.js');
 const {Combat}=require('../dist/combat.js');
 
 test('Planning checks only short, bounded connections from the craft, even when trapped',()=>{

@@ -3,6 +3,7 @@ const assert=require('node:assert/strict');
 const {World,M}=require('../dist/simulation.js');
 const {Drone}=require('../dist/flight.js');
 require('../dist/ai.js');
+require('../dist/tools.js');
 const {Combat}=require('../dist/combat.js');
 function scene(){
   const world=new World(320,240);world.spawn={x:80,y:110};world.enemySpawn={x:220,y:110};

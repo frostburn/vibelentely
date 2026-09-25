@@ -75,3 +75,5 @@
 .mission-progress p{color:#a9bdb8}.mission-progress #mission-cargo{color:#e5c592}.mission-legend{font-size:11px}
 @media(max-width:1000px){.menu-cards{grid-template-columns:1fr 1fr}.lab-card{grid-column:1/-1}.lab-card p{max-width:none}}
 @media(max-width:780px){.menu-cards{grid-template-columns:1fr}.main-menu{width:min(520px,calc(100% - 32px))}}
+
+.loadout{margin:0 0 22px;padding:12px;border:1px solid var(--line);font-size:12px}.loadout legend{color:#dec69f;padding:0 6px}.loadout label{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;color:#b8c9c8}.loadout select{width:100%;min-height:36px}.loadout p{font-size:11px;line-height:1.5;color:var(--muted);margin:0}
