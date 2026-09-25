@@ -1,6 +1,6 @@
 (function(root){
   'use strict';
-  const {SONG,Tracker}=root.CaveMusic;
+  const {SONGS,REPEATS,Tracker,Playlist}=root.CaveMusic;
   // A mono 8-bit DAC at 11025 Hz, followed by the narrow speaker cabinet.
   // User volume is deliberately outside this processor, after the filters.
   class Cabinet {
@@ -19,7 +19,7 @@
   }
   class Synth {
     constructor(rate=48000){
-      this.rate=rate;this.cabinet=new Cabinet(rate);this.music=new Tracker(rate);this.voices=[];this.seed=19790517;
+      this.rate=rate;this.cabinet=new Cabinet(rate);this.music=new Playlist(rate);this.voices=[];this.seed=19790517;
       this.target={engine:0,wet:0,lava:0,vacuum:0,charge:0,shield:0};this.level={...this.target};
       this.phases=new Float64Array(4);this.time=0;this.smooth=1-Math.exp(-1/(rate*.025));
       this.engineClock=1;this.engineNoise=0;this.rumbleLP=1-Math.exp(-2*Math.PI*340/rate);
@@ -93,15 +93,16 @@
       }
     }
   }
-  function workletSource(){return `const SONG=${JSON.stringify(SONG)};\n${Tracker.toString()}\n${Cabinet.toString()}\n${Synth.toString()}\n
+  function workletSource(){return `const SONGS=${JSON.stringify(SONGS)},REPEATS=${REPEATS};\n${Tracker.toString()}\n${Playlist.toString()}\n${Cabinet.toString()}\n${Synth.toString()}\n
     class CaveProcessor extends AudioWorkletProcessor {
       constructor(){super();this.synth=new Synth(sampleRate);this.port.onmessage=({data})=>{
         if(data.type==='event')this.synth.event(data.kind,data.gain,data.power);
         else if(data.type==='controls')this.synth.controls(data.values);
         else if(data.type==='music')this.synth.music.set(data.playing,data.level);
+        else if(data.type==='playlist')this.synth.music.configure(data);
         else if(data.type==='clear')this.synth.clear();
       };}
-      process(inputs,outputs){this.synth.render(outputs[0][0]);return true;}
+      process(inputs,outputs){this.synth.render(outputs[0][0]);const state=this.synth.music.takeState();if(state)this.port.postMessage(state);return true;}
     }
     registerProcessor('cave-speaker',CaveProcessor);`;}
   root.CaveAudioDSP={Cabinet,Synth,workletSource};

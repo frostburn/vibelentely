@@ -64,10 +64,14 @@
       <label for="menu-volume">Voimakkuus</label><input id="menu-volume" data-volume type="range" min="0" max="100" value="60" step="1">
       <output data-volume-readout for="menu-volume">60 %</output><span data-audio-status role="status"></span>
     </div>
-    <div class="sound-controls music-controls" role="group" aria-label="Taustamusiikki: Basalttiyö">
+    <div class="sound-controls music-controls" role="group" aria-label="Taustamusiikki">
       <button type="button" data-music aria-label="Taustamusiikki" aria-pressed="true" title="Basalttiyö">Musiikki päällä</button>
       <label for="menu-music-volume">Taso</label><input id="menu-music-volume" data-music-volume type="range" min="0" max="100" value="45" step="1">
-      <output data-music-readout for="menu-music-volume">45 %</output><span class="track-name">Basalttiyö</span>
+      <output data-music-readout for="menu-music-volume">45 %</output>
+    </div>
+    <div class="music-library" role="group" aria-label="Biisivalinta">
+      <label class="track-picker" for="music-track">Biisi <select id="music-track"></select></label>
+      <label class="music-rotation" for="music-rotation"><input id="music-rotation" type="checkbox" checked> Vaihda biisiä 3 kierroksen jälkeen</label>
     </div>
   </section>
   <div id="game-app" class="app" hidden>
@@ -86,10 +90,10 @@
       <label for="game-volume">Voimakkuus</label><input id="game-volume" data-volume type="range" min="0" max="100" value="60" step="1">
       <output data-volume-readout for="game-volume">60 %</output><span data-audio-status role="status"></span>
     </div>
-    <div class="sound-controls music-controls" role="group" aria-label="Taustamusiikki: Basalttiyö">
+    <div class="sound-controls music-controls" role="group" aria-label="Taustamusiikki">
       <button type="button" data-music aria-label="Taustamusiikki" aria-pressed="true" title="Basalttiyö">Musiikki päällä</button>
       <label for="game-music-volume">Taso</label><input id="game-music-volume" data-music-volume type="range" min="0" max="100" value="45" step="1">
-      <output data-music-readout for="game-music-volume">45 %</output>
+      <output data-music-readout for="game-music-volume">45 %</output><span class="track-name" data-music-title aria-live="polite">Basalttiyö</span>
     </div>
     <main>
       <section class="play-area" aria-label="Maastosimulaatio">
