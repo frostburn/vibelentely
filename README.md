@@ -26,15 +26,17 @@ Kolme alkuperäistä suomichip-kappaletta, jokainen 64 tahtia ja 4/4. Kaikilla o
 
 | Biisi | Sävellaji | Tempo | Yksi kierto | Sovitus |
 | --- | --- | --- | --- | --- |
-| Basalttiyö | E-molli | 132 BPM | 1:56 | Pulssimelodia, oktaavibasso, duuriin avautuva vastateema ja hiljainen väliosa |
-| Kuparisydän | D-molli | 148 BPM | 1:44 | Katkonainen riffi, synkopoitu basso ja komppi, leveä F-duurinen vastateema |
-| Revontulivirta | A-doorinen | 116 BPM | 2:12 | Pehmeä pulssi–kolmio-melodia, harva puolitempoinen komppi, harmoniseen molliin tummuva väliosa |
+| Basalttiyö | E-molli | 132 BPM | 1:56 | Kulkijan ja kaiun kysymykset, duuriin avautuva toive ja roolien vaihto |
+| Kuparisydän | D-molli | 148 BPM | 1:44 | Sepän koputusaihe, koneen katkonaiset vastaukset ja yhteinen F-duuriteema |
+| Revontulivirta | A-doorinen | 116 BPM | 2:12 | Joen ja taivaan pitkät kaaret, helähtävät vastaukset ja lyhyt varovainen kiertotie |
 
 Sointuarpeggio on [trackerien `0xy`-efektin](https://milkytracker.org/docs/manual/MilkyTracker.html#fx0xy) tapainen yhden pulssikanavan sävelkorkeuskierto. Sävel vaihtuu kaikissa biiseissä **50 kertaa sekunnissa**: yksi sävel kestää 20 ms ja kolmen sävelen sointu kiertää noin 16,7 kertaa sekunnissa. Efektin näytekello ja oskillaattorin vaihe jatkuvat kompin iskujen ja arpin taukojen yli.
 
-Arpilla on kussakin biisissä oma sovitus: hiljaisempia säestysiskuja, melodian loppuun vastaavia pyrähdyksiä ja kokonaisia taukotahteja. Väliosassa melodia antaa sille neljän tahdin etualajakson; myöhemmin tulee lyhyt kahden tahdin paluu. Etualalla arppi soi voimakkaammin ja oktaavia ylempää. Basalttiyössä kaaret ovat pitkiä, Kuparisydämessä synkopoituja ja katkonaisia, Revontulivirrassa väljempiä. Sisääntulot ja tauot häivytetään lyhyesti. Melodiakaiku ja viiveellä alkava vibrato täydentävät tracker-soinnin.
+Biisit on rytmitetty [kolmen lyhyen kävelynäytelmän](docs/music-scenes.md) vuoropuhelun mukaan. Avausaiheet ja suuremmat jaksot palaavat tunnistettavina, mutta fraasien pituudet, jatkot ja soitinroolit vaihtelevat. Pulssi ja **FM-kantele** soittavat myös pidempiä melodioita toisen tukiessa, keskeyttävät lyhyillä vastauksilla ja vaihtavat tuttuja teemoja keskenään. Kantele on oma monofoninen soitin. Sen karkea oskillaattorivaihe ja yliohjattu aaltomuoto tuovat särmää; FM-sävy säilyy myös äänen hännässä. Väri vaihtelee kappaleittain.
 
-`dist/music.js`-tiedoston `arps` sisältää arppikuviot: `x` aloittaa painotuksen, `-` pitää ääntä ja `.` vapauttaa sen. `gain` määrää kuvion tason ja `octave` valinnaisen siirron puolisävelaskelina. `order`-rivin valinnainen neljäs alkio valitsee kuvion; ilman sitä arppi pitää tahdin taukoa.
+Basson neljäsosat ja vuorottelevat rumpuiskut pitävät kävelyn liikkeessä myös hiljaisissa jaksoissa. Harvoissa kohdissa bassolla on oma vastaus, pohjasävel jää soimaan tai rumpujen painotus siirtyy. Kukin kappale pysähtyy kuuntelemaan vain kerran, lyhyesti. Arppi jää enimmäkseen taustan lehtien havinaksi, josta nousee muutama lyhyt puuska. FM-kantele, muut soittimet ja melodiakaiku kulkevat yhteisen 11 025 Hz / 8-bit -tuhnuketjun läpi ennen lopullista master-gainia.
+
+`dist/music.js`-tiedoston `phrases` on pulssin ja kanteleen yhteinen fraasikirja. `order`-rivin alkiot ovat **sointu, pulssifraasi, komppi, arppikuvio, kantelefraasi**; kaksi viimeistä ovat valinnaisia. `grooves` määrittää bassokuvion, rumpuiskut ja dynamiikan. `arps` sisältää arppikuviot: `x` aloittaa painotuksen, `-` pitää ääntä ja `.` vapauttaa sen. `gain` määrää kuvion tason ja `octave` valinnaisen siirron puolisävelaskelina.
 
 **Päävalikon Biisi-valitsin** vaihtaa kappaletta heti lyhyellä ristihäivytyksellä ja aloittaa uuden kappaleen alusta. Oletuksena soitin käy listaa järjestyksessä: kolme kokonaista toistoa per kappale, sitten seuraava; viimeisestä palataan ensimmäiseen. Poista valinta **Vaihda biisiä 3 kierroksen jälkeen**, jos haluat kuunnella valittua biisiä jatkuvasti. Toistotavan vaihtaminen ei aloita kappaletta alusta. Biisivalinta ja toistotapa muistetaan selaimessa. Pelin äänisäätimien vieressä näkyy kulloinenkin kappale myös automaattisen vaihdon jälkeen.
 
@@ -213,7 +215,8 @@ Vienti tuottaa yhden itsenäisen HTML-tiedoston. `dist/`-hakemiston voi myös pa
 | `dist/solo.js` | Kahdeksan soolotehtävää, yhdistetyt maastotavoitteet, herkkä koneisto, lasti ja tulokset |
 | `dist/ai.js` | Reitinhaku, tähtäys, lentäminen ja tekoälyn varustevalinnat |
 | `dist/render.js` | Pikselipiirto, lennokin rasterisprite ja pienoiskartta |
-| `dist/music.js` | Kolme 64 tahdin sävellystä, tracker-soitin, toistokierto ja ristihäivytys |
+| `dist/music.js` | Kolme 64 tahdin vuoropuhelua, pulssi ja FM-kantele, tracker-soitin ja toistokierto |
+| `docs/music-scenes.md` | Biisien lyhyet näytelmät, vuorot ja tahtikartta |
 | `dist/audio-dsp.js` | Synteesi, 24 äänen raja, 8-bittinen näytteenpito ja purkkisuodatus |
 | `dist/audio.js` | Äänitapahtumat, selainäänen käynnistys, asetukset ja viimeinen master-gain |
 | `debug/audio.html`, `debug/audio.js` | Debug-exportin arppisoolo, nopeussäädin ja tuhnuketjun vertailu |

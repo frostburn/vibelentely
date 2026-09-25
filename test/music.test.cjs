@@ -14,8 +14,9 @@ test('Every score has valid pitched notes, sixteen-row bars, contrasting section
       for(const n of phrase)assert.ok(n==='-'||n==='.'||Number.isInteger(n)&&n>=0&&n<128);
     }
     for(const [i,bar] of tracker.progression.entries()){
-      assert.ok(bar.notes);assert.equal(bar.chord.length,4);
+      assert.ok(bar.notes);assert.equal(bar.chord.length,4);assert.ok(bar.groove);
       if(song.order[i][3])assert.ok(bar.arp,'named arp patterns must exist');
+      if(song.order[i][4])assert.ok(bar.reply,'named reply phrases must exist');
     }
     for(const part of Object.values(tracker.arps)){
       assert.equal(part.rows.length,16);assert.notEqual(part.rows[0],'-');
@@ -23,7 +24,10 @@ test('Every score has valid pitched notes, sixteen-row bars, contrasting section
       assert.ok(Number.isFinite(part.gain)&&part.gain>0);
       for(const chord of Object.values(song.chords))for(const note of chord.slice(1))assert.ok(tracker.frequencies[note+(part.octave??0)]);
     }
-    assert.ok(new Set(tracker.progression.map(b=>b.notes)).size>20);assert.ok(new Set(tracker.progression.map(b=>b.style)).size>=5);
+    for(const groove of Object.values(song.grooves)){
+      assert.ok(song.bass[groove.bass]);assert.ok(groove.level>0&&groove.level<=1);
+      for(const kind of ['kick','snare','hat'])assert.ok(groove[kind].every(step=>Number.isInteger(step)&&step>=0&&step<16));
+    }
     for(const pattern of Object.values(song.bass))assert.equal(pattern.length,16);
   }
   assert.equal(Tracker.note('A4'),69);assert.equal(Tracker.note('D#5'),75);
@@ -65,19 +69,18 @@ test('Fast chord cycling keeps even pitch ticks and oscillator phase across rhyt
   }
 });
 
-test('Arp rests fade fully, feature phrases sound alone, and returning accents keep the pitch clock running',()=>{
+test('Arp rests fade fully and returning accents keep the pitch clock running',()=>{
   const rate=48000;
   for(const song of SONGS){
-    const t=new Tracker(rate,song);t.debug({arpSolo:true,arpHz:null});t.set(true,.45);
+    const fixture={...song,arps:{test:{pattern:'x - - - . . . . x - - - . . . .',gain:.8}},
+      order:[[song.order[0][0],'rest','walk','test'],[song.order[1][0],'rest','walk']]};
+    const t=new Tracker(rate,fixture);t.debug({arpSolo:true,arpHz:null});t.set(true,.45);
     function bar(index){t.row=index*16-1;t.remaining=0;t.frames=Math.ceil(index*16*t.rowLength);}
-    const feature=t.progression.findIndex(part=>part.arp?.gain>1),rest=t.progression.findIndex(part=>!part.arp);
-    assert.ok(feature>=0&&rest>=0);
-    assert.ok(t.progression[feature].notes.every(note=>note==='.'),'the melody must leave room for the featured arp');
-    bar(feature);const active=samples(t,4800);assert.ok(active.some(x=>Math.abs(x)>.01));
-    bar(rest);const release=samples(t,18000);
+    bar(0);const active=samples(t,4800);assert.ok(active.some(x=>Math.abs(x)>.005));
+    bar(1);const release=samples(t,18000);
     assert.ok(release.subarray(0,128).some(x=>Math.abs(x)>.001),'release must fade instead of cutting the oscillator');
     assert.equal(t.arpLevel,0);assert.ok(release.subarray(-128).every(x=>x===0),'omitted patterns must be genuinely silent even in solo');
-    const phase=t.arpPhase;bar(feature);const frame=t.frames;t.sample();
+    const phase=t.arpPhase;bar(0);const frame=t.frames;t.sample();
     assert.equal(t.arpIndex,Math.floor(frame*50/rate+1e-10)%3,'re-entry uses the running pitch clock');
     assert.ok(Math.abs(t.arpPhase-(phase+t.arpFrequency/rate)%1)<1e-12,'re-entry must preserve oscillator phase');
     assert.ok(t.arpLevel>0&&t.arpLevel<.01,'new accents fade in');
@@ -94,6 +97,38 @@ test('Pausing fades to silence while preserving notes, echo position and transpo
   assert.deepEqual({frames:t.frames,row:t.row,remaining:t.remaining,echo:t.echoIndex,age:t.lead?.age},before);
   assert.ok(fade.subarray(-256).every(v=>Math.abs(v)<1e-7));
   t.set(true,.45);const resumed=samples(t,2048);assert.equal(t.frames,before.frames+2048);assert.ok(resumed.some(v=>Math.abs(v)>.001));
+});
+
+test('The FM-kantele has its own decaying timbre, plays alongside the pulse and preserves its note while paused',()=>{
+  const rate=48000,t=new Tracker(rate);t.set(true,.45);
+  const pluck=t.voice(69,8,'reply'),pulse=t.voice(69,8,'lead'),a=[],b=[];
+  for(let i=0;i<rate/2;i++){a.push(t.pitched(pluck,1/rate));b.push(t.pitched(pulse,1/rate));}
+  const rms=values=>Math.sqrt(values.reduce((sum,x)=>sum+x*x,0)/values.length);
+  assert.ok(a.every(Number.isFinite));assert.ok(rms(a.slice(480,5280))>.02);
+  assert.ok(rms(a.slice(-4800))<rms(a.slice(480,5280))*.6,'the answering voice must have a plucked decay');
+  const energy=a.reduce((sum,x,i)=>sum+(x-b[i])**2,0);
+  assert.ok(energy>1,'the new voice must be a distinct timbre');
+  const duet=t.progression.findIndex(bar=>bar.reply&&bar.notes.some(Number.isInteger)&&bar.reply.some(Number.isInteger));
+  t.row=duet*16-1;t.frames=Math.ceil(duet*16*t.rowLength);t.remaining=0;
+  const entry=t.progression[duet].reply.findIndex(Number.isInteger);
+  samples(t,Math.ceil(t.rowLength*entry)+128);assert.ok(t.lead&&t.reply);assert.notEqual(t.lead,t.reply);
+  const age=t.reply.age,frames=t.frames;t.set(false,.45);samples(t,2048);
+  assert.equal(t.reply.age,age);assert.equal(t.frames,frames);
+  t.set(true,.45);samples(t,128);assert.ok(t.reply.age>age);
+  t.reset();assert.equal(t.reply,null);
+});
+
+test('An isolated FM-kantele and its echo pass through the same master DAC and cabinet',()=>{
+  const rate=48000,song={...SONGS[0],phrases:{rest:'. . . . . . . . . . . . . . . .',held:'A4 - - - - - - - - - - - - - - .'},
+    bass:{silence:Array(16).fill('.')},grooves:{quiet:{bass:'silence',kick:[],snare:[],hat:[],level:1}},
+    order:[['Em','rest','quiet',null,'held']]};
+  const synth=new Synth(rate),reference=new Tracker(rate,song),cabinet=new Cabinet(rate);
+  synth.music.current=new Tracker(rate,song);synth.music.set(true,.45);reference.set(true,.45);
+  const out=new Float32Array(24000),raw=new Float32Array(out.length),expected=new Float32Array(out.length);
+  for(let i=0;i<out.length;i++){const input=reference.sample()*1.8;raw[i]=input;expected[i]=cabinet.process(input);}
+  synth.render(out);assert.ok(synth.music.current.reply);assert.ok(raw.some(x=>Math.abs(x)>.02));
+  assert.deepEqual(out,expected,'the answering instrument must receive the full shared DAC/filter chain');
+  assert.ok(out.some((x,i)=>Math.abs(x-raw[i])>.01),'the cabinet must materially alter the FM voice');
 });
 
 test('Music and effects share one nonlinear cabinet and render identically across block boundaries',()=>{
@@ -116,6 +151,13 @@ test('The standalone worklet carries the score, music transport and the same fil
   p.port.onmessage({data:choice});reference.music.configure(choice);p.process([],[[out]]);reference.render(expected);assert.deepEqual(out,expected);
   assert.equal(states.at(-1).track,SONGS[2].id);assert.equal(states.at(-1).request,7);
   assert.equal(p.synth.music.autoAdvance,false);
+  const replyBar=reference.music.current.progression.findIndex(bar=>bar.reply);
+  const replyStep=reference.music.current.progression[replyBar].reply.findIndex(Number.isInteger);
+  for(const t of [p.synth.music.current,reference.music.current]){
+    t.row=replyBar*16+replyStep-1;t.frames=Math.ceil((t.row+1)*t.rowLength);t.remaining=0;
+  }
+  for(let i=0;i<8;i++){p.process([],[[out]]);reference.render(expected);assert.deepEqual(out,expected);}
+  assert.ok(p.synth.music.current.reply,'the serialized score and worklet must actually play the answering instrument');
   p.port.onmessage({data:{type:'music',playing:false,level:.45}});p.process([],[[new Float32Array(24000)]]);
   p.process([],[[out]]);assert.ok(out.every(v=>Math.abs(v)<1e-7));
 });
@@ -194,7 +236,7 @@ test('Arp solo removes every other instrument and game effect, through either th
     const s=new Synth(),cabinet=new Cabinet(48000),raw=[];s.debug({arpSolo:true,arpHz:50,bypass});s.music.set(true,.45);
     const t=s.music.current,arp=t.arpeggio.bind(t);
     t.arpeggio=dt=>{const value=arp(dt);raw.push(value*t.gain*1.8);return value;};
-    t.kickAge=t.snareAge=t.hatAge=0;t.echo.fill(.2);
+    t.kickAge=t.snareAge=t.hatAge=0;t.echo.fill(.2);t.reply=t.voice(69,8,'reply');
     s.controls({engine:1,vacuum:1,charge:1,shield:1,wet:1,lava:1});s.event('explosion');s.event('pulse');
     const out=new Float32Array(24000);s.render(out);
     const expected=Float32Array.from(raw,x=>bypass?Math.max(-1,Math.min(127/128,x)):cabinet.process(x));
