@@ -110,11 +110,25 @@ test('The FM-kantele has its own decaying timbre, plays alongside the pulse and 
   assert.ok(energy>1,'the new voice must be a distinct timbre');
   const duet=t.progression.findIndex(bar=>bar.reply&&bar.notes.some(Number.isInteger)&&bar.reply.some(Number.isInteger));
   t.row=duet*16-1;t.frames=Math.ceil(duet*16*t.rowLength);t.remaining=0;
-  samples(t,Math.ceil(t.rowLength*9));assert.ok(t.lead&&t.reply);assert.notEqual(t.lead,t.reply);
+  const entry=t.progression[duet].reply.findIndex(Number.isInteger);
+  samples(t,Math.ceil(t.rowLength*entry)+128);assert.ok(t.lead&&t.reply);assert.notEqual(t.lead,t.reply);
   const age=t.reply.age,frames=t.frames;t.set(false,.45);samples(t,2048);
   assert.equal(t.reply.age,age);assert.equal(t.frames,frames);
   t.set(true,.45);samples(t,128);assert.ok(t.reply.age>age);
   t.reset();assert.equal(t.reply,null);
+});
+
+test('An isolated FM-kantele and its echo pass through the same master DAC and cabinet',()=>{
+  const rate=48000,song={...SONGS[0],phrases:{rest:'. . . . . . . . . . . . . . . .',held:'A4 - - - - - - - - - - - - - - .'},
+    bass:{silence:Array(16).fill('.')},grooves:{quiet:{bass:'silence',kick:[],snare:[],hat:[],level:1}},
+    order:[['Em','rest','quiet',null,'held']]};
+  const synth=new Synth(rate),reference=new Tracker(rate,song),cabinet=new Cabinet(rate);
+  synth.music.current=new Tracker(rate,song);synth.music.set(true,.45);reference.set(true,.45);
+  const out=new Float32Array(24000),raw=new Float32Array(out.length),expected=new Float32Array(out.length);
+  for(let i=0;i<out.length;i++){const input=reference.sample()*1.8;raw[i]=input;expected[i]=cabinet.process(input);}
+  synth.render(out);assert.ok(synth.music.current.reply);assert.ok(raw.some(x=>Math.abs(x)>.02));
+  assert.deepEqual(out,expected,'the answering instrument must receive the full shared DAC/filter chain');
+  assert.ok(out.some((x,i)=>Math.abs(x-raw[i])>.01),'the cabinet must materially alter the FM voice');
 });
 
 test('Music and effects share one nonlinear cabinet and render identically across block boundaries',()=>{
@@ -138,10 +152,11 @@ test('The standalone worklet carries the score, music transport and the same fil
   assert.equal(states.at(-1).track,SONGS[2].id);assert.equal(states.at(-1).request,7);
   assert.equal(p.synth.music.autoAdvance,false);
   const replyBar=reference.music.current.progression.findIndex(bar=>bar.reply);
+  const replyStep=reference.music.current.progression[replyBar].reply.findIndex(Number.isInteger);
   for(const t of [p.synth.music.current,reference.music.current]){
-    t.row=replyBar*16-1;t.frames=Math.ceil(replyBar*16*t.rowLength);t.remaining=0;
+    t.row=replyBar*16+replyStep-1;t.frames=Math.ceil((t.row+1)*t.rowLength);t.remaining=0;
   }
-  for(let i=0;i<24;i++){p.process([],[[out]]);reference.render(expected);assert.deepEqual(out,expected);}
+  for(let i=0;i<8;i++){p.process([],[[out]]);reference.render(expected);assert.deepEqual(out,expected);}
   assert.ok(p.synth.music.current.reply,'the serialized score and worklet must actually play the answering instrument');
   p.port.onmessage({data:{type:'music',playing:false,level:.45}});p.process([],[[new Float32Array(24000)]]);
   p.process([],[[out]]);assert.ok(out.every(v=>Math.abs(v)<1e-7));

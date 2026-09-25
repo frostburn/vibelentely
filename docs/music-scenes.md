@@ -1,10 +1,16 @@
 # Kolme kävelynäytelmää
 
-Nämä kohtaukset ovat pelin kolmen instrumentaalikappaleen partituurisuunnitelma. Vuorosanojen painot, keskeytykset ja vastaukset määräävät fraasien rytmiä. Jokainen kahdeksan tahdin jakso sisältää neljä kahden tahdin vuoroa. Lyhyen lauseen jälkeen jää tilaa askeleille, kaiulle tai toisen soittimen ennakoivalle sisääntulolle.
+Nämä kohtaukset ovat pelin kolmen instrumentaalikappaleen dramaturginen runko. Vuorosanojen painot, keskeytykset ja vastaukset ohjaavat fraasien rytmiä. Instrumentit jatkavat ajatusta yhden, kahden tai useamman tahdin ajan, vastaavat myös kesken lauseen ja tukevat välillä toisen pidempää melodiaa. Tunnistettava avausaihe palaa kussakin kappaleessa, mutta sen jatko ja vastaus voivat vaihtua.
 
-Pulssimelodia ja **FM-kantele** ovat kaksi puhujaa. Kantele on uusi näppäilevä chip-ääni: kirkas, puumainen alku pehmenee nopeasti. Se soittaa oman melodialinjansa. Hahmot lainaavat toisiltaan samoja nuottikuvioita, joten teeman siirtymisen soittimelta toiselle voi kuulla. Loppupuolella vuorot myös limittyvät.
+Pulssimelodia ja **FM-kantele** ovat kaksi puhujaa. Kantele on näppäilevä chip-ääni: karkea oskillaattorivaihe, yliohjattu aaltomuoto ja myös häntään jäävä FM-sävy karhentavat sen pintaa. Se soittaa oman melodialinjansa saman yhteisen tuhnuketjun läpi kuin muu musiikki. Hahmot lainaavat toisiltaan samoja nuottikuvioita, joten teeman siirtymisen soittimelta toiselle voi kuulla. Limittäisiä sisääntuloja on myös ennen loppuhuipennusta.
 
-Basso ja rummut ovat askeleet. Niiden neljäsosapulssi säilyy myös kevyissä sovituksissa. Arppi kulkee matalana taustan havinana; muutama lyhyt puuska korostaa käännettä. Sen nopeus on yhä 50 sävelenvaihtoa sekunnissa. Kaikki soittimet kulkevat pelin yhteisen tuhnuketjun läpi.
+Basso ja rummut ovat askeleet. Kävelypulssi säilyy kevyissäkin sovituksissa, mutta muutamassa kohdassa basso kertoo oman pienen lauseensa, pohjasävel jää odottamaan tai rumpukomppi siirtää painoa. Arppi kulkee matalana taustan havinana; muutama lyhyt puuska korostaa käännettä. Sen nopeus on yhä 50 sävelenvaihtoa sekunnissa.
+
+| Biisi | Toistuva rakenne ja vaihtelu | Harvat kompin poikkeukset |
+| --- | --- | --- |
+| Basalttiyö | Avaus jatkuu kolmen tahdin kaarena; kahden ensimmäisen tahdin kysymys palaa tahdeissa 9–10 ja 57–58. Kantele aloittaa vastauksia jo kesken pulssifraasin ja kantaa myöhemmin itse pidempää ajatusta. | Basso vastaa tahdeissa 15 ja 59. Tahdeissa 25–26 pidätetty pohjasävel ja harvempi virveli avartavat melodian taustaa; tahdin 45 komppi nojautuu hetkeksi sivuun. |
+| Kuparisydän | Alun kahden tahdin koputus säilyy ankkurina. Kiirehtivä pulssi jatkaa kolme tahtia, Kone keskeyttää lyhyesti. F-duurijakson tuttu rakenne palaa tahdeissa 41–44, ja myöhemmin kantele saa kolmen tahdin etualan. | Basson koputusaihe tahdeissa 20 ja 44; tahdeissa 12 ja 52 lyhyt synkopoitu horjahdus. Virveli ja hihat väistyvät tahdeiksi 29–30, basso ja bassorumpu jatkavat. |
+| Revontulivirta | Pidemmät neljän tahdin kaaret, kanteleen myöhäiset huudahdukset ja tuttu jokiaihe. Roolinvaihdon jälkeen pulssi kantaa vielä pidemmän nousun ennen yhteistä loppua. | Basso vastaa tahdissa 8 ja kiertää melodian alla tahdissa 45. Tahdeissa 23–24 pohjasävel jää soimaan. Tahdeissa 16 ja 56 komppi siirtää yhtä askelta. |
 
 ## Basalttiyö
 

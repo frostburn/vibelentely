@@ -12,6 +12,14 @@
       rest:'. . . . . . . . . . . . . . . .',
       path:'E4 - B4 - G4 - - . F#4 - - - . . . .',
       pathEnd:'E4 - - . G4 - A4 - B4 - - - . . . .',
+      pathMore:'B4 - E5 - F#5 - G5 - F#5 - E5 - . . . .',
+      pathAlt:'E4 - B4 - G4 - A4 - B4 - E5 - . . . .',
+      side:'. . . . . . . . . . B4 - E5 - . .',
+      sideC:'. . . . . . . . . . G4 - C5 - . .',
+      cut:'A4 - C5 - E5 - . . . . . . . . . .',
+      answerAm:'. . . . . . E5 - C5 - B4 - A4 - . .',
+      thread:'E4 - - - . . . . B4 - - - . . . .',
+      threadG:'G4 - - - . . . . D4 - - - . . . .',
       light:'. . B4 - E5 - D5 - B4 - G4 - . . . .',
       lightEnd:'. . G4 - B4 - E5 - D5 - B4 - . . . .',
       hollow:'A4 - C5 - B4 - A4 - . . E5 - - - . .',
@@ -46,6 +54,8 @@
       walk:[0,'-','-','.',7,'-','-','.',12,'-','-','.',7,'-','-','.'],
       climb:[0,'-','.',12,7,'-','-','.',12,'-','.',7,0,'-',7,11],
       breath:[0,'-','.','.',7,'-','.','.','.','.','.','.','.','.',7,'.'],
+      turn:[0,'-',3,5,7,'-',10,7,12,'-',7,5,3,'-',2,'.'],
+      pedal:[0,'-','-','-','-','-','-','-',0,'-','-','-','-','-','-','.'],
     },
     grooves:{
       light:{bass:'walk',kick:[0,8],snare:[12],hat:[2,6,10,14],level:.58},
@@ -53,32 +63,35 @@
       push:{bass:'climb',kick:[0,6,8],snare:[4,12],hat:[0,2,4,6,8,10,12,14],level:.91},
       rise:{bass:'climb',kick:[0,8,14],snare:[4,12,15],hat:[0,2,4,6,8,10,12,14],level:1},
       breath:{bass:'breath',kick:[0,4,14],snare:[],hat:[14],level:.5},
+      turn:{bass:'turn',kick:[0,8],snare:[12],hat:[2,6,10,14],level:.84},
+      half:{bass:'pedal',kick:[0,8],snare:[8],hat:[4,12],level:.76},
+      lean:{bass:'walk',kick:[0,8,11],snare:[6,12],hat:[2,6,10,14],level:.85},
     },
     order:[
       // 1–8: The walker asks where the path went. The echo answers in a new voice.
-      ['Em','path','light','leaves'],['C','pathEnd','light'],['Em','rest','walk',null,'light'],['B7','rest','walk',null,'stepEnd'],
-      ['Am','hollow','walk'],['B7','hollowEnd','walk','wind'],['Em','rest','walk',null,'step'],['B7','rest','push',null,'stepEnd'],
+      ['Em','path','light','leaves'],['C','pathEnd','light',null,'sideC'],['Em','pathMore','walk'],['B7','rest','walk',null,'stepEnd'],
+      ['Am','cut','walk',null,'answerAm'],['B7','rest','walk','wind','hollowEnd'],['Em','step','walk'],['B7','stepEnd','push'],
       // 9–16: One step becomes a question; its rhythm comes back as an answer.
-      ['Em','path','walk'],['C','pathEnd','walk','leaves'],['Em','rest','walk',null,'light'],['C','rest','walk',null,'lightEnd'],
-      ['Am','doubt','push'],['B7','hollowEnd','walk'],['Em','rest','walk','wind','step'],['B7','rest','rise',null,'stepEnd'],
+      ['Em','path','walk'],['C','pathEnd','walk','leaves'],['Em','rest','walk',null,'light'],['C','climbEnd','walk',null,'sideC'],
+      ['Am','cut','push',null,'answerAm'],['B7','rest','walk',null,'stepEnd'],['Em','rest','turn','wind'],['B7','rest','walk',null,'pickup'],
       // 17–24: They argue about the way. Longer phrases open towards G major.
-      ['G','doubtEnd','walk','leaves'],['D','hollowEnd','walk'],['G','rest','walk',null,'bend'],['D','rest','walk',null,'bendEnd'],
-      ['C','climbEnd','push'],['Am','trust','walk','wind'],['Fs','rest','push',null,'trustEnd'],['B7','rest','rise',null,'stepEnd'],
+      ['G','doubtEnd','walk','leaves'],['D','nearEnd','walk'],['G','near','walk',null,'threadG'],['D','rest','walk',null,'bendEnd'],
+      ['C','rest','walk',null,'climbEnd'],['Am','cut','walk','wind','answerAm'],['Fs','trustEnd','push'],['B7','stepEnd','rise'],
       // 25–32: The echo knows the bend. A two-beat listening pause, then a pickup.
-      ['G','near','walk'],['D','nearEnd','walk','leaves'],['G','rest','walk',null,'bend'],['D','rest','walk',null,'bendEnd'],
+      ['G','near','half'],['D','nearEnd','half','leaves'],['G','near','walk',null,'threadG'],['D','nearEnd','walk'],
       ['Am','listen','light'],['B7','hollowEnd','light'],['Em','rest','light',null,'listen'],['B7','rest','breath',null,'pickup'],
       // 33–40: Roles reverse: the kantele asks with the walker's exact motif.
-      ['Em','rest','walk','leaves','path'],['C','rest','walk',null,'pathEnd'],['Em','light','walk'],['B7','stepEnd','push'],
-      ['Am','rest','walk',null,'hollow'],['B7','rest','walk','wind','hollowEnd'],['Em','step','walk'],['B7','stepEnd','rise'],
+      ['Em','rest','walk','leaves','path'],['C','rest','walk',null,'pathEnd'],['Em','thread','walk',null,'pathMore'],['B7','rest','push',null,'stepEnd'],
+      ['Am','hollow','walk'],['B7','hollowEnd','walk','wind'],['Em','pathAlt','walk',null,'side'],['B7','rest','rise',null,'stepEnd'],
       // 41–48: Confidence raises the question an octave; answers grow with it.
-      ['Em','climb','push','leaves'],['C','climbEnd','push'],['G','rest','push',null,'near'],['D','rest','push',null,'nearEnd'],
-      ['Am','trust','push'],['F','climbEnd','push','wind'],['Fs','rest','push',null,'trustEnd'],['B7','rest','rise','gust','stepEnd'],
+      ['Em','climb','push','leaves'],['C','climbEnd','push',null,'sideC'],['G','near','push'],['D','nearEnd','push',null,'bendEnd'],
+      ['Am','rest','lean',null,'trust'],['F','rest','walk','wind','climbEnd'],['Fs','trustEnd','push'],['B7','stepEnd','rise','gust'],
       // 49–56: Short overlaps become a shared sentence instead of two solos.
-      ['Em','together','push','leaves','under'],['C','togetherEnd','walk',null,'underEnd'],['G','near','push'],['D','rest','walk',null,'bendEnd'],
-      ['Am','trust','push','wind'],['F','rest','walk',null,'climbEnd'],['Fs','trustEnd','push'],['B7','rest','rise','gust','stepEnd'],
+      ['Em','together','push','leaves','under'],['C','togetherEnd','walk',null,'underEnd'],['G','threadG','push',null,'near'],['D','nearEnd','walk'],
+      ['Am','trust','push','wind'],['F','climbEnd','walk'],['Fs','trustEnd','push'],['B7','stepEnd','rise','gust'],
       // 57–64: The opening question now resolves. Footsteps lead back into the loop.
-      ['Em','path','walk'],['C','rest','walk',null,'lightEnd'],['Am','trust','walk','leaves'],['B7','rest','walk',null,'stepEnd'],
-      ['Em','home','light'],['C','rest','light',null,'homeEnd'],['Am','hollow','walk'],['B7','rest','walk',null,'stepEnd'],
+      ['Em','path','walk'],['C','pathEnd','walk'],['Am','rest','turn','leaves'],['B7','rest','walk',null,'stepEnd'],
+      ['Em','home','light'],['C','climbEnd','light',null,'homeEnd'],['Am','trust','walk'],['B7','rest','walk',null,'pickup'],
     ],
   };
   const COPPER={
@@ -90,6 +103,13 @@
       rest:'. . . . . . . . . . . . . . . .',
       knock:'D5 - . A4 D5 - . . F5 - E5 - D5 - . .',
       knockEnd:'F5 - D5 - A#4 - - . A4 - - - . . . .',
+      knockLong:'A5 - G5 F5 E5 - D5 - F5 - E5 - D5 - . .',
+      cut:'G5 - D5 - G5 - . . . . . . . . . .',
+      interject:'. . . . . . A4 . E5 . C#5 - A4 - . .',
+      tail:'. . . . . . . . . . . . D4 F4 A4 .',
+      chordF:'F4 - - - . . . . C5 - - - . . . .',
+      last:'E5 - C#5 - . . . . A4 - - - . . . .',
+      answerFast:'F4 A4 C5 - D5 C5 A4 - . . . . . . . .',
       screw:'. D4 . A4 . D5 - . . A4 . F4 D4 - . .',
       screwEnd:'. A4 . E5 . C#5 - . . A4 . G4 E4 - . .',
       doubt:'G5 - D5 - G5 - . . A#5 - A5 - G5 - . .',
@@ -124,6 +144,8 @@
       walk:[0,'-','-','.',7,'-','-','.',12,'-','-','.',7,'-','-','.'],
       climb:[0,'-','.',12,7,'-','.',0,12,'-','.',7,0,'-',7,12],
       breath:[0,'-','.','.',7,'-','.','.','.','.','.','.','.','.',7,'.'],
+      turn:[0,'-','.',7,12,'-','-','.',15,'-',14,'-',12,'-',7,'.'],
+      hitch:[0,'.','.',7,'.','.',12,'.',0,'-','.',7,'.','.',12,'.'],
     },
     grooves:{
       light:{bass:'walk',kick:[0,8],snare:[4,12],hat:[2,6,10,14],level:.57},
@@ -131,32 +153,35 @@
       push:{bass:'climb',kick:[0,3,8,10],snare:[4,12],hat:[0,2,4,6,8,10,12,14],level:.93},
       rise:{bass:'climb',kick:[0,3,8,14],snare:[4,12,15],hat:[0,2,4,6,8,10,12,14],level:1},
       breath:{bass:'breath',kick:[0,4,14],snare:[],hat:[14],level:.5},
+      turn:{bass:'turn',kick:[0,8],snare:[12],hat:[2,6,14],level:.86},
+      hitch:{bass:'hitch',kick:[0,7,10],snare:[4,12],hat:[2,6,14],level:.86},
+      bare:{bass:'walk',kick:[0,8],snare:[],hat:[],level:.76},
     },
     order:[
       // 1–8: A syncopated knock. The machine dismisses it with a crooked little reply.
       ['Dm','knock','light','leaves'],['Bb','knockEnd','walk'],['Dm','rest','walk',null,'screw'],['A7','rest','walk',null,'screwEnd'],
-      ['Gm','doubt','walk'],['A7','doubtEnd','walk','wind'],['Gm','rest','walk',null,'wait'],['A7','rest','rise',null,'waitEnd'],
+      ['Gm','cut','walk',null,'wait'],['A7','doubtEnd','walk','wind','interject'],['Gm','doubt','push'],['A7','last','walk'],
       // 9–16: The walker quickens; the answer stumbles and catches up.
-      ['Dm','faster','push'],['C','fasterEnd','push','leaves'],['Dm','rest','walk',null,'protest'],['A7','rest','walk',null,'protestEnd'],
-      ['Dm','knock','walk'],['Bb','knockEnd','walk'],['Dm','rest','push','wind','screw'],['A7','rest','rise',null,'waitEnd'],
+      ['Dm','faster','push'],['C','fasterEnd','push','leaves'],['Dm','knockLong','push',null,'tail'],['A7','rest','hitch',null,'protestEnd'],
+      ['Dm','knock','walk'],['Bb','knockEnd','walk'],['Dm','rest','push','wind','screw'],['A7','doubtEnd','rise',null,'interject'],
       // 17–24: The broad major theme is offered; the machine still dodges the question.
-      ['F','heart','walk','leaves'],['C','heartEnd','walk'],['Bb','rest','walk',null,'answer'],['Dm','rest','walk',null,'answerEnd'],
-      ['Gm','doubt','push'],['Em7b5','doubtEnd','walk','wind'],['A7','rest','walk',null,'protestEnd'],['A7','rest','rise',null,'waitEnd'],
+      ['F','heart','walk','leaves'],['C','heartEnd','walk'],['Bb','hingeEnd','walk',null,'answerFast'],['Dm','rest','turn'],
+      ['Gm','rest','walk',null,'doubt'],['Em7b5','rest','walk','wind','doubtEnd'],['A7','last','walk',null,'protestEnd'],['A7','doubtEnd','rise'],
       // 25–32: A stopped heartbeat lasts half a bar, then the answer reveals itself.
       ['Dm','hinge','light'],['Bb','hingeEnd','light'],['A7','rest','light',null,'stop'],['A7','rest','breath',null,'pickup'],
-      ['F','rest','walk',null,'heart'],['C','rest','walk','leaves','heartEnd'],['Bb','answer','walk'],['Dm','answerEnd','rise'],
+      ['F','rest','bare',null,'heart'],['C','rest','bare','leaves','heartEnd'],['Bb','knockEnd','walk',null,'answerFast'],['Dm','home','rise'],
       // 33–40: The same motifs switch instruments. Both now recognise the knock.
-      ['Dm','rest','walk','leaves','knock'],['Bb','rest','walk',null,'knockEnd'],['Dm','screw','walk'],['A7','screwEnd','walk'],
-      ['Gm','rest','push',null,'doubt'],['A7','rest','walk','wind','doubtEnd'],['Gm','wait','walk'],['A7','waitEnd','rise'],
+      ['Dm','rest','walk','leaves','knock'],['Bb','rest','walk',null,'knockEnd'],['Dm','under','walk',null,'knockLong'],['A7','last','walk'],
+      ['Gm','rest','push',null,'doubt'],['A7','rest','walk','wind','doubtEnd'],['Gm','rest','walk',null,'wait'],['A7','last','rise',null,'interject'],
       // 41–48: The machine stops dodging: a full answer, followed by a warmer refrain.
-      ['F','heart','push'],['C','heartEnd','push','leaves'],['Bb','rest','push',null,'answer'],['Dm','rest','push',null,'answerEnd'],
-      ['Gm','doubt','push'],['Em7b5','doubtEnd','push'],['A7','rest','push','wind','wait'],['A7','rest','rise','gust','waitEnd'],
+      ['F','heart','push',null,'chordF'],['C','heartEnd','push','leaves'],['Bb','hingeEnd','push',null,'answerFast'],['Dm','rest','turn'],
+      ['Gm','doubt','push'],['Em7b5','doubtEnd','push'],['A7','last','push','wind','interject'],['A7','waitEnd','rise','gust'],
       // 49–56: Shared rhythm, staggered entries; the gait keeps its little syncopation.
-      ['Dm','together','push','leaves','under'],['F','togetherEnd','push',null,'underEnd'],['Bb','hingeEnd','walk'],['A7','rest','walk',null,'waitEnd'],
-      ['F','heart','push'],['C','rest','walk','wind','heartEnd'],['Bb','answer','push'],['Dm','rest','rise','gust','answerEnd'],
+      ['Dm','together','push','leaves','under'],['F','togetherEnd','push',null,'underEnd'],['Bb','knockEnd','walk',null,'answerFast'],['A7','last','hitch',null,'interject'],
+      ['F','chordF','walk',null,'heart'],['C','rest','walk','wind','heartEnd'],['Bb','rest','push',null,'answer'],['Dm','home','rise','gust'],
       // 57–64: A companionable argument trails off while the footsteps keep going.
-      ['Dm','knock','walk'],['Bb','rest','walk',null,'knockEnd'],['Gm','wait','walk','leaves'],['A7','rest','walk',null,'waitEnd'],
-      ['Dm','home','light'],['Bb','rest','light',null,'homeEnd'],['Gm','doubt','walk'],['A7','rest','walk',null,'screwEnd'],
+      ['Dm','knock','walk'],['Bb','knockEnd','walk',null,'tail'],['Gm','doubt','walk','leaves'],['A7','rest','walk',null,'waitEnd'],
+      ['Dm','rest','light',null,'home'],['Bb','hingeEnd','light',null,'homeEnd'],['Gm','doubt','walk'],['A7','last','walk',null,'pickup'],
     ],
   };
   const AURORA={
@@ -168,6 +193,13 @@
       rest:'. . . . . . . . . . . . . . . .',
       river:'A4 - - E5 C5 - - . B4 - A4 - . . . .',
       riverEnd:'F#4 - - A4 D5 - - . E5 - F#5 - . . . .',
+      riverMore:'C5 - E5 - A5 - - - G5 - E5 - . . . .',
+      riverAlt:'A4 - - E5 C5 - B4 - G4 - A4 - . . . .',
+      lateSky:'. . . . . . . . . . E5 - G5 - A5 -',
+      answerShort:'E5 - G5 - A5 - - . . . . . . . . .',
+      thread:'A4 - - - - - . . E4 - - - . . . .',
+      threadC:'G4 - - - - - . . C5 - - - . . . .',
+      shore:'. . . . G#4 - B4 - E5 - D5 - B4 - . .',
       sky:'. . E5 - G5 - - . A5 - G5 - E5 - . .',
       skyEnd:'. . D5 - F#5 - - . A5 - F#5 - D5 - . .',
       uphill:'B4 - D5 - G5 - - . F#5 - E5 - D5 - . .',
@@ -204,6 +236,8 @@
       walk:[0,'-','-','.',7,'-','-','.',12,'-','-','.',7,'-','-','.'],
       climb:[0,'-','-',7,12,'-','-','.',7,'-','-',12,0,'-',7,'.'],
       breath:[0,'-','.','.',7,'-','.','.','.','.','.','.','.','.',7,'.'],
+      turn:[0,'-',3,7,12,'-',10,7,5,'-',7,10,12,'-',7,'.'],
+      pedal:[0,'-','-','-','-','-','-','-','-','-','-','-','-','-','-','.'],
     },
     grooves:{
       light:{bass:'walk',kick:[0,8],snare:[12],hat:[4,6,12,14],level:.57},
@@ -211,32 +245,35 @@
       push:{bass:'climb',kick:[0,8,10],snare:[4,12],hat:[0,2,4,6,8,10,12,14],level:.9},
       rise:{bass:'climb',kick:[0,8,14],snare:[4,12,15],hat:[0,2,4,6,8,10,12,14],level:1},
       breath:{bass:'breath',kick:[0,4,14],snare:[],hat:[14],level:.5},
+      turn:{bass:'turn',kick:[0,8],snare:[8],hat:[4,12],level:.8},
+      float:{bass:'pedal',kick:[0,8],snare:[],hat:[4,12],level:.72},
+      skip:{bass:'walk',kick:[0,10],snare:[8],hat:[2,6,11,14],level:.85},
     },
     order:[
       // 1–8: Two walkers mistake the reflection for a river flowing uphill.
-      ['Am','river','light','leaves'],['D','riverEnd','walk'],['G','rest','walk',null,'sky'],['D','rest','walk',null,'skyEnd'],
-      ['G','uphill','walk'],['C','uphillEnd','walk','wind'],['C','rest','walk',null,'fallen'],['Em','rest','walk',null,'fallenEnd'],
+      ['Am','river','light','leaves'],['D','riverEnd','walk'],['G','uphill','walk',null,'lateSky'],['D','skyEnd','walk'],
+      ['G','rest','walk',null,'sky'],['C','threadC','walk','wind','fallen'],['C','rest','walk',null,'fallen'],['Em','rest','turn'],
       // 9–16: A practical warning gets a mischievous answer in the same rhythm.
-      ['Am','river','walk'],['D','riverEnd','walk','leaves'],['Am','rest','walk',null,'laugh'],['D','rest','walk',null,'laughEnd'],
-      ['Am','look','walk'],['D','lookEnd','walk'],['G','rest','walk','wind','sky'],['Em','rest','rise',null,'fallenEnd'],
+      ['Am','river','walk'],['D','riverEnd','walk','leaves'],['Am','riverMore','walk',null,'lateSky'],['D','lookEnd','walk'],
+      ['Am','rest','walk',null,'laugh'],['D','rest','walk',null,'laughEnd'],['G','uphill','walk','wind'],['Em','uphillEnd','skip',null,'answerShort'],
       // 17–24: The sky widens; the answer borrows the question's rising sixth.
-      ['C','carry','push','leaves'],['D','lookEnd','walk'],['G','rest','walk',null,'carryEnd'],['Em','rest','walk',null,'fallenEnd'],
-      ['Am','look','push'],['D','lookEnd','walk','wind'],['C','rest','walk',null,'fallen'],['Em','rest','rise',null,'fallenEnd'],
+      ['C','carry','push','leaves'],['D','lookEnd','walk'],['G','carryEnd','walk'],['Em','uphillEnd','walk',null,'answerShort'],
+      ['Am','rest','walk',null,'look'],['D','thread','walk','wind','lookEnd'],['C','threadC','float',null,'fallen'],['Em','rest','float',null,'fallenEnd'],
       // 25–32: They hear ice. F natural and G sharp briefly darken the walk.
-      ['Am','ice','light'],['F','bank','walk','leaves'],['C','rest','walk',null,'fallen'],['E7','rest','walk',null,'iceEnd'],
-      ['Am','ice','walk'],['F','bank','walk'],['D','rest','walk','wind','skyEnd'],['E7','rest','walk',null,'bankEnd'],
+      ['Am','ice','light'],['F','bank','walk','leaves',null],['C','uphillEnd','walk'],['E7','rest','walk',null,'shore'],
+      ['Am','rest','walk',null,'ice'],['F','threadC','walk',null,'bank'],['D','lookEnd','walk','wind'],['E7','iceEnd','walk',null,'shore'],
       // 33–40: Listen, then take the bank. Only half a bar really stands still.
       ['Am','ice','light'],['F','bank','light'],['E7','rest','light',null,'listen'],['E7','rest','breath',null,'pickup'],
-      ['Am','rest','walk',null,'river'],['D','rest','walk','leaves','riverEnd'],['G','sky','walk'],['Em','fallenEnd','rise'],
-      // 41–48: The companion now leads; familiar themes return higher and brighter.
-      ['Am','rest','push','leaves','look'],['D','rest','push',null,'lookEnd'],['G','carryEnd','push'],['Em','fallenEnd','walk'],
-      ['Am','light','push'],['D','lightEnd','push','wind'],['C','rest','push',null,'carry'],['Em','rest','rise','gust','fallenEnd'],
+      ['Am','rest','walk',null,'river'],['D','rest','walk','leaves','riverEnd'],['G','threadC','walk',null,'uphill'],['Em','rest','walk',null,'fallenEnd'],
+      // 41–48: A longer pulse arc returns higher; the bass answers under its last turn.
+      ['Am','look','push','leaves'],['D','lookEnd','push'],['G','carryEnd','push'],['Em','fallenEnd','walk',null,'answerShort'],
+      ['Am','light','turn'],['D','lightEnd','push','wind'],['C','carry','push',null,'threadC'],['Em','rest','rise','gust','fallenEnd'],
       // 49–56: The river and sky motifs interlock, with footsteps under both.
-      ['Am','together','push','leaves','under'],['D','togetherEnd','walk',null,'underEnd'],['G','uphill','push'],['Em','rest','walk',null,'fallenEnd'],
-      ['Am','light','push'],['D','rest','walk','wind','lightEnd'],['C','carry','push'],['Em','rest','rise','gust','carryEnd'],
+      ['Am','together','push','leaves','under'],['D','togetherEnd','walk',null,'underEnd'],['G','threadC','walk',null,'uphill'],['Em','rest','walk',null,'fallenEnd'],
+      ['Am','light','push'],['D','lightEnd','push','wind'],['C','carry','push'],['Em','carryEnd','skip','gust',null],
       // 57–64: They take the rhythm home. The unresolved fifth invites another walk.
-      ['Am','river','walk'],['D','rest','walk',null,'riverEnd'],['G','carryEnd','walk','leaves'],['Em','rest','walk',null,'fallenEnd'],
-      ['Am','home','light'],['D','rest','light',null,'homeEnd'],['G','uphill','walk'],['Em','rest','walk',null,'fallenEnd'],
+      ['Am','river','walk'],['D','riverEnd','walk'],['G','uphill','walk','leaves',null],['Em','rest','walk',null,'fallenEnd'],
+      ['Am','riverAlt','light'],['D','rest','light',null,'homeEnd'],['G','uphill','walk',null,'lateSky'],['Em','uphillEnd','walk'],
     ],
   };
   const SONGS=[SONG,COPPER,AURORA],REPEATS=3,ARP_HZ=50;
@@ -309,10 +346,11 @@
       const lead=v.kind==='lead',vibrato=lead&&v.age>.12?1+.0035*Math.sin(v.age*2*Math.PI*6):1;
       v.phase=(v.phase+v.frequency*vibrato*dt)%1;
       if(v.kind==='reply'){
-        // FM-kantele: a woody pluck, with a bright 2:1 attack that settles to sine.
-        // One independent monophonic voice; it never steals the pulse or bass.
-        const phase=v.phase*2*Math.PI,brightness=this.tone.replyColor*Math.exp(-v.age*18);
-        const wave=Math.sin(phase+brightness*Math.sin(phase*2))+.12*Math.sin(phase*3)*Math.exp(-v.age*25);
+        // Coarse oscillator phase and a driven carrier give the pluck some chip grit.
+        // Retain a little 2:1 FM in the tail; this voice still joins the shared cabinet.
+        const phase=Math.floor(v.phase*64)/64*2*Math.PI,brightness=this.tone.replyColor*(.25+.75*Math.exp(-v.age*18));
+        const carrier=Math.sin(phase+brightness*Math.sin(phase*2))+.12*Math.sin(phase*3)*Math.exp(-v.age*25);
+        const wave=Math.tanh(carrier*2.4)*.8;
         const env=Math.min(1,v.age/.003)*Math.exp(-v.age/this.tone.replyDecay)*Math.min(1,Math.max(0,(v.gate+.035-v.age)/.035));
         if(this.playing)v.age+=dt;
         return wave*env*this.tone.replyGain*v.velocity;
