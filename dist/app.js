@@ -34,16 +34,28 @@
   function audioReadout(){
     for(const el of document.querySelectorAll('[data-volume]'))el.value=String(audio.volume);
     for(const el of document.querySelectorAll('[data-volume-readout]'))el.textContent=Math.round(audio.volume)+' %';
+    for(const el of document.querySelectorAll('[data-music-volume]'))el.value=String(audio.musicVolume);
+    for(const el of document.querySelectorAll('[data-music-readout]'))el.textContent=Math.round(audio.musicVolume)+' %';
+    for(const el of document.querySelectorAll('[data-music]')){
+      el.textContent=audio.musicEnabled?'Musiikki päällä':'Musiikki pois';el.setAttribute('aria-pressed',String(audio.musicEnabled));
+      el.disabled=audio.status==='unsupported';
+    }
     for(const el of document.querySelectorAll('[data-mute]')){
       el.textContent=audio.muted?'Äänet pois':'Äänet päällä';el.setAttribute('aria-pressed',String(audio.muted));
       el.setAttribute('aria-label',audio.muted?'Ota äänet käyttöön':'Mykistä äänet');el.disabled=audio.status==='unsupported';
     }
     for(const el of document.querySelectorAll('[data-audio-status]'))el.textContent=audio.status==='unsupported'?'Selain ei tue ääntä.':'';
   }
-  function syncAudio(){audio.setActive(view!=='menu'&&!paused&&!document.hidden&&focused);}
+  function syncAudio(){
+    const foreground=!document.hidden&&focused;
+    audio.setActive(view!=='menu'&&!paused&&foreground);
+    audio.setMusicActive(foreground&&(view==='menu'||!paused));
+  }
   audio.onchange=audioReadout;audioReadout();
   for(const el of document.querySelectorAll('[data-volume]'))el.addEventListener('input',()=>audio.setVolume(Number(el.value)));
   for(const el of document.querySelectorAll('[data-mute]'))el.addEventListener('click',()=>{audio.toggleMute();audio.unlock();});
+  for(const el of document.querySelectorAll('[data-music-volume]'))el.addEventListener('input',()=>audio.setMusicVolume(Number(el.value)));
+  for(const el of document.querySelectorAll('[data-music]'))el.addEventListener('click',()=>{audio.toggleMusic();audio.unlock();});
   // Capture gestures also on the menu and touch controls; loading alone stays silent.
   for(const event of ['pointerdown','keydown'])window.addEventListener(event,()=>{if(!document.hidden)audio.unlock();},{capture:true});
   function clampCamera(){camera.x=clamp(Math.round(camera.x),0,world.width-320);camera.y=clamp(Math.round(camera.y),0,world.height-200);}

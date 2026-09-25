@@ -10,15 +10,31 @@ Päävalikosta valitaan **Tiimitaistelu**, **Soolokeikat** tai **Luolalabra**. V
 
 ## Äänet
 
-Moottori kohisee hillityllä voimakkuudella ajassa kvantisoidulla kohinalla: näyte vaihtuu noin 1,3–2 kHz tahdissa ja pysyy välissä vakiona. Pulssitykki sirisee, ja räjähdyksen alkupamausta seuraa matala, lyhyt kumina (noin 0,45–0,75 s koon mukaan). Mutapommin laukaisussa ja osumassa on pieni nouseva ”bloub!” ja karkea, märkä loppuääni. Vesi ja imu kuulostavat erilaisilta; blasterin nousuääni kertoo latauksesta, täysi lataus kilahtaa ja ylikuumeneminen lässähtää. Kilven osuma, lähisiirtymä, runkovaurio, nouto, toimitus ja erän tulos saavat omat lyhyet merkkinsä. Kaukaiset tapahtumat kuuluvat hiljempaa. Ei taustamusiikkia tai ladattavia äänitiedostoja.
+Moottori kohisee hillityllä voimakkuudella ajassa kvantisoidulla kohinalla: näyte vaihtuu noin 1,3–2 kHz tahdissa ja pysyy välissä vakiona. Pulssitykki sirisee, ja räjähdyksen alkupamausta seuraa matala, lyhyt kumina (noin 0,45–0,75 s koon mukaan). Mutapommin laukaisussa ja osumassa on pieni nouseva ”bloub!” ja karkea, märkä loppuääni. Vesi ja imu kuulostavat erilaisilta; blasterin nousuääni kertoo latauksesta, täysi lataus kilahtaa ja ylikuumeneminen lässähtää. Kilven osuma, lähisiirtymä, runkovaurio, nouto, toimitus ja erän tulos saavat omat lyhyet merkkinsä. Kaukaiset tapahtumat kuuluvat hiljempaa. Tehosteet ja musiikki syntyvät koodissa ilman ladattavia äänitiedostoja.
 
 Koko monomiksaus kulkee yhden purkin läpi:
 
-`Synteesi ja miksaus → kiinteä ajotaso → 11 025 Hz näytteenpito + 8-bittinen kvantisointi → 180 Hz ylipäästö → kaksi 2 300 Hz alipäästöä → master-gain → kaiuttimet`
+`Tehosteet + musiikki → yhteinen miksaus → kiinteä ajotaso → 11 025 Hz näytteenpito + 8-bittinen kvantisointi → 180 Hz ylipäästö → kaksi 2 300 Hz alipäästöä → master-gain → kaiuttimet`
 
 Voimakkuussäädin on **kaiken tuhnutuksen jälkeen**. Se ei muuta kvantisoinnin askelkokoa, suodatusta tai miksauksen säröytymistä. Säädön vaste on neliöllinen ja muutokset pehmennetään, jotta pieniäkin voimakkuuksia on helppo käyttää. Mykistys säilyttää valitun voimakkuuden; molemmat asetukset muistetaan selaimessa, jos paikallinen tallennus on käytettävissä.
 
-Ääni käynnistyy ensimmäisestä näppäin- tai osoitineleestä. Valikko, tauko, ikkunan fokuksen menetys ja piilotettu välilehti hiljentävät pelin ja tyhjentävät kesken olevat äänet. Pelitilan vaihto tai uusi yritys ei toista vanhoja ääniä. Äänet toimivat ensisijaisesti AudioWorkletissa; jos se ei ole saatavilla esimerkiksi paikallista HTML-tiedostoa avattaessa, ScriptProcessor ajaa saman synteesin ja purkkiketjun. Peli toimii myös ilman Web Audiota.
+Ääni käynnistyy ensimmäisestä näppäin- tai osoitineleestä. Valikko pysäyttää tehosteet, mutta musiikki jatkuu. Tauko, ikkunan fokuksen menetys ja piilotettu välilehti hiljentävät kaiken; musiikin paikka säilyy. Pelitilan vaihto tai uusi yritys ei toista vanhoja tehosteita eikä aloita biisiä alusta. Äänet toimivat ensisijaisesti AudioWorkletissa; jos se ei ole saatavilla esimerkiksi paikallista HTML-tiedostoa avattaessa, ScriptProcessor ajaa saman synteesin ja purkkiketjun. Peli toimii myös ilman Web Audiota.
+
+### Basalttiyö
+
+Alkuperäinen suomichip-henkinen taustabiisi: **E-molli, 132 BPM, 4/4, 64 tahtia, noin 1:56**. Pulssiaalto kantaa mollimelodiaa, basso vuorottelee oktaaveja ja kvinttejä, soinnut vaihtuvat 50 Hz tracker-arpeggioina. Viivästetty melodia, viivästetty vibrato ja kohinarummut täydentävät sovituksen. B-osan suhteellinen duuri ja lainattu F-duurisointu tuovat vaihtelua ennen dominantin paluuta E-molliin.
+
+| Tahdit | Sovitus |
+| --- | --- |
+| 1–4 | Harva alkusoitto ja nousu komppiin |
+| 5–20 | Pääteema ja sen melodinen muunnelma |
+| 21–28 | Vastateema ja soinnullinen sivupolku |
+| 29–36 | Hiljaisempi väliosa ja uusi nousu |
+| 37–52 | Pääteeman paluu korkeampien arpeggioiden kanssa |
+| 53–60 | Vastateeman kertaus |
+| 61–64 | Rauhoittuminen ja dominantti takaisin alkuun |
+
+Musiikilla on oma muistettava tasosäädin ja päälle/pois-painike. Tasosäädin muuttaa musiikin osuutta **ennen yhteistä tuhnuketjua**; yleinen voimakkuussäädin on edelleen ketjun jälkeen. Musiikin mykistys tai nollataso pysäyttää sen toiston samaan kohtaan. Soitin seuraa äänilaitteen näytekelloa, joten grafiikan hidastuminen tai Luolalabran nopeussäädin eivät muuta tempoa. Nuotit, soinnut ja kappalerakenne ovat muokattavissa `dist/music.js`-tiedostossa; piste on tauko ja viiva pitää edellisen nuotin.
 
 ## Soolokeikat
 
@@ -184,6 +200,7 @@ Vienti tuottaa yhden itsenäisen HTML-tiedoston. `dist/`-hakemiston voi myös pa
 | `dist/solo.js` | Kahdeksan soolotehtävää, yhdistetyt maastotavoitteet, herkkä koneisto, lasti ja tulokset |
 | `dist/ai.js` | Reitinhaku, tähtäys, lentäminen ja tekoälyn varustevalinnat |
 | `dist/render.js` | Pikselipiirto, lennokin rasterisprite ja pienoiskartta |
+| `dist/music.js` | Basalttiyön nuotit, 64 tahdin rakenne ja näytekelloon sidottu tracker-soitin |
 | `dist/audio-dsp.js` | Synteesi, 24 äänen raja, 8-bittinen näytteenpito ja purkkisuodatus |
 | `dist/audio.js` | Äänitapahtumat, selainäänen käynnistys, asetukset ja viimeinen master-gain |
 | `dist/app.js` | Päävalikko, erilliset pelitilanteet, ohjaimet, kamera ja kiinteä aika-askel |
