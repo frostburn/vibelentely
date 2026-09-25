@@ -1,13 +1,13 @@
 (function(root){
   'use strict';
-  const DSP=root.CaveAudioDSP,{SONGS}=root.CaveMusic,debugBuild=!!root.CAVE_AUDIO_DEBUG,storageKey=debugBuild?'vibelentely.audio.debug':'vibelentely.audio';
+  const DSP=root.CaveAudioDSP,{SONGS,ARP_HZ}=root.CaveMusic,debugBuild=!!root.CAVE_AUDIO_DEBUG,storageKey=debugBuild?'vibelentely.audio.debug':'vibelentely.audio';
   class Sound {
     constructor(){
       this.volume=60;this.muted=false;this.active=false;this.context=null;this.node=null;this.master=null;this.starting=null;
       this.status='idle';this.onchange=()=>{};this.combat=null;this.listener=null;
       this.musicEnabled=true;this.musicVolume=45;this.musicActive=false;
       this.musicTrack=SONGS[0].id;this.musicRotation=!debugBuild;this.musicRequest=0;
-      this.debug={arpSolo:debugBuild,arpHz:debugBuild?50:null,bypass:false};
+      this.debug={arpSolo:debugBuild,arpHz:debugBuild?ARP_HZ:null,bypass:false};
       try{
         const saved=JSON.parse(root.localStorage?.getItem(storageKey)||'null');
         if(Number.isFinite(saved?.volume))this.volume=Math.max(0,Math.min(100,saved.volume));

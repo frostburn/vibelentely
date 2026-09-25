@@ -13,7 +13,16 @@ test('Every score has valid pitched notes, sixteen-row bars, contrasting section
       assert.equal(phrase.length,16);assert.notEqual(phrase[0],'-','holds must have a preceding note in the bar');
       for(const n of phrase)assert.ok(n==='-'||n==='.'||Number.isInteger(n)&&n>=0&&n<128);
     }
-    for(const bar of tracker.progression){assert.ok(bar.notes);assert.equal(bar.chord.length,4);}
+    for(const [i,bar] of tracker.progression.entries()){
+      assert.ok(bar.notes);assert.equal(bar.chord.length,4);
+      if(song.order[i][3])assert.ok(bar.arp,'named arp patterns must exist');
+    }
+    for(const part of Object.values(tracker.arps)){
+      assert.equal(part.rows.length,16);assert.notEqual(part.rows[0],'-');
+      assert.ok(part.rows.every(row=>row==='x'||row==='-'||row==='.'));
+      assert.ok(Number.isFinite(part.gain)&&part.gain>0);
+      for(const chord of Object.values(song.chords))for(const note of chord.slice(1))assert.ok(tracker.frequencies[note+(part.octave??0)]);
+    }
     assert.ok(new Set(tracker.progression.map(b=>b.notes)).size>20);assert.ok(new Set(tracker.progression.map(b=>b.style)).size>=5);
     for(const pattern of Object.values(song.bass))assert.equal(pattern.length,16);
   }
@@ -45,7 +54,7 @@ test('Fast chord cycling keeps even pitch ticks and oscillator phase across rhyt
       assert.ok(Math.abs(t.arpPhase-(phase+t.arpFrequency/rate)%1)<1e-12,'pitch changes must preserve oscillator phase');
       changes.push(sample);previousFrequency=t.arpFrequency;
     }
-    assert.ok(changes.length>=150,'the effect must run at least 150 pitch steps per second');
+    assert.equal(changes.length,50,'normal playback uses the accepted debug speed');
     assert.equal(changes.length,t.tone.arpHz);
     for(let i=1;i<changes.length;i++){
       const length=changes[i]-changes[i-1];
@@ -53,6 +62,28 @@ test('Fast chord cycling keeps even pitch ticks and oscillator phase across rhyt
     }
     const frames=t.frames,index=t.arpIndex;t.set(false,.45);samples(t,1024);
     assert.equal(t.frames,frames);assert.equal(t.arpIndex,index,'pausing also freezes the pitch-effect clock');
+  }
+});
+
+test('Arp rests fade fully, feature phrases sound alone, and returning accents keep the pitch clock running',()=>{
+  const rate=48000;
+  for(const song of SONGS){
+    const t=new Tracker(rate,song);t.debug({arpSolo:true,arpHz:null});t.set(true,.45);
+    function bar(index){t.row=index*16-1;t.remaining=0;t.frames=Math.ceil(index*16*t.rowLength);}
+    const feature=t.progression.findIndex(part=>part.arp?.gain>1),rest=t.progression.findIndex(part=>!part.arp);
+    assert.ok(feature>=0&&rest>=0);
+    assert.ok(t.progression[feature].notes.every(note=>note==='.'),'the melody must leave room for the featured arp');
+    bar(feature);const active=samples(t,4800);assert.ok(active.some(x=>Math.abs(x)>.01));
+    bar(rest);const release=samples(t,18000);
+    assert.ok(release.subarray(0,128).some(x=>Math.abs(x)>.001),'release must fade instead of cutting the oscillator');
+    assert.equal(t.arpLevel,0);assert.ok(release.subarray(-128).every(x=>x===0),'omitted patterns must be genuinely silent even in solo');
+    const phase=t.arpPhase;bar(feature);const frame=t.frames;t.sample();
+    assert.equal(t.arpIndex,Math.floor(frame*50/rate+1e-10)%3,'re-entry uses the running pitch clock');
+    assert.ok(Math.abs(t.arpPhase-(phase+t.arpFrequency/rate)%1)<1e-12,'re-entry must preserve oscillator phase');
+    assert.ok(t.arpLevel>0&&t.arpLevel<.01,'new accents fade in');
+    samples(t,2048);const level=t.arpLevel;
+    t.set(false,.45);samples(t,2048);assert.equal(t.arpLevel,level,'pause must freeze the arrangement envelope');
+    t.reset();assert.equal(t.arpLevel,0);assert.equal(t.arpTarget,0);
   }
 });
 
@@ -142,7 +173,7 @@ test('Track changes fade the outgoing sound, clear old notes and echo, and keep 
 
 test('Live debug rate changes preserve playback and oscillator position; overrides survive song changes',()=>{
   for(const rate of [44100,48000]){
-    const s=new Synth(rate);s.music.set(true,.45);s.render(new Float32Array(1024));const t=s.music.current;
+    const s=new Synth(rate);s.debug({arpHz:75});s.music.set(true,.45);s.render(new Float32Array(1024));const t=s.music.current;
     const before={frames:t.frames,row:t.row,phase:t.arpPhase,index:t.arpIndex,echo:t.echoIndex};
     s.debug({arpHz:50});assert.deepEqual({frames:t.frames,row:t.row,phase:t.arpPhase,index:t.arpIndex,echo:t.echoIndex},before);
     const changes=[];let last=t.arpIndex;
@@ -154,7 +185,7 @@ test('Live debug rate changes preserve playback and oscillator position; overrid
     s.music.configure({track:SONGS[1].id});assert.equal(s.music.current.arpHz,1);
     s.debug({arpHz:999});assert.equal(s.music.current.arpHz,300);
     s.debug({arpHz:NaN});assert.equal(s.music.current.arpHz,300);
-    s.debug({arpHz:null});assert.equal(s.music.current.arpHz,null);assert.equal(s.music.current.tone.arpHz,225);
+    s.debug({arpHz:null});assert.equal(s.music.current.arpHz,null);assert.equal(s.music.current.tone.arpHz,50);
   }
 });
 

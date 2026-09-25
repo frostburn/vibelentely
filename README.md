@@ -30,7 +30,11 @@ Kolme alkuperäistä suomichip-kappaletta, jokainen 64 tahtia ja 4/4. Kaikilla o
 | Kuparisydän | D-molli | 148 BPM | 1:44 | Katkonainen riffi, synkopoitu basso ja komppi, leveä F-duurinen vastateema |
 | Revontulivirta | A-doorinen | 116 BPM | 2:12 | Pehmeä pulssi–kolmio-melodia, harva puolitempoinen komppi, harmoniseen molliin tummuva väliosa |
 
-Sointuarpeggio on nopeutettu [trackerien `0xy`-efektin](https://milkytracker.org/docs/manual/MilkyTracker.html#fx0xy) tapainen yhden pulssikanavan sävelkorkeuskierto. Sävel vaihtuu **150 kertaa sekunnissa** (Kuparisydämessä 225), joten kokonainen kolmen sävelen sointu kiertää 50 / 75 kertaa sekunnissa. Efektin näytekello ja oskillaattorin vaihe jatkuvat kompin iskujen yli. Sointikanava jää soimaan iskujen väliin, jolloin nopea kierto muodostaa yhtenäisemmän surisevan sointisävyn. Nämä nopeudet ovat tämän pelin saundivalinta. Kappaleiden omat bassokuviot, rumpurytmit ja sointupulssin pituudet erottavat sovituksia. Melodiakaiku ja viiveellä alkava vibrato täydentävät tracker-soinnin.
+Sointuarpeggio on [trackerien `0xy`-efektin](https://milkytracker.org/docs/manual/MilkyTracker.html#fx0xy) tapainen yhden pulssikanavan sävelkorkeuskierto. Sävel vaihtuu kaikissa biiseissä **50 kertaa sekunnissa**: yksi sävel kestää 20 ms ja kolmen sävelen sointu kiertää noin 16,7 kertaa sekunnissa. Efektin näytekello ja oskillaattorin vaihe jatkuvat kompin iskujen ja arpin taukojen yli.
+
+Arpilla on kussakin biisissä oma sovitus: hiljaisempia säestysiskuja, melodian loppuun vastaavia pyrähdyksiä ja kokonaisia taukotahteja. Väliosassa melodia antaa sille neljän tahdin etualajakson; myöhemmin tulee lyhyt kahden tahdin paluu. Etualalla arppi soi voimakkaammin ja oktaavia ylempää. Basalttiyössä kaaret ovat pitkiä, Kuparisydämessä synkopoituja ja katkonaisia, Revontulivirrassa väljempiä. Sisääntulot ja tauot häivytetään lyhyesti. Melodiakaiku ja viiveellä alkava vibrato täydentävät tracker-soinnin.
+
+`dist/music.js`-tiedoston `arps` sisältää arppikuviot: `x` aloittaa painotuksen, `-` pitää ääntä ja `.` vapauttaa sen. `gain` määrää kuvion tason ja `octave` valinnaisen siirron puolisävelaskelina. `order`-rivin valinnainen neljäs alkio valitsee kuvion; ilman sitä arppi pitää tahdin taukoa.
 
 **Päävalikon Biisi-valitsin** vaihtaa kappaletta heti lyhyellä ristihäivytyksellä ja aloittaa uuden kappaleen alusta. Oletuksena soitin käy listaa järjestyksessä: kolme kokonaista toistoa per kappale, sitten seuraava; viimeisestä palataan ensimmäiseen. Poista valinta **Vaihda biisiä 3 kierroksen jälkeen**, jos haluat kuunnella valittua biisiä jatkuvasti. Toistotavan vaihtaminen ei aloita kappaletta alusta. Biisivalinta ja toistotapa muistetaan selaimessa. Pelin äänisäätimien vieressä näkyy kulloinenkin kappale myös automaattisen vaihdon jälkeen.
 
@@ -40,7 +44,7 @@ Musiikilla on oma muistettava tasosäädin ja päälle/pois-painike. Tasosäädi
 
 CI:n **vibelentely-debug**-paketissa on itsenäinen `vibelentely-debug.html`. Avaa se ja paina **Kuuntele**. Sivun yläreunan paneelissa voi valita biisin, soolottaa arppikanavan ja säätää nopeutta lennossa **1–300 sävelenvaihtoon sekunnissa**. Liukusäätimen lisäksi on numerokenttä ja vertailupresetit 25, 50, 75, 100, 150 ja 225. Lukema näyttää myös yhden sävelen keston ja kokonaisen kolmisoinnun kiertotaajuuden. **Biisin oletus** palauttaa kappalekohtaisen nopeuden.
 
-Soolotus hiljentää melodian, basson, kaiun, rummut ja pelitehosteet. **Ohita tuhnuketju** ohittaa sekä kvantisoinnin että suodatuksen vertailukuuntelua varten. Lopullinen master-gain toimii myös ohituksessa. Nopeuden vaihto säilyttää toistokohdan ja efektin vaiheen; soolotus ja suodatuksen vaihto häivytetään lyhyesti.
+Soolotus hiljentää melodian, basson, kaiun, rummut ja pelitehosteet. Arpin sovituksen tauot kuuluvat myös soolotettuna. **Ohita tuhnuketju** ohittaa sekä kvantisoinnin että suodatuksen vertailukuuntelua varten. Lopullinen master-gain toimii myös ohituksessa. Nopeuden vaihto säilyttää toistokohdan ja efektin vaiheen; soolotus ja suodatuksen vaihto häivytetään lyhyesti.
 
 Ensimmäisellä avauksella debug-build soolottaa arpin nopeudella 50 sävelenvaihtoa/s ja pitää automaattisen biisivaihdon pois päältä. Debug-kuuntelun asetukset tallennetaan erikseen. Tavallinen export sisältää normaalin pelin käyttöliittymän ja käyttää omia ääniasetuksiaan.
 

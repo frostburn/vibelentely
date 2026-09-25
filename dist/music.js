@@ -13,11 +13,11 @@
       i2:'A4 - - - . . E4 - C5 - B4 A4 . . E4 .',
       i3:'. . B4 - D#5 - F#5 - A5 G5 F#5 E5 D#5 C5 B4 .',
       a0:'E5 - B4 . G4 B4 E5 - F#5 E5 D5 B4 G4 - B4 .',
-      a1:'E5 - G5 E5 D5 - C5 . B4 C5 E5 - G4 - C5 .',
+      a1:'E5 - G5 E5 D5 - C5 . B4 C5 E5 - . . . .',
       a2:'A4 - C5 E5 A5 - G5 E5 D5 C5 B4 A4 C5 - E5 .',
       a3:'F#5 - D#5 B4 A4 - F#4 . B4 D#5 F#5 - E5 D#5 B4 .',
       a4:'G5 - F#5 E5 B4 - E5 . D5 B4 G4 - A4 B4 D5 .',
-      a5:'F#5 - E5 D5 A4 - D5 . C5 A4 F#4 A4 D5 - E5 .',
+      a5:'F#5 - E5 D5 A4 - D5 . C5 A4 F#4 A4 . . . .',
       a6:'E5 - C5 A4 B4 C5 E5 - G5 F#5 E5 C5 B4 A4 G4 .',
       a7:'F#4 B4 D#5 F#5 A5 - F#5 . E5 D#5 C5 A4 F#4 - B4 .',
       v0:'E5 - B4 E5 G5 - F#5 E5 D5 B4 G4 B4 E5 - - .',
@@ -38,24 +38,33 @@
       c3:'F#4 - - - B4 - D#5 - F#5 - E5 - D#5 - B4 .',
       end:'E5 - - - B4 - G4 - E4 - - - . . . .',
     },
-    // Arrangement: 4-bar pickup, two A phrases, B, a sparse middle, A reprise,
-    // B reprise, and a four-bar turnaround. The loop resolves back to E minor.
+    // Arp patterns have one token per sixteenth: x accents, - holds, . releases.
+    // The optional fourth order column picks a pattern; omitting it rests the arp.
+    arps:{
+      hint:{pattern:'x - . . . . . . . . . . . . . .',gain:.4},
+      answer:{pattern:'. . . . . . . . . . . . x - - .',gain:.75},
+      bed:{pattern:'x - . . . . . . x - . . . . . .',gain:.42},
+      lift:{pattern:'. . . . . . . . x - x - x - . .',gain:.85},
+      solo:{pattern:'x - - - - - - - x - - - - - . .',gain:1.65,octave:12},
+      soloEnd:{pattern:'x - - - . . . . x - x - x - . .',gain:1.65,octave:12},
+    },
+    // The middle hands four bars to the arp; a two-bar reply returns near the end.
     order:[
-      ['Em','i0','intro'],['C','i1','intro'],['Am','i2','build'],['B7','i3','build'],
-      ['Em','a0','main'],['C','a1','main'],['Am','a2','main'],['B7','a3','main'],
-      ['Em','a4','main'],['D','a5','main'],['Am','a6','main'],['B7','a7','fill'],
-      ['Em','v0','main'],['C','v1','main'],['Am','v2','main'],['B7','v3','main'],
-      ['Em','a4','main'],['D','a5','main'],['Am','a6','main'],['B7','a7','fill'],
-      ['G','b0','chorus'],['D','b1','chorus'],['C','b2','chorus'],['Em','b3','chorus'],
-      ['Am','b4','chorus'],['F','b5','chorus'],['Fs','b6','chorus'],['B7','b7','fill'],
-      ['Em','c0','break'],['C','c1','break'],['Am','c2','break'],['B7','c3','break'],
-      ['Em','rest','break'],['C','i1','break'],['Am','i2','build'],['B7','i3','fill'],
-      ['Em','a0','chorus'],['C','a1','chorus'],['Am','a2','chorus'],['B7','a3','chorus'],
-      ['Em','a4','chorus'],['D','a5','chorus'],['Am','a6','chorus'],['B7','a7','fill'],
-      ['Em','v0','chorus'],['C','v1','chorus'],['Am','v2','chorus'],['B7','v3','chorus'],
-      ['Em','a4','chorus'],['D','a5','chorus'],['Am','a6','chorus'],['B7','a7','fill'],
-      ['G','b0','main'],['D','b1','main'],['C','b2','main'],['Em','b3','main'],
-      ['Am','b4','main'],['F','b5','main'],['Fs','b6','main'],['B7','b7','fill'],
+      ['Em','i0','intro','hint'],['C','i1','intro'],['Am','i2','build'],['B7','i3','build','lift'],
+      ['Em','a0','main'],['C','a1','main','answer'],['Am','a2','main'],['B7','a3','main'],
+      ['Em','a4','main'],['D','a5','main','answer'],['Am','a6','main'],['B7','a7','fill','lift'],
+      ['Em','v0','main','bed'],['C','v1','main'],['Am','v2','main','bed'],['B7','v3','main'],
+      ['Em','a4','main'],['D','a5','main','answer'],['Am','a6','main'],['B7','a7','fill','lift'],
+      ['G','b0','chorus','bed'],['D','b1','chorus'],['C','b2','chorus','bed'],['Em','b3','chorus'],
+      ['Am','b4','chorus','bed'],['F','b5','chorus'],['Fs','b6','chorus'],['B7','b7','fill','lift'],
+      ['Em','c0','break'],['C','c1','break'],['Am','rest','break','solo'],['B7','rest','break','solo'],
+      ['Em','rest','break','solo'],['C','rest','break','soloEnd'],['Am','i2','build'],['B7','i3','fill','lift'],
+      ['Em','a0','chorus','bed'],['C','a1','chorus','answer'],['Am','a2','chorus'],['B7','a3','chorus'],
+      ['Em','a4','chorus','bed'],['D','a5','chorus','answer'],['Am','a6','chorus'],['B7','a7','fill','lift'],
+      ['Em','v0','chorus','bed'],['C','v1','chorus'],['Am','v2','chorus','bed'],['B7','v3','chorus'],
+      ['Em','a4','chorus'],['D','a5','chorus','answer'],['Am','rest','chorus','solo'],['B7','rest','fill','soloEnd'],
+      ['G','b0','main'],['D','b1','main'],['C','b2','main'],['Em','b3','main','bed'],
+      ['Am','b4','main'],['F','b5','main'],['Fs','b6','main'],['B7','b7','fill','lift'],
       ['Em','end','break'],['C','i1','break'],['Am','i2','intro'],['B7','c3','build'],
     ],
     bass:{drive:[0,'-',12,'.',0,'-',7,'.',0,'-',12,'.',7,'.',12,'.'],
@@ -64,21 +73,22 @@
   const COPPER={
     id:'kuparisydan',title:'Kuparisydän',bpm:148,
     // A clipped D-minor motor riff answers a broad F-major refrain.
-    tone:{duty:.18,triangle:.08,arpHz:225,arpGain:.06},
+    tone:{duty:.18,triangle:.08,arpGain:.06},
     drums:{kick:[0,3,8,10],snare:[4,12],hat:[0,2,4,6,8,10,12,14]},
     chords:{Dm:[38,50,53,57],Bb:[34,50,53,58],Gm:[43,55,58,62],A7:[33,49,52,55],
       F:[41,53,57,60],C:[36,52,55,60],Em7b5:[40,55,58,62]},
     phrases:{
+      rest:'. . . . . . . . . . . . . . . .',
       i0:'. . D4 - . . A4 - . . D5 - C5 A4 F4 .',
       i1:'. . F4 - . . A#4 - . . D5 - F5 D5 A#4 .',
       i2:'G4 - . D5 G5 - F5 D5 A#4 - . D5 F5 D5 A#4 .',
       i3:'A4 - E5 - G5 F5 E5 D5 C#5 - E5 - A4 - - .',
       a0:'D5 - . A4 D5 - F5 - E5 D5 . C5 A4 - C5 .',
-      a1:'D5 - F5 - A#5 - A5 F5 D5 - C5 D5 F5 - - .',
+      a1:'D5 - F5 - A#5 - A5 F5 D5 - C5 D5 . . . .',
       a2:'G5 - . D5 G5 A5 A#5 - A5 G5 F5 D5 A#4 - D5 .',
       a3:'E5 - C#5 - A4 - . E5 G5 F5 E5 D5 C#5 - A4 .',
       a4:'D5 - . F5 A5 - G5 F5 E5 D5 . A4 F4 A4 D5 .',
-      a5:'E5 - . G5 C6 - G5 E5 D5 C5 . G4 E4 G4 C5 .',
+      a5:'E5 - . G5 C6 - G5 E5 D5 C5 . G4 . . . .',
       a6:'D5 F5 G5 - A#5 - A5 G5 F5 D5 A#4 - D5 - G5 .',
       a7:'E5 G5 A5 - C#6 - A5 G5 E5 D5 C#5 - B4 C#5 E5 .',
       v0:'D5 A4 D5 . F5 - A5 - G5 F5 E5 D5 C5 - A4 .',
@@ -99,22 +109,30 @@
       c3:'A4 - - - E5 - - - G5 - F5 - E5 C#5 A4 .',
       end:'D5 - - - F5 - A5 - D5 - - - . . . .',
     },
+    arps:{
+      hint:{pattern:'x . . . . . . . . . . . . . . .',gain:.4},
+      stab:{pattern:'. . x - . . . . . . x - . . . .',gain:.5},
+      answer:{pattern:'. . . . . . . . . . . . x - x .',gain:.8},
+      lift:{pattern:'. . . . . . . . x . x . x - x .',gain:.9},
+      solo:{pattern:'x - . x - . x - x - . x - . x .',gain:1.7,octave:12},
+      soloEnd:{pattern:'x - . x - . x - x . x . x - . .',gain:1.7,octave:12},
+    },
     order:[
-      ['Dm','i0','intro'],['Bb','i1','intro'],['Gm','i2','build'],['A7','i3','fill'],
-      ['Dm','a0','main'],['Bb','a1','main'],['Gm','a2','main'],['A7','a3','main'],
-      ['Dm','a4','main'],['C','a5','main'],['Gm','a6','main'],['A7','a7','fill'],
-      ['Dm','v0','main'],['Bb','v1','main'],['Gm','v2','main'],['A7','v3','main'],
-      ['Dm','a4','main'],['C','a5','main'],['Gm','a6','main'],['A7','a7','fill'],
-      ['F','b0','chorus'],['C','b1','chorus'],['Bb','b2','chorus'],['Dm','b3','chorus'],
-      ['Gm','b4','chorus'],['Em7b5','b5','chorus'],['A7','b6','chorus'],['A7','b7','fill'],
-      ['Dm','c0','break'],['Bb','c1','break'],['Gm','c2','break'],['A7','c3','break'],
-      ['Dm','i0','intro'],['Bb','i1','build'],['Gm','i2','build'],['A7','i3','fill'],
-      ['Dm','a0','chorus'],['Bb','a1','chorus'],['Gm','a2','chorus'],['A7','a3','chorus'],
-      ['Dm','a4','chorus'],['C','a5','chorus'],['Gm','a6','chorus'],['A7','a7','fill'],
-      ['Dm','v0','chorus'],['Bb','v1','chorus'],['Gm','v2','chorus'],['A7','v3','chorus'],
-      ['Dm','a4','chorus'],['C','a5','chorus'],['Gm','a6','chorus'],['A7','a7','fill'],
-      ['F','b0','chorus'],['C','b1','chorus'],['Bb','b2','chorus'],['Dm','b3','chorus'],
-      ['Gm','b4','main'],['Em7b5','b5','main'],['A7','b6','main'],['A7','b7','fill'],
+      ['Dm','i0','intro','hint'],['Bb','i1','intro'],['Gm','i2','build'],['A7','i3','fill','lift'],
+      ['Dm','a0','main'],['Bb','a1','main','answer'],['Gm','a2','main'],['A7','a3','main','stab'],
+      ['Dm','a4','main'],['C','a5','main','answer'],['Gm','a6','main'],['A7','a7','fill','lift'],
+      ['Dm','v0','main'],['Bb','v1','main','stab'],['Gm','v2','main'],['A7','v3','main','stab'],
+      ['Dm','a4','main'],['C','a5','main','answer'],['Gm','a6','main'],['A7','a7','fill','lift'],
+      ['F','b0','chorus','stab'],['C','b1','chorus'],['Bb','b2','chorus','stab'],['Dm','b3','chorus'],
+      ['Gm','b4','chorus'],['Em7b5','b5','chorus','stab'],['A7','b6','chorus'],['A7','b7','fill','lift'],
+      ['Dm','c0','break'],['Bb','c1','break'],['Gm','rest','break','solo'],['A7','rest','break','solo'],
+      ['Dm','rest','intro','solo'],['Bb','rest','build','soloEnd'],['Gm','i2','build'],['A7','i3','fill','lift'],
+      ['Dm','a0','chorus','stab'],['Bb','a1','chorus','answer'],['Gm','a2','chorus'],['A7','a3','chorus'],
+      ['Dm','a4','chorus','stab'],['C','a5','chorus','answer'],['Gm','a6','chorus'],['A7','a7','fill','lift'],
+      ['Dm','v0','chorus','stab'],['Bb','v1','chorus'],['Gm','v2','chorus','stab'],['A7','v3','chorus'],
+      ['Dm','a4','chorus'],['C','a5','chorus','answer'],['Gm','a6','chorus'],['A7','a7','fill','lift'],
+      ['F','b0','chorus'],['C','b1','chorus'],['Bb','rest','chorus','solo'],['Dm','rest','chorus','soloEnd'],
+      ['Gm','b4','main'],['Em7b5','b5','main','stab'],['A7','b6','main'],['A7','b7','fill','lift'],
       ['Dm','end','break'],['Bb','c1','break'],['Gm','c2','intro'],['A7','c3','build'],
     ],
     bass:{drive:[0,'.',0,12,0,'-',7,'.',0,'.',12,7,0,12,7,'.'],
@@ -124,21 +142,22 @@
     id:'revontulivirta',title:'Revontulivirta',bpm:116,
     // A Dorian: the raised sixth lights up a spacious, half-time melody.
     // The borrowed F and E7 in the middle briefly turn it towards harmonic minor.
-    tone:{duty:.32,triangle:.55,arpHz:150,arpGain:.05,arpRows:4},
+    tone:{duty:.32,triangle:.55,arpGain:.05},
     drums:{kick:[0,10],snare:[8],hat:[0,3,6,8,11,14]},
     chords:{Am:[45,57,60,64],D:[38,54,57,62],G:[43,55,59,62],C:[36,55,60,64],
       Em:[40,55,59,64],F:[41,53,57,60],E7:[40,56,59,62]},
     phrases:{
+      rest:'. . . . . . . . . . . . . . . .',
       i0:'. . . . A4 - - - E5 - - - C5 - - .',
       i1:'. . . . F#4 - - - A4 - - - D5 - - .',
       i2:'B4 - - - D5 - - - G5 - F#5 - E5 - D5 .',
       i3:'E5 - - - C5 - - - G4 - - - B4 C5 E5 .',
       a0:'A4 - - E5 - - C5 - B4 - A4 - E4 - G4 .',
-      a1:'F#4 - - A4 - - D5 - E5 - F#5 - E5 D5 A4 .',
+      a1:'F#4 - - A4 - - D5 - E5 - F#5 - . . . .',
       a2:'B4 - - D5 - - G5 - F#5 - E5 - D5 - B4 .',
       a3:'E5 - - G5 - - E5 - D5 - C5 - G4 - C5 .',
       a4:'C5 - - E5 - - A5 - G5 - E5 - C5 B4 A4 .',
-      a5:'D5 - - F#5 - - A5 - G5 F#5 E5 - D5 - A4 .',
+      a5:'D5 - - F#5 - - A5 - G5 F#5 E5 - . . . .',
       a6:'B4 - - E5 - - G5 - F#5 - E5 - D5 B4 G4 .',
       a7:'A4 - - - C5 - E5 - G5 - F#5 E5 C5 - B4 .',
       b0:'G5 - - - E5 - G5 - C6 - B5 G5 E5 - - .',
@@ -159,43 +178,53 @@
       v3:'G5 - E5 - - - C5 G4 C5 - D5 E5 G5 - E5 .',
       end:'A5 - - - E5 - C5 - A4 - - - . . . .',
     },
+    arps:{
+      hint:{pattern:'x - - . . . . . . . . . . . . .',gain:.35},
+      answer:{pattern:'. . . . . . . . . . . . x - - .',gain:.7},
+      glow:{pattern:'x - - - . . . . x - - - . . . .',gain:.38},
+      lift:{pattern:'. . . . . . . . x - - - x - - .',gain:.75},
+      solo:{pattern:'x - - - - - - - x - - - - - . .',gain:1.8,octave:12},
+      soloEnd:{pattern:'x - - - - - . . x - - - . . . .',gain:1.8,octave:12},
+    },
     order:[
-      ['Am','i0','intro'],['D','i1','intro'],['G','i2','intro'],['C','i3','intro'],
-      ['Am','i0','break'],['D','i1','break'],['G','i2','build'],['Em','b7','build'],
-      ['Am','a0','main'],['D','a1','main'],['G','a2','main'],['C','a3','main'],
-      ['Am','a4','main'],['D','a5','main'],['Em','a6','main'],['Am','a7','fill'],
-      ['Am','v0','main'],['D','v1','main'],['G','v2','main'],['C','v3','main'],
-      ['Am','a4','main'],['D','a5','main'],['Em','a6','main'],['Am','a7','fill'],
-      ['C','b0','chorus'],['D','b1','chorus'],['G','b2','chorus'],['Em','b3','chorus'],
-      ['Am','b4','chorus'],['D','b5','chorus'],['C','b6','chorus'],['Em','b7','fill'],
-      ['Am','c0','break'],['F','c1','break'],['C','c2','break'],['E7','c3','break'],
-      ['Am','c0','break'],['F','c1','break'],['D','i1','build'],['E7','c3','fill'],
-      ['Am','v0','chorus'],['D','v1','chorus'],['G','v2','chorus'],['C','v3','chorus'],
-      ['Am','a4','chorus'],['D','a5','chorus'],['Em','a6','chorus'],['Am','a7','fill'],
-      ['C','b0','chorus'],['D','b1','chorus'],['G','b2','chorus'],['Em','b3','chorus'],
-      ['Am','b4','chorus'],['D','b5','chorus'],['C','b6','chorus'],['Em','b7','fill'],
-      ['Am','a0','main'],['D','a1','main'],['G','a2','main'],['C','a3','main'],
+      ['Am','i0','intro','hint'],['D','i1','intro'],['G','i2','intro'],['C','i3','intro'],
+      ['Am','i0','break'],['D','i1','break'],['G','i2','build'],['Em','b7','build','lift'],
+      ['Am','a0','main'],['D','a1','main','answer'],['G','a2','main'],['C','a3','main'],
+      ['Am','a4','main'],['D','a5','main','answer'],['Em','a6','main'],['Am','a7','fill','lift'],
+      ['Am','v0','main'],['D','v1','main'],['G','v2','main','glow'],['C','v3','main'],
+      ['Am','a4','main'],['D','a5','main','answer'],['Em','a6','main'],['Am','a7','fill','lift'],
+      ['C','b0','chorus','glow'],['D','b1','chorus'],['G','b2','chorus'],['Em','b3','chorus','glow'],
+      ['Am','b4','chorus'],['D','b5','chorus','glow'],['C','b6','chorus'],['Em','b7','fill','lift'],
+      ['Am','c0','break'],['F','c1','break'],['C','rest','break','solo'],['E7','rest','break','solo'],
+      ['Am','rest','break','solo'],['F','rest','break','soloEnd'],['D','i1','build'],['E7','c3','fill','lift'],
+      ['Am','v0','chorus','glow'],['D','v1','chorus'],['G','v2','chorus','glow'],['C','v3','chorus'],
+      ['Am','a4','chorus'],['D','a5','chorus','answer'],['Em','a6','chorus'],['Am','a7','fill','lift'],
+      ['C','b0','chorus'],['D','b1','chorus'],['G','rest','chorus','solo'],['Em','rest','chorus','soloEnd'],
+      ['Am','b4','chorus','glow'],['D','b5','chorus'],['C','b6','chorus'],['Em','b7','fill','lift'],
+      ['Am','a0','main'],['D','a1','main','answer'],['G','a2','main'],['C','a3','main'],
       ['Am','end','break'],['D','i1','break'],['G','i2','intro'],['Em','b7','intro'],
     ],
     bass:{drive:[0,'-','-','.',7,'-','.',12,0,'-','-','.',12,'.',7,'.'],
       sparse:[0,'-','-','-','-','-','.','.',7,'-','-','-','.','.',12,'.']},
   };
-  const SONGS=[SONG,COPPER,AURORA],REPEATS=3,ARP_HZ=150;
+  const SONGS=[SONG,COPPER,AURORA],REPEATS=3,ARP_HZ=50;
   class Tracker {
     constructor(rate,song=SONGS[0]){
       this.rate=rate;this.song=song;this.rowLength=rate*60/(song.bpm*4);this.smooth=1-Math.exp(-1/(rate*.02));
-      this.tone={duty:.26,triangle:0,arpHz:ARP_HZ,arpGain:.065,arpRows:2,...song.tone};
+      this.tone={duty:.26,triangle:0,arpHz:ARP_HZ,arpGain:.065,...song.tone};
       this.arpHz=null;this.arpSolo=false;
       this.drums=song.drums||{kick:[0,6,8],snare:[4,12],hat:[0,2,4,6,8,10,12,14]};
       this.echo=new Float32Array(Math.round(this.rowLength*3));
       this.notes=Object.fromEntries(Object.entries(song.phrases).map(([name,phrase])=>[name,phrase.split(' ').map(Tracker.note)]));
-      this.progression=song.order.map(([chord,phrase,style])=>({chord:song.chords[chord],notes:this.notes[phrase],style}));
+      this.arps=Object.fromEntries(Object.entries(song.arps).map(([name,part])=>[name,{...part,rows:part.pattern.split(' ')}]));
+      this.progression=song.order.map(([chord,phrase,style,arp])=>({chord:song.chords[chord],notes:this.notes[phrase],style,arp:this.arps[arp]}));
       this.frequencies=Array.from({length:128},(_,note)=>440*Math.pow(2,(note-69)/12));this.reset();
     }
     reset(){
       this.remaining=0;this.row=-1;this.frames=0;this.loops=0;this.bar=null;
       this.playing=false;this.level=0;this.gain=0;this.seed=73129;
       this.lead=null;this.bass=null;this.arpPhase=0;this.arpAge=0;this.arpFrequency=0;this.arpIndex=-1;
+      this.arpTarget=0;this.arpLevel=0;
       this.arpOffset=0;this.arpBaseFrame=0;this.soloMix=Number(this.arpSolo);
       this.kickAge=1;this.kickPhase=0;this.snareAge=1;this.snarePhase=0;this.hatAge=1;this.hatLength=.035;this.lastNoise=0;
       this.echo.fill(0);this.echoIndex=0;
@@ -230,7 +259,9 @@
         let rows=1;while(step+rows<16&&pattern[step+rows]==='-')rows++;
         this.bass=this.voice(bar.chord[0]+bass,rows,'bass');
       }
-      if(step%this.tone.arpRows===0)this.arpAge=0;
+      const arp=bar.arp?.rows[step]??'.';
+      if(arp==='x'){this.arpAge=0;this.arpTarget=bar.arp.gain;}
+      else if(arp==='.')this.arpTarget=0;
       if(step===0)this.arpIndex=-1; // Refresh the chord without restarting the pitch-effect clock.
       if(bar.style!=='intro'&&bar.style!=='break'){
         if(this.drums.kick.includes(step)||(bar.style==='fill'&&step===14)){this.kickAge=0;this.kickPhase=0;}
@@ -252,9 +283,13 @@
       // Fast 0xy-style pitch cycling on one continuous oscillator. The sample clock
       // keeps the effect running evenly across rhythmic accents and chord changes.
       const index=Math.floor(this.arpOffset+(this.frames-1-this.arpBaseFrame)*(this.arpHz??this.tone.arpHz)/this.rate+1e-10)%3;
-      if(index!==this.arpIndex){this.arpIndex=index;this.arpFrequency=this.frequencies[this.bar.chord[index+1]+(this.bar.style==='chorus'?12:0)];}
+      if(index!==this.arpIndex){this.arpIndex=index;this.arpFrequency=this.frequencies[this.bar.chord[index+1]+(this.bar.arp?.octave??0)];}
       this.arpPhase=(this.arpPhase+this.arpFrequency*dt)%1;
-      return (this.arpPhase<.125?1:-1/7)*(.65+.35*Math.exp(-this.arpAge*9))*this.tone.arpGain;
+      if(this.playing){
+        this.arpLevel+=(this.arpTarget-this.arpLevel)*this.smooth;
+        if(Math.abs(this.arpTarget-this.arpLevel)<1e-7)this.arpLevel=this.arpTarget;
+      }
+      return (this.arpPhase<.125?1:-1/7)*(.65+.35*Math.exp(-this.arpAge*9))*this.tone.arpGain*this.arpLevel;
     }
     sample(){
       this.gain+=((this.playing?this.level:0)-this.gain)*this.smooth;
