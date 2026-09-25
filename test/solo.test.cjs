@@ -17,7 +17,7 @@ function park(player,point){Object.assign(player,{x:point.x,y:point.y,vx:0,vy:0,
 function run(solo,n){for(let i=0;i<n;i++)solo.step({brake:true});}
 
 test('Solo missions wait for input, have safe reachable docks, and retry a pristine map and equipment',()=>{
-  assert.equal(list.length,8);
+  assert.equal(list.length,12);
   for(let index=0;index<list.length;index++){
     const {world,player,combat,solo}=game(index),cells=world.cells.slice();
     const counts=world.count();assert.equal(counts.reduce((sum,n)=>sum+n,0),world.size,'material totals include the entire mission map');
@@ -150,4 +150,77 @@ test('The hard shell starts sealed and real blaster impacts open a flyable route
   assert.ok(pilot.passage(end.x,end.y,station.x,station.y));
   park(player,station);run(solo,50);assert.equal(solo.cargo,1);assert.equal(solo.phase,'playing');
   park(player,solo.base);run(solo,50);assert.equal(solo.phase,'won');assert.equal(solo.rescued,1);
+});
+
+function fillZone(world,zone,material){
+  for(let y=zone.y;y<zone.y+zone.height;y++)for(let x=zone.x;x<zone.x+zone.width;x++)world.set(y*world.width+x,material);
+}
+
+test('A mud dam stops an established lava stream while the reservoir remains molten',()=>{
+  const {world,player,combat,solo}=game(list.findIndex(m=>m.id==='lava-dam'));
+  park(player,{x:150,y:240});solo.phase='playing';
+  // Isolate the terrain and swept projectiles from piloting, as in the gate tests.
+  function advance(n){for(let i=0;i<n;i++){
+    world.step();combat.prepare(player,{},1/60);
+    combat.projectiles=combat.projectiles.filter(p=>combat.projectileStep(p,1/60));
+    solo.elapsed+=1/60;solo.checkObjective(1/60);
+  }}
+  advance(650);assert.ok(solo.readings[1].count>0,'there must be a real stream to stop');
+  assert.equal(solo.readyToReturn,false);
+  for(const [x,y,angle] of [[363,151,0],[365,147,.12]]){
+    park(player,{x,y});player.angle=angle;assert.equal(player.collides(x,y),false);
+    assert.ok(combat.shoot(player,'mud'));park(player,{x:150,y:240});advance(90);
+  }
+  advance(900);
+  assert.ok(solo.readings[0].done);assert.equal(solo.readings[1].count,0);
+  assert.ok(solo.readyToReturn);assert.ok(solo.stable>=5);assert.equal(solo.progress,1,'a clear zone that started empty is still a completed goal');
+  assert.ok(solo.countZone({zone:{x:430,y:93,width:62,height:73},materials:[M.LAVA]})>300,'waiting for the entire reservoir to freeze is not the solution');
+  assert.equal(world.emitting,true);assert.equal(solo.phase,'playing');
+  park(player,solo.base);run(solo,50);assert.equal(solo.phase,'won');
+});
+
+test('A renewed lava leak resets the full five-second confirmation and prevents returning early',()=>{
+  const {world,player,solo}=game(list.findIndex(m=>m.id==='lava-dam'));
+  park(player,{x:150,y:240});
+  fillZone(world,solo.goals[0].zone,M.MUD);fillZone(world,solo.goals[1].zone,M.AIR);
+  solo.checkObjective(4.9);assert.equal(solo.readyToReturn,false);
+  solo.checkObjective(.2);assert.equal(solo.readyToReturn,true);
+  const z=solo.goals[1].zone;world.set(z.y*world.width+z.x,M.LAVA);
+  park(player,solo.base);solo.checkObjective(1);assert.equal(solo.stable,0);assert.equal(solo.readyToReturn,false);assert.notEqual(solo.phase,'won');
+  world.set(z.y*world.width+z.x,M.AIR);solo.checkObjective(1);assert.equal(solo.readyToReturn,false);
+  fillZone(world,solo.goals[0].zone,M.BASALT);solo.checkObjective(10);
+  assert.equal(solo.readyToReturn,false,'rock alone cannot stand in for the mud repair');
+});
+
+test('Archive modules and both clear pickup bays are required together at delivery',()=>{
+  const {world,player,solo}=game(list.findIndex(m=>m.id==='buried-archive'));
+  fillZone(world,solo.goals[0].zone,M.AIR);park(player,solo.stations[0]);run(solo,50);
+  assert.equal(solo.cargo,1);assert.equal(solo.readyToReturn,false,'the other bay still needs excavation');
+  fillZone(world,solo.goals[1].zone,M.AIR);park(player,solo.stations[1]);run(solo,65);
+  assert.equal(solo.cargo,2);assert.equal(solo.readyToReturn,true);
+  fillZone(world,solo.goals[1].zone,M.SAND);park(player,solo.base);solo.checkObjective(1);
+  assert.notEqual(solo.phase,'won');assert.equal(solo.rescued,0);
+  fillZone(world,solo.goals[1].zone,M.AIR);run(solo,110);
+  assert.equal(solo.phase,'won');assert.equal(solo.rescued,2);
+  assert.equal(solo.next(),true);assert.equal(solo.mission.id,'cooling-basin');
+});
+
+test('Cooling needs a cold bed and a water blanket; the two cisterns cannot substitute for each other',()=>{
+  for(const id of ['cooling-basin','split-reservoir']){
+    const {world,player,solo}=game(list.findIndex(m=>m.id===id));park(player,{x:150,y:230});
+    solo.checkObjective(5);assert.equal(solo.readyToReturn,false);
+    if(id==='cooling-basin'){
+      fillZone(world,solo.goals[0].zone,M.AIR);
+      fillZone(world,{x:394,y:331,width:98,height:4},M.BASALT);
+      solo.checkObjective(5);assert.equal(solo.readyToReturn,false,'a cold dry basin is not commissioned');
+      fillZone(world,{x:394,y:300,width:98,height:6},M.WATER);
+    }else{
+      fillZone(world,solo.goals[0].zone,M.WATER);fillZone(world,solo.goals[2].zone,M.MUD);
+      solo.checkObjective(5);assert.equal(solo.readyToReturn,false,'overfilling the left basin does not fill the right');
+      fillZone(world,solo.goals[1].zone,M.WATER);
+    }
+    solo.checkObjective(solo.holdTime);assert.equal(solo.readyToReturn,true);assert.notEqual(solo.phase,'won');
+    park(player,solo.base);solo.checkObjective(1);assert.equal(solo.phase,'won');
+    if(id==='split-reservoir')assert.equal(solo.next(),false);
+  }
 });

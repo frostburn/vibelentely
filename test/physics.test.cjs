@@ -30,6 +30,17 @@ test('Steam rises and clears within 2.5 seconds instead of circulating indefinit
   for(let i=0;i<world.size;i++)if(world.cells[i]===M.LAVA||world.cells[i]===M.BASALT)world.set(i,M.AIR);
   advance(world,150);assert.equal(world.count()[M.STEAM],0);assert.ok(world.count()[M.WATER]<=1);
 });
+test('Drying mud crusts a thin lava film without freezing a full cell or losing lava volume',()=>{
+  for(const fill of [32,256]){
+    const world=new World(32,24),at=12*32+16;
+    for(let y=10;y<15;y++)for(let x=14;x<19;x++)world.set(y*32+x,M.ROCK);
+    world.set(at,M.LAVA,1200);world.lavaFill[at]=fill;world.set(at+1,M.MUD);
+    const mass=world.lavaVolume();world.step();
+    assert.equal(world.cells[at+1],M.SAND,'the wet contact parcel dries out');
+    assert.equal(world.cells[at],fill===32?M.BASALT:M.LAVA);
+    assert.equal(world.lavaVolume(),mass);assert.ok(world.heat[at]<1200);
+  }
+});
 test('A wall stops lateral water movement and no particle crosses the world border',()=>{
   const world=new World(80,60);for(let y=1;y<59;y++)world.cells[y*80+40]=M.ROCK;
   world.brush(20,20,9,M.WATER);const count=world.count()[M.WATER];advance(world,600);

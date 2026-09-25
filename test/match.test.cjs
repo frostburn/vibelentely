@@ -23,12 +23,12 @@ test('Each lineup lasts five wins; only then does the next stage start at 0–0'
   for(let i=0;i<60;i++)match.step();
   assert.equal(world.tick,0);assert.equal(combat.time,0);assert.deepEqual(world.cells,initial);
   assert.equal(match.nextRound(),false);
-  // Continue beyond 1v4 as well: progression has no arbitrary final stage.
+  // Reinforcements stay with the player; later stages add enemies without a cap.
   for(let stage=0;stage<7;stage++){
     for(let wins=0;wins<5;wins++){
       assert.equal(match.stage,stage);
-      assert.equal(combat.living(0).length,stage===0?2:1);
-      assert.equal(combat.living(1).length,Math.max(1,stage));
+      assert.equal(combat.living(0).length,stage===0?2:3);
+      assert.equal(combat.living(1).length,stage+1);
       endRound(match,'won');assert.deepEqual(match.score,[wins+1,0]);
       const tick=world.tick;
       for(let i=0;i<10;i++)match.step({fire:true});
@@ -54,7 +54,7 @@ test('Losses keep the current lineup and five enemy wins end the run',()=>{
   endRound(match,'won');match.nextRound();endRound(match,'won');match.nextRound();
   for(let n=0;n<5;n++){
     assert.equal(match.stage,1);
-    assert.equal(combat.living(0).length,1);assert.equal(combat.living(1).length,1);
+    assert.equal(combat.living(0).length,3);assert.equal(combat.living(1).length,2);
     endRound(match,'lost');assert.deepEqual(match.score,[2,n+1]);
     assert.equal(match.nextRound(),n<4);
   }
@@ -74,7 +74,7 @@ test('A draw at 4–4 neither advances the stage nor scores; a subsequent win re
   assert.deepEqual(match.lineup(),{allies:1,enemies:1});assert.equal(match.round,10);
   endRound(match,'won');assert.deepEqual(match.score,[5,4]);assert.equal(match.phase,'stage-over');
   match.nextRound();assert.deepEqual(match.score,[0,0]);assert.equal(match.stage,1);
-  assert.deepEqual(match.lineup(),{allies:0,enemies:1});assert.equal(match.round,1);
+  assert.deepEqual(match.lineup(),{allies:2,enemies:2});assert.equal(match.round,1);
 });
 
 test('An ally continues after the human dies and can still win the round',()=>{

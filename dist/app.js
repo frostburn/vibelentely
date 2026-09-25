@@ -375,7 +375,7 @@
     renderRoster();$('score').textContent=combat.score.join(' : ');
     if(solo){soloReadout();return;}
     const watching=drone.dead&&!combat.result&&combat.living(0).length>0;
-    $('combat-hint').textContent=combat.result?'Erä päättyi. Jatka kun olet valmis.':watching?'Sinut pudotettiin. Siipi taistelee vielä!':!combat.started?'Erä alkaa ensimmäisestä ohjauksesta.':match?'Tuhoa koko vihollisjoukkue.':combat.enabled?'Oranssi lennokki on vastustajasi.':'Vapaa harjoittelu · tekoäly pois päältä.';
+    $('combat-hint').textContent=combat.result?'Erä päättyi. Jatka kun olet valmis.':watching?'Sinut pudotettiin. Oma joukkue taistelee vielä!':!combat.started?'Erä alkaa ensimmäisestä ohjauksesta.':match?'Tuhoa koko vihollisjoukkue.':combat.enabled?'Oranssi lennokki on vastustajasi.':'Vapaa harjoittelu · tekoäly pois päältä.';
     $('round-result').hidden=mode!=='fly'||!combat.result;
     $('round-title').textContent=match?.winner?(match.winner==='won'?'Taso voitettu!':'Ottelu hävitty'):combat.result==='won'?'Erävoitto!':combat.result==='draw'?'Tasapeli':combat.enabled?'Erä hävitty':'Lennokki hajosi';
     const action=match?(match.phase==='finished'?'Uusi ottelu':match.phase==='stage-over'?'Seuraava taso':combat.result?'Seuraava erä':'Luovuta erä'):'Uusi erä';
@@ -383,18 +383,19 @@
     $('next-round').textContent=action+' · R';
     if(match){
       $('round-number').textContent='Vaikeus '+(match.stage+1)+' · erä '+match.round;
-      $('lineup-label').textContent=(combat.actors.some(a=>a.team===0&&a!==drone)?'Sinä + Siipi':'Sinä')+' vs '+combat.actors.filter(a=>a.team===1).length;
+      const current=match.lineup();
+      $('lineup-label').textContent='Sinä + '+current.allies+' siipi'+(current.allies===1?'':'ä')+' vs '+current.enemies;
       for(const [i,id] of ['our-wins','their-wins'].entries()){
         $(id).textContent=Array.from({length:CaveMatch.WINS},(_,n)=>n<match.score[i]?'●':'○').join(' ');
         $(id).setAttribute('aria-label',(i?'Viholliset':'Oma joukkue')+': '+match.score[i]+' voittoa');
       }
       const firstStage=Math.max(0,match.stage-2);
       for(const [i,el] of Array.from($('difficulty-ladder').children).entries()){
-        const stage=firstStage+i;el.textContent=stage===0?'2v1':'1v'+stage;
+        const stage=firstStage+i,roster=match.lineup(stage);el.textContent=(roster.allies+1)+'v'+roster.enemies;
         if(stage===match.stage)el.setAttribute('aria-current','step');else el.removeAttribute('aria-current');
         el.classList.toggle('completed',stage<match.stage||(stage===match.stage&&match.winner==='won'));
       }
-      const next=match.lineup(match.stage+(match.winner==='won'?1:0)),lineup=next.allies?'sinä + Siipi vastaan 1':'sinä vastaan '+next.enemies;
+      const next=match.lineup(match.stage+(match.winner==='won'?1:0)),lineup=(next.allies+1)+' vastaan '+next.enemies;
       $('round-description').textContent=match.winner?match.score.join(' : ')+' · '+(match.winner==='won'?'Viides voitto! Seuraavalla tasolla '+lineup+'. Pisteet alkavat nollasta.':'Viholliset saivat viisi voittoa. Uusi yritys?'):
         (combat.result==='draw'?'Ei eräpisteitä. ':'')+'Seuraavaksi '+lineup+'.';
       if(match.phase!=='finished')$('round-description').textContent+=' Kenttä: '+match.nextLevel.name+'.';
@@ -405,10 +406,13 @@
     const m=solo.mission,rescue=solo.delivery,won=solo.phase==='won';
     $('mission-number').textContent=(solo.index+1)+' / '+CaveSolo.list.length;
     $('mission-objective').textContent=m.objective;
-    $('mission-count').textContent=rescue?solo.rescued+' / '+solo.total+' perillä':Math.min(100,Math.floor(solo.progress*100))+' % · '+(solo.stable>=1?'Valmis':solo.readings.every(r=>r.done)?'Tasaantuu…':'Työ kesken');
+    const work=solo.workComplete?'Valmis':solo.readings.every(r=>r.done)?'Varmistuu '+Math.min(solo.holdTime,Math.floor(solo.stable))+' / '+solo.holdTime+' s':'Työ kesken';
+    $('mission-count').textContent=rescue?solo.rescued+' / '+solo.total+' perillä'+(solo.goals.length?' · '+work:''):Math.min(100,Math.floor(solo.progress*100))+' % · '+work;
     $('mission-time').textContent=(m.limit?'Aikaa ':'Aika ')+clock(m.limit?solo.remaining:solo.elapsed);
     $('mission-meter').value=solo.progress;
-    $('mission-cargo').textContent=rescue?(m.cargoLabel||'Matkustajia')+' kyydissä '+solo.cargo+' / 2 · kiihtyvyys '+Math.round(100/(1+solo.cargo*.22))+' %':solo.goals.map((g,i)=>g.label+': '+solo.readings[i].count+' / '+(g.clear?'enintään ':'vähintään ')+g.amount).join(' · ');
+    const goals=solo.goals.map((g,i)=>g.label+': '+solo.readings[i].count+' / '+(g.clear?'enintään ':'vähintään ')+g.amount);
+    if(rescue)goals.unshift((m.cargoLabel||'Matkustajia')+' kyydissä '+solo.cargo+' / 2 · kiihtyvyys '+Math.round(100/(1+solo.cargo*.22))+' %');
+    $('mission-cargo').textContent=goals.join(' · ');
     $('mission-advice').textContent=m.hint;
     $('combat-hint').textContent=solo.status;
     $('round-result').hidden=solo.phase!=='won'&&solo.phase!=='lost';
@@ -420,7 +424,7 @@
   }
   function flightReadout(){
     const watching=drone.dead&&!combat.result&&combat.living(0).length>0;
-    const text=watching?'Seurataan Siiven taistelua':drone.blocked?'Lähtöpaikka tukossa · kaiva tilaa labrassa':drone.dead?'Lennokki hajosi':!combat.started?'Valmiina · ↑ tai W käynnistää '+(solo?'tehtävän':'erän'):Math.round(drone.speed)+' px/s · Runko '+Math.ceil(drone.health)+' %'+(drone.wet>.25?' · Vedessä':'');
+    const text=watching?'Seurataan oman joukkueen taistelua':drone.blocked?'Lähtöpaikka tukossa · kaiva tilaa labrassa':drone.dead?'Lennokki hajosi':!combat.started?'Valmiina · ↑ tai W käynnistää '+(solo?'tehtävän':'erän'):Math.round(drone.speed)+' px/s · Runko '+Math.ceil(drone.health)+' %'+(drone.wet>.25?' · Vedessä':'');
     $('pointer-status').textContent=text;$('pointer-status').classList.toggle('damaged',drone.health<40);battleReadout();
   }
   function frame(now){

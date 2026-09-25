@@ -6,7 +6,7 @@
     get nextLevel(){return Levels.at(this.battle);}
     get score(){return this.combat.score;}
     get winner(){return this.phase==='stage-over'?'won':this.phase==='finished'?'lost':null;}
-    lineup(stage=this.stage){return {allies:stage===0?1:0,enemies:Math.max(1,stage)};}
+    lineup(stage=this.stage){return {allies:stage===0?1:2,enemies:stage+1};}
     start(){
       this.combat.score=[0,0];this.history=[];this.stage=0;this.round=0;this.battle=0;this.prepareRound();
     }

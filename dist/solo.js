@@ -125,6 +125,79 @@
         b.pool(369,436,88,144);return {};
       },
     },
+    {
+      id:'lava-dam',name:'Tulivirran tulppa',theme:get('basalt-steps').theme,loadout:['mud','water'],hold:5,
+      briefing:'Patoa laavasäiliön sivuaukko mudalla. Odota, että alapuolinen virta sammuu, ja palaa kotiasemalle padon pitäessä.',
+      hint:'Ammu mutapommit ruskean plussan kohdalle kivihyllyn päälle. Laava kuivattaa mudan pinnan hiekaksi; myös se kelpaa patoon. Vesi auttaa jäähdyttämään jälkivirran.',
+      objective:'Patoa laava ja pidä alavirta kylmänä',success:'Tulivirta on pysähtynyt ja pato kestää.',
+      goals:[{label:'Mutapato ja kuivunut pinta',zone:{x:400,y:146,width:30,height:20},materials:[M.MUD,M.SAND],amount:95},
+        {label:'Laavaa alavirrassa',zone:{x:376,y:166,width:28,height:70},materials:[M.LAVA],amount:0,clear:true}],
+      points:[{x:412,y:158,kind:'repair'}],
+      build(b){
+        b.ellipse(320,207,296,169);
+        b.rect(420,85,502,180,M.HARDROCK);b.rect(430,93,492,166);
+        b.rect(408,154,430,166);b.rect(394,166,444,184,M.HARDROCK);
+        b.pool(430,492,122,166,M.LAVA);b.pool(408,430,154,166,M.LAVA);
+        b.source(462,128,M.LAVA,3);
+        b.rock([[357,268],[418,279],[441,296],[360,285]]);
+        b.pool(397,580,337,376,M.LAVA);b.pool(127,233,332,366);
+        return {};
+      },
+    },
+    {
+      id:'buried-archive',name:'Kadonnut arkisto',theme:get('hourglass').theme,loadout:['vacuum','water'],delivery:true,
+      briefing:'Kaiva kaksi arkistomoduulia esiin sortuman alta. Ime molemmat merkityt noutosyvennykset puhtaiksi ja tuo moduulit kotiin.',
+      hint:'Keltainen paketti näyttää moduulin. Laskeudu kuopan suulle ja ime kerros kerrallaan. Painevedellä voi siirtää hankalaa reunaa. Arkisto ei kestä räjähdyksiä.',
+      objective:'Puhdista arkisto ja tuo kaksi moduulia',cargoLabel:'Moduuleja',success:'Molemmat moduulit ovat kotona ja arkiston noutopaikat avoinna.',
+      goals:[{label:'Ylähyllyn sortuma',zone:{x:332,y:166,width:66,height:46},materials:[M.SAND,M.MUD],amount:35,clear:true},
+        {label:'Alahyllyn sortuma',zone:{x:467,y:267,width:66,height:46},materials:[M.SAND,M.MUD],amount:35,clear:true}],
+      fragile:{x:435,y:239,radius:126},
+      build(b){
+        b.ellipse(185,219,155,142);b.ellipse(433,210,162,158);
+        b.tunnel([[180,242],[308,245],[438,226]],29);
+        b.rect(324,166,406,222,M.ROCK);b.rect(332,141,398,212);
+        b.rect(459,267,541,323,M.ROCK);b.rect(467,240,533,313);
+        b.rect(332,177,398,212,M.SAND);b.rect(467,290,533,313,M.MUD);b.rect(467,278,533,290,M.SAND);
+        return {stations:[{x:365,y:198,waiting:1},{x:500,y:299,waiting:1}]};
+      },
+    },
+    {
+      id:'cooling-basin',name:'Jäähdytyskeikka',theme:get('rust-chasm').theme,loadout:['water','mud'],hold:3,
+      briefing:'Jäähdytä kuuma pohjakerros basalttikiveksi ja jätä sen päälle vesipatja. Kun allas on kylmä ja täynnä vettä, palaa kotiin.',
+      hint:'Jäähdytä pohjaa läheltä. Täytä lopuksi allasta korkeammalta, jotta vesi sataa kivipohjalle. Vasen vesitasku täyttää säiliön. Herkkää allasta ei saa räjäyttää.',
+      objective:'Kylmä kivipohja ja jäähdytysvesi',success:'Jäähdytysallas on käyttövalmis.',
+      goals:[{label:'Kuuma laava',zone:{x:394,y:276,width:98,height:59},materials:[M.LAVA],amount:0,clear:true},
+        {label:'Kivettynyt pohja',zone:{x:394,y:310,width:98,height:25},materials:[M.BASALT],amount:300},
+        {label:'Jäähdytysvesi',zone:{x:394,y:276,width:98,height:59},materials:[M.WATER],amount:500}],
+      points:[{x:442,y:290,kind:'target'}],fragile:{x:443,y:312,radius:61},
+      build(b){
+        b.ellipse(320,205,296,169);
+        b.rect(384,273,502,346,M.HARDROCK);b.rect(394,248,492,335);
+        b.pool(394,492,331,335,M.LAVA);
+        b.rect(146,269,234,342,M.ROCK);b.rect(154,247,226,332);b.pool(154,226,277,332);
+        b.source(170,255,M.WATER,6);
+        b.rock([[263,165],[321,146],[344,166],[279,189]]);
+        return {};
+      },
+    },
+    {
+      id:'split-reservoir',name:'Kaksi janoa',theme:get('chalk-vaults').theme,loadout:['blaster','mud'],
+      briefing:'Jaa yläsäiliön rajallinen vesi kahteen altaaseen. Paikkaa vasemman altaan vuoto ja avaa molemmat lujat syöttöluukut.',
+      hint:'Paikkaa ruskea plus ensin. Säiliö on yhteinen: avaa molemmat oranssit luukut ajoissa tai patoamalla säästä vettä toiseen haaraan. Räjäytä ylhäällä, älä keräysaltaiden vieressä.',
+      objective:'Kaksi täyttä allasta ja pitävä paikka',success:'Molemmat altaat saivat vettä ja vasen pato pitää.',
+      goals:[{label:'Vasen allas',zone:{x:263,y:269,width:92,height:55},materials:[M.WATER],amount:900},
+        {label:'Oikea allas',zone:{x:435,y:269,width:92,height:55},materials:[M.WATER],amount:900},
+        {label:'Mutapaikka',zone:{x:299,y:320,width:26,height:22},materials:[M.MUD],amount:70}],
+      gates:[{x:309,y:211},{x:481,y:211}],points:[{x:312,y:332,kind:'repair'}],
+      build(b){
+        b.ellipse(320,211,296,169);
+        b.rect(255,48,547,148,M.HARDROCK);b.rect(263,56,539,136);b.pool(263,539,111,136);
+        for(const x of [309,481]){b.rect(x-14,136,x+15,220,M.HARDROCK);b.rect(x-4,134,x+4,204);}
+        for(const x of [263,435]){b.rect(x-9,261,x+101,334,M.ROCK);b.rect(x,236,x+92,324);}
+        b.rect(306,324,318,334);b.rect(297,343,329,354,M.ROCK);
+        return {};
+      },
+    },
   ];
   class Solo {
     constructor(world,combat,index=0,records={}){
@@ -134,7 +207,9 @@
     get remaining(){return Math.max(0,(this.mission.limit||0)-this.elapsed);}
     get delivery(){return this.mission.id==='rescue'||!!this.mission.delivery;}
     get progress(){return this.delivery?this.rescued/this.total:Math.min(...this.readings.map(r=>r.progress));}
-    get readyToReturn(){return this.delivery?this.cargo>0:this.stable>=1;}
+    get holdTime(){return this.mission.hold||1;}
+    get workComplete(){return !this.goals.length||this.stable>=this.holdTime;}
+    get readyToReturn(){return this.workComplete&&(!this.delivery||this.cargo>0);}
     get canEquip(){return !this.player.dead&&(this.phase==='ready'||this.phase==='won'||this.phase==='lost'||this.near(this.base));}
     start(index=this.index){
       if(!Number.isInteger(index)||!list[index])return false;
@@ -175,7 +250,7 @@
       const fragile=this.mission.fragile;
       if(fragile)for(const e of this.world.effects)if(!this.hazardsSeen.has(e)){
         this.hazardsSeen.add(e);
-        if(Math.hypot(e.x-fragile.x,e.y-fragile.y)<e.radius+fragile.radius){this.finish('lost','Räjähdys rikkoi herkän laitteiston. Käytä imutykkiä ja mutaa.');return;}
+        if(Math.hypot(e.x-fragile.x,e.y-fragile.y)<e.radius+fragile.radius){this.finish('lost','Räjähdys rikkoi herkän kohteen. Painevesi, muta ja imutykki ovat turvallisia.');return;}
       }
       if(this.mission.id==='rescue'){
         for(const station of this.stations)if(station.waiting){
@@ -184,10 +259,11 @@
             if(k===M.LAVA||k===M.FIRE){this.finish('lost','Laava tai tuli saavutti suojan. Kokeile toista reittiä tai jäähdytä laavaa.');return;}
           }
         }
-      }else if(!this.delivery){
+      }
+      if(this.goals.length){
         this.readings=this.goals.map(g=>{
           const count=this.countZone(g),done=g.clear?count<=g.amount:count>=g.amount;
-          const progress=g.clear?(g.initial-count)/Math.max(1,g.initial-g.amount):count/g.amount;
+          const progress=done?1:g.clear?(g.initial-count)/Math.max(1,g.initial-g.amount):count/g.amount;
           return {count,done,progress:Math.max(0,Math.min(1,progress))};
         });
         this.amount=this.readings[0].count;
@@ -224,7 +300,8 @@
       if(this.phase==='won'||this.phase==='lost')return this.reason;
       if(this.dockTarget)return this.dockTarget===this.base?'Pidä paikallasi · purku '+Math.min(100,Math.round(this.docking/.75*100))+' %':'Pidä paikallasi · nouto '+Math.min(100,Math.round(this.docking/.75*100))+' %';
       if(this.readyToReturn)return 'Palaa vihreälle kotiasemalle ja hidasta merkin kohdalle.';
-      return this.delivery?(this.mission.delivery?'Nouda moduuli keltaiselta pakettimerkiltä.':'Nouda kaivostyöläiset keltaisilta henkilömerkeiltä.'):this.mission.goals?'Täytä kaikki tehtäväpaneelin tavoitteet. Vihreä H näyttää paluupaikan.':'Avaa oranssilla merkityt luukut. Täyttö mitataan rajatun alueen sisältä.';
+      if(this.goals.length&&!this.workComplete)return this.readings.every(r=>r.done)?'Pidä tavoitteet kunnossa vielä '+Math.ceil(this.holdTime-this.stable)+' s.':'Täytä kaikki tehtäväpaneelin tavoitteet. Vihreä H näyttää paluupaikan.';
+      return this.delivery?(this.mission.delivery?'Nouda moduulit keltaisilta pakettimerkeiltä.':'Nouda kaivostyöläiset keltaisilta henkilömerkeiltä.'):'Avaa oranssilla merkityt luukut. Täyttö mitataan rajatun alueen sisältä.';
     }
     markers(){
       const points=[{...this.base,kind:'base',active:this.readyToReturn}];

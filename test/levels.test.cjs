@@ -29,8 +29,8 @@ test('All eight levels have different terrain and reproduce from a clean load',(
 test('Every cave safely spawns both teams and gives all six enemy pilots a hull-wide route to the player',()=>{
   for(const level of Levels.list){
     const world=new World();world.generate(level.id);
-    const player=new Drone(world),combat=new Combat(world,player);combat.setRoster(1,6);combat.reset();
-    assert.equal(combat.actors.length,8);
+    const player=new Drone(world),combat=new Combat(world,player);combat.setRoster(2,6);combat.reset();
+    assert.equal(combat.actors.length,9);
     for(const [i,actor] of combat.actors.entries()){
       assert.equal(actor.health,100,level.id);assert.ok(actor.safeSpawn(actor.x,actor.y),level.id);
       for(const other of combat.actors.slice(i+1))assert.ok(Math.hypot(actor.x-other.x,actor.y-other.y)>actor.radius+other.radius+4,level.id);
