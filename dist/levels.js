@@ -19,6 +19,11 @@
   };
   class Builder {
     constructor(world){this.world=world;world.cells.fill(M.ROCK);}
+    rect(x0,y0,x1,y1,material=M.AIR){
+      const w=this.world;
+      for(let y=Math.max(2,y0);y<Math.min(w.height-2,y1);y++)
+        for(let x=Math.max(2,x0);x<Math.min(w.width-2,x1);x++)w.set(y*w.width+x,material);
+    }
     ellipse(cx,cy,rx,ry,material=M.AIR,onlyAir=false){
       const w=this.world;
       for(let y=Math.max(2,Math.floor(cy-ry-3));y<Math.min(w.height-2,cy+ry+3);y++)
@@ -198,6 +203,6 @@
     world.teamSpawns=level.starts.map(p=>spawnPoints(world,p));
     world.spawn=world.teamSpawns[0][0];world.enemySpawn=world.teamSpawns[1][0];
   }
-  root.CaveLevels={list,get,at,build};
+  root.CaveLevels={list,get,at,build,Builder};
   if(typeof module!=='undefined')module.exports=root.CaveLevels;
 })(globalThis);

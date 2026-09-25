@@ -6,7 +6,23 @@ Luolalennokki ja muokattava soluautomaattimaasto selaimessa. Peliruutu on aina *
 
 Avaa `dist/index.html` selaimessa. Asennuksia, palvelinta, ulkoisia kirjastoja tai verkkoyhteyttä ei tarvita.
 
-Päävalikosta valitaan **Tiimitaistelu** tai **Luolalabra**. Valikko pysäyttää molemmat; keskeneräistä ottelua voi jatkaa ja labran rakennelmat säilyvät erikseen niin kauan kuin sivu on auki. Sivun lataaminen uudelleen aloittaa alusta.
+Päävalikosta valitaan **Tiimitaistelu**, **Soolokeikat** tai **Luolalabra**. Valikko pysäyttää pelin; kaikkien kolmen pelimuodon tilanne säilyy erikseen niin kauan kuin sivu on auki. Sivun lataaminen uudelleen aloittaa alusta.
+
+## Soolokeikat
+
+Kolme vapaasti valittavaa tehtävää omilla kartoillaan. Maasto, lennokki ja kello käynnistyvät ensimmäisestä ohjauksesta. Tavoite, eteneminen ja toimintaohje näkyvät peliruudun vieressä. Kohteet näkyvät pienoiskartalla ja ruudun reunoilla; vihreä **H** on kotiasema, keltainen henkilö on noutopaikka ja oranssi risti on avattava luukku.
+
+| Tehtävä | Tavoite | Ratkaisu ja vaarat |
+| --- | --- | --- |
+| Pelastuspartio | Kolme kaivostyöläistä kahdelta suojalta kotiin 3 minuutissa | Laskeudu tai hidasta merkille 0,75 sekunniksi; nouto ja purku toimivat automaattisesti. Kyytiin mahtuu kaksi. Yksi matkustaja vähentää moottorin kiihtyvyyden noin 82 prosenttiin, kaksi noin 69 prosenttiin. Laava tai tuli miehitetyllä suojalla päättää tehtävän. |
+| Luolaputkimies | Vähintään 1 200 solua vettä rajattuun keräysaltaaseen ja lennokki kotiin | Avaa yläsäiliön pohjapato louhintapanoksella. Vesi valuu todellista kanavaa pitkin. Älä räjäytä keräysaltaan pohjaa. |
+| Hallittu sortuma | Vähintään 1 800 solua hiekkaa rajattuun kuiluun ja lennokki kotiin | Avaa alempi luukku ennen ylempää. Irtonainen hiekka päästää lennokin läpi, laskeutunut kasa tukkii reitin. Kallio pysyy paikallaan; sortuva materiaali on hiekkaa. |
+
+Soolokeikoilla **K / Panos** ampuu maastoon tarttuvan louhintapanoksen. Sulake kestää 1,4 sekuntia laukaisusta, panoksia on kolme ja yksi palautuu neljässä sekunnissa. Oma räjähdys sattuu. Tiimitaistelussa ja Luolalabrassa K käyttää edelleen pomppivaa kranaattia. Muut varusteet, kuten painevesi ja lähisiirtymä, toimivat kaikissa pelimuodoissa.
+
+Altaan tai kuilun tavoitemäärän pitää säilyä vähintään sekunti. Pelkkä täyttö ei riitä: palaa elossa kotiasemalle ja hidasta. Jos täyttö laskee alle tavoitteen ennen paluuta, sitä pitää korjata. Kotiasema tai suojan merkki toimii alle 19 solun etäisyydeltä, alle 18 solun sekuntinopeudella ja esteettömällä näkölinjalla. Noudon ja purun eteneminen näkyy tilatekstissä.
+
+**R / Yritä alusta** palauttaa saman tehtävän kartan, kellon ja varusteet. Voiton jälkeen R jatkaa seuraavaan tehtävään ja viimeisestä päävalikkoon. Valikosta voi valita minkä tahansa tehtävän uudelleen. Suoritukset ja parhaat ajat säilyvät sivun aukiolon ajan. Valikko ja tauko pysäyttävät myös määräajan; ikkunan tai välilehden jättäminen tauottaa tehtävän automaattisesti.
 
 ## Tiimitaistelu
 
@@ -54,11 +70,11 @@ Vapaa lentely ja maaston muokkaus neljällä alkuperäisellä kartalla sekä kah
 | ← / A, → / D | Käännä lennokkia |
 | ↓ / S | Ilmajarru |
 | J / vasen hiiri lentotilassa | Pulssitykki |
-| K | Kranaatti |
+| K | Soolokeikoilla tarttuva louhintapanos, muualla pomppiva kranaatti |
 | L | Painevesitykki |
 | I / oikea hiiri lentotilassa | Pidä keulakilpeä |
 | Q | Lähisiirtymä keulan suuntaan |
-| R | Taistelussa luovuta / seuraava erä / uusi ottelu; labrassa uusi lennokki |
+| R | Soolokeikalla yritä alusta / seuraava tehtävä; taistelussa luovuta / seuraava erä / uusi ottelu; labrassa uusi lennokki |
 | Esc | Päävalikko; tilanne säilyy |
 | E | Labrassa vaihda lentämisen ja muokkaamisen välillä |
 | C | Kameran seuranta päälle / pois |
@@ -133,10 +149,11 @@ Vienti tuottaa yhden itsenäisen HTML-tiedoston. `dist/`-hakemiston voi myös pa
 | `dist/flight.js` | Lennokin fysiikka, ainevastus, törmäykset ja lähtöpaikan etsintä |
 | `dist/combat.js` | Joukkueet, aseet, ammusten törmäykset, kilpi, siirtymä ja eräpisteet |
 | `dist/match.js` | Viiden voiton sarjat, vaikeusportaat, jokaisen erän kenttävaihto ja luovutus |
+| `dist/solo.js` | Kolmen soolotehtävän kartat, tavoitteet, lasti, nouto, purku, määräaika ja tulokset |
 | `dist/ai.js` | Reitinhaku, tähtäys, lentäminen ja tekoälyn varustevalinnat |
 | `dist/render.js` | Pikselipiirto, lennokin rasterisprite ja pienoiskartta |
 | `dist/app.js` | Päävalikko, erilliset pelitilanteet, ohjaimet, kamera ja kiinteä aika-askel |
-| `test/` | Materiaalien, lentämisen, taistelun ja tekoälyn regressiotestit |
+| `test/` | Materiaalien, lentämisen, taistelun, tekoälyn ja soolotehtävien regressiotestit |
 
 Simulaatio käyttää 60 kiinteää aika-askelta sekunnissa myös näkymän ulkopuolella. Lennokin liike tarkistetaan alle solun pituisina osina, jotta ohut seinä ei jää nopean liikkeen väliin. Raskaimmissa tilanteissa simulaatio hidastuu rajattoman aikavelan keräämisen sijaan. Piirtonopeus ei muuta fysiikan askelpituutta. Konsolin `vibelentely`-olio tarjoaa maailman, lennokin, `combat`-taistelutilan, kameran ja ohjaustilan tarkasteltavaksi.
 

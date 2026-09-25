@@ -14,16 +14,17 @@
   const names=['Ilma','Kivi','Hiekka','Vesi','Muta','Laava','Höyry','Ruuti','Tuli','Savu','Jäähtynyt laava'];
   const screen=$('screen'),held=new Set(),keys=new Set();
   const pointer={inside:false,down:false,x:0,y:0,panning:false,erase:false};
-  function createSession(kind){
+  function createSession(kind,missionIndex=0,records={}){
     const world=new World();world.generate(kind==='match'?'arena':'cave');
     const drone=new CaveFlight.Drone(world),combat=new CaveCombat.Combat(world,drone);
     const match=kind==='match'?new CaveMatch.Match(world,combat):null;
-    if(!match)combat.setOpponent(false);
-    return {world,drone,combat,match,camera:{x:0,y:0},selected:0,radius:5,paused:false,
-      scene:kind==='match'?'arena':'cave',speed:1,mode:kind==='match'?'fly':'edit',follow:true};
+    const solo=kind==='solo'?new CaveSolo.Solo(world,combat,missionIndex,records):null;
+    if(!match&&!solo)combat.setOpponent(false);
+    return {world,drone,combat,match,solo,camera:{x:0,y:0},selected:0,radius:5,paused:false,
+      scene:kind==='match'?'arena':'cave',speed:1,mode:kind==='lab'?'edit':'fly',follow:true};
   }
   const sessions={lab:createSession('lab')};
-  let {world,drone,combat,camera}=sessions.lab,match=null,view='menu';
+  let {world,drone,combat,camera}=sessions.lab,match=null,solo=null,view='menu';
   const renderer=new CaveRenderer(world,screen,$('minimap'));
   let selected=0,radius=5,paused=false,scene='cave',panTool=false,speed=1,mode='edit';
   let rosterActors=[];
@@ -31,7 +32,7 @@
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   function clampCamera(){camera.x=clamp(Math.round(camera.x),0,world.width-320);camera.y=clamp(Math.round(camera.y),0,world.height-200);}
   function setMode(value,recenter=true){
-    if(view==='match'&&value!=='fly')return;
+    if((view==='match'||view==='solo')&&value!=='fly')return;
     mode=value;keys.clear();held.clear();document.querySelectorAll('[data-flight]').forEach(b=>b.classList.remove('is-held'));pointer.down=false;pointer.panning=false;pointer.inside=false;lastBrush=null;
     panTool=false;$('pan').setAttribute('aria-pressed','false');screen.classList.remove('panning','dragging');
     screen.classList.toggle('flying',mode==='fly');
@@ -127,7 +128,12 @@
   function respawn(){
     if(view==='menu')return;
     clearInput();
-    if(match){
+    if(solo){
+      if(solo.phase==='won'){
+        if(!solo.next()){openMenu();return;}
+      }else solo.start();
+      setPaused(false);
+    }else if(match){
       if(match.phase==='finished')match.start();
       else if(match.phase==='round-over'||match.phase==='stage-over')match.nextRound();
       else match.forfeit();
@@ -150,20 +156,30 @@
     $('saved-match').textContent=saved?'Vaikeus '+(saved.stage+1)+' · '+saved.score.join(' : ')+' · erä '+saved.round:'';
     $('start-match').textContent=saved?'Uusi ottelu':'Aloita ottelu →';
     $('start-match').classList.toggle('primary',!canContinue);
+    const savedSolo=sessions.solo?.solo;
+    $('continue-solo').hidden=!savedSolo;
+    $('continue-solo').textContent=savedSolo?'Jatka · '+savedSolo.mission.name:'Jatka tehtävää';
+    const records=savedSolo?.records||{};
+    $('solo-records').textContent=Object.keys(records).length+' / '+CaveSolo.list.length+' suoritettu';
+    for(const [i,option] of Array.from($('mission-select').children).entries())option.textContent=(records[CaveSolo.list[i].id]!==undefined?'✓ ':'')+CaveSolo.list[i].name;
     (canContinue?$('continue-match'):$('start-match')).focus({preventScroll:true});
   }
   function enterSession(kind,fresh=false){
     saveSession();clearInput();
-    if(fresh||!sessions[kind])sessions[kind]=createSession(kind);
+    if(fresh||!sessions[kind])sessions[kind]=createSession(kind,Number($('mission-select').value),sessions.solo?.solo.records);
     const session=sessions[kind];
-    ({world,drone,combat,camera,match,selected,radius,paused,scene,speed,mode}=session);
+    ({world,drone,combat,camera,match,solo,selected,radius,paused,scene,speed,mode}=session);
     view=kind;renderer.world=world;rosterActors=[];accumulator=0;lastTime=0;pointer.inside=false;
     $('main-menu').hidden=true;$('game-app').hidden=false;
-    $('game-app').classList.toggle('match-game',!!match);
-    $('game-subtitle').textContent=match?'Tiimitaistelu':'Luolalabra';
-    $('battle-heading').textContent=match?'Tiimitaistelu':'Harjoittelu';
-    document.querySelectorAll('[data-lab-only]').forEach(el=>el.hidden=!!match);
+    $('game-app').classList.toggle('match-game',!!match||!!solo);
+    $('game-subtitle').textContent=match?'Tiimitaistelu':solo?'Soolokeikat':'Luolalabra';
+    $('battle-heading').textContent=match?'Tiimitaistelu':solo?'Tehtävä':'Harjoittelu';
+    document.querySelectorAll('[data-lab-only]').forEach(el=>el.hidden=kind!=='lab');
     $('match-banner').hidden=!match;$('match-progress').hidden=!match;
+    $('solo-banner').hidden=!solo;$('mission-progress').hidden=!solo;
+    $('score').hidden=!!solo;$('team-guide').hidden=!!solo;
+    $('grenade-name').textContent=solo?'Panos':'Kranaatti';
+    $('grenade-control').title=solo?'Louhintapanos · K. Tarttuu maastoon, räjähtää 1,4 s laukaisusta. Väistä omaa räjähdystä.':'Kranaatti · K. Pomppii, räjähtää 1,4 s laukaisusta. Oma räjähdys sattuu.';
     $('speed').value=String(speed);$('sources').checked=world.emitting;$('sources').disabled=scene==='empty';
     $('opponent').checked=combat.enabled;setRadius(radius);
     document.querySelectorAll('[data-scene]').forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.scene===scene)));
@@ -177,6 +193,15 @@
   $('start-match').addEventListener('click',()=>enterSession('match',true));
   $('continue-match').addEventListener('click',()=>enterSession('match'));
   $('open-lab').addEventListener('click',()=>enterSession('lab'));
+  for(const [i,mission] of CaveSolo.list.entries()){
+    const option=document.createElement('option');option.value=String(i);option.textContent=mission.name;
+    $('mission-select').append(option);
+  }
+  $('mission-select').value='0';
+  function missionPreview(){$('mission-preview').textContent=CaveSolo.list[Number($('mission-select').value)].briefing;}
+  $('mission-select').addEventListener('change',missionPreview);missionPreview();
+  $('start-solo').addEventListener('click',()=>enterSession('solo',true));
+  $('continue-solo').addEventListener('click',()=>enterSession('solo'));
   for(const level of CaveLevels.list){
     const option=document.createElement('option');option.value=level.id;option.textContent=level.name;
     $('level-select').append(option);
@@ -243,8 +268,8 @@
   });
   window.addEventListener('keyup',e=>keys.delete(e.code));
   function clearInput(){keys.clear();held.clear();mapDown=false;release();document.querySelectorAll('[data-flight]').forEach(b=>b.classList.remove('is-held'));}
-  window.addEventListener('blur',()=>{clearInput();if(view==='match'&&!combat.result)setPaused(true);});
-  document.addEventListener('visibilitychange',()=>{clearInput();lastTime=0;accumulator=0;if(document.hidden&&view==='match'&&!combat.result)setPaused(true);});
+  window.addEventListener('blur',()=>{clearInput();if((view==='match'||view==='solo')&&!combat.result)setPaused(true);});
+  document.addEventListener('visibilitychange',()=>{clearInput();lastTime=0;accumulator=0;if(document.hidden&&(view==='match'||view==='solo')&&!combat.result)setPaused(true);});
   window.addEventListener('resize',resize);
   function flightInput(){return {
     thrust:keys.has('KeyW')||keys.has('ArrowUp')||held.has('thrust'),
@@ -256,6 +281,7 @@
   };}
   function simulate(){
     if(view==='match')match.step(flightInput());
+    else if(view==='solo')solo.step(flightInput());
     else if(view==='lab'){world.step();if(mode==='fly')combat.step(flightInput());}
   }
   function renderRoster(){
@@ -286,6 +312,7 @@
     for(const b of $('weapons').querySelectorAll('button'))b.style.setProperty('--charge',charge[b.dataset.flight]*100+'%');
     for(const b of document.querySelectorAll('[data-flight]'))b.disabled=drone.dead||!!combat.result;
     renderRoster();$('score').textContent=combat.score.join(' : ');
+    if(solo){soloReadout();return;}
     const watching=drone.dead&&!combat.result&&combat.living(0).length>0;
     $('combat-hint').textContent=combat.result?'Erä päättyi. Jatka kun olet valmis.':watching?'Sinut pudotettiin. Siipi taistelee vielä!':!combat.started?'Erä alkaa ensimmäisestä ohjauksesta.':match?'Tuhoa koko vihollisjoukkue.':combat.enabled?'Oranssi lennokki on vastustajasi.':'Vapaa harjoittelu · tekoäly pois päältä.';
     $('round-result').hidden=mode!=='fly'||!combat.result;
@@ -312,9 +339,27 @@
       if(match.phase!=='finished')$('round-description').textContent+=' Kenttä: '+match.nextLevel.name+'.';
     }else $('round-description').textContent='Maasto ja pisteet säilyvät. Uudet lennokit ja varusteet.';
   }
+  function clock(seconds){const s=Math.max(0,Math.ceil(seconds));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
+  function soloReadout(){
+    const m=solo.mission,rescue=m.id==='rescue',won=solo.phase==='won';
+    $('mission-number').textContent=(solo.index+1)+' / '+CaveSolo.list.length;
+    $('mission-objective').textContent=m.objective;
+    $('mission-count').textContent=rescue?solo.rescued+' / 3 turvassa':Math.min(100,Math.floor(solo.progress*100))+' % · '+(solo.stable>=1?'Valmis':solo.amount>=m.goal?'Tasaantuu…':'Täytä allas');
+    $('mission-time').textContent=(m.limit?'Aikaa ':'Aika ')+clock(m.limit?solo.remaining:solo.elapsed);
+    $('mission-meter').value=solo.progress;
+    $('mission-cargo').textContent=rescue?'Kyydissä '+solo.cargo+' / 2 · moottorin kiihtyvyys '+Math.round(100/(1+solo.cargo*.22))+' %':'Tavoite: '+m.goal+' solua '+(m.material===M.WATER?'vettä':'hiekkaa')+' vähintään sekunnin ajan.';
+    $('mission-advice').textContent=m.hint;
+    $('combat-hint').textContent=solo.status;
+    $('round-result').hidden=solo.phase!=='won'&&solo.phase!=='lost';
+    $('round-title').textContent=won?'Tehtävä suoritettu!':'Tehtävä epäonnistui';
+    $('round-description').textContent=solo.reason+(won?' Aika '+clock(solo.elapsed)+'. Paras '+clock(solo.records[m.id])+'.':'');
+    const action=won?(solo.index+1<CaveSolo.list.length?'Seuraava tehtävä':'Päävalikko'):'Yritä alusta';
+    $('respawn').textContent=action+' · R';$('respawn').title=won?action:'Aloita tämä tehtävä ja sen maasto alusta · R';
+    $('next-round').textContent=action+' · R';
+  }
   function flightReadout(){
     const watching=drone.dead&&!combat.result&&combat.living(0).length>0;
-    const text=watching?'Seurataan Siiven taistelua':drone.blocked?'Lähtöpaikka tukossa · kaiva tilaa labrassa':drone.dead?'Lennokki hajosi':!combat.started?'Valmiina · ↑ tai W käynnistää erän':Math.round(drone.speed)+' px/s · Runko '+Math.ceil(drone.health)+' %'+(drone.wet>.25?' · Vedessä':'');
+    const text=watching?'Seurataan Siiven taistelua':drone.blocked?'Lähtöpaikka tukossa · kaiva tilaa labrassa':drone.dead?'Lennokki hajosi':!combat.started?'Valmiina · ↑ tai W käynnistää '+(solo?'tehtävän':'erän'):Math.round(drone.speed)+' px/s · Runko '+Math.ceil(drone.health)+' %'+(drone.wet>.25?' · Vedessä':'');
     $('pointer-status').textContent=text;$('pointer-status').classList.toggle('damaged',drone.health<40);battleReadout();
   }
   function frame(now){
@@ -336,8 +381,8 @@
         if(Math.abs(oy)>28)camera.y+=oy-Math.sign(oy)*28;
         clampCamera();
       }
-      renderer.render(camera.x,camera.y,mode==='edit'?pointer:null,materials[selected].id,radius,drone,combat);
-      if(frameCount%6===0){renderer.minimap(camera.x,camera.y,drone,combat);if(mode==='fly')flightReadout();}
+      renderer.render(camera.x,camera.y,mode==='edit'?pointer:null,materials[selected].id,radius,drone,combat,solo);
+      if(frameCount%6===0){renderer.minimap(camera.x,camera.y,drone,combat,solo);if(mode==='fly')flightReadout();}
       frameCount++;
       if(now-statTime>1000){$('performance').textContent=paused?'Tauolla':Math.round(stepCount*1000/(now-statTime))+' askelta/s';stepCount=0;statTime=now;}
     }
@@ -347,6 +392,7 @@
   // Inspectable references always point at the session currently shown.
   window.vibelentely=window.luolalabra={
     get world(){return world;},get drone(){return drone;},get combat(){return combat;},get match(){return match;},
+    get solo(){return solo;},
     get camera(){return camera;},materials,pause:setPaused,reset,respawn,setMode,renderer,openMenu,enterSession,
     get scene(){return world.level?.id||scene;},get state(){return{view,paused,selected,radius,speed,mode,simMS,screen:[screen.width,screen.height],camera:{...camera}};},
   };
