@@ -2,6 +2,7 @@
 (function (root) {
   'use strict';
   const M = Object.freeze({ AIR: 0, ROCK: 1, SAND: 2, WATER: 3, MUD: 4, LAVA: 5, STEAM: 6, POWDER: 7, FIRE: 8, SMOKE: 9, BASALT: 10, HARDROCK: 11 });
+  const materialCount = Math.max(...Object.values(M)) + 1;
   const dynamic = new Set([M.SAND, M.WATER, M.MUD, M.LAVA, M.STEAM, M.POWDER, M.FIRE, M.SMOKE]);
   class World {
     constructor(width = 640, height = 400, seed = 7321) {
@@ -297,7 +298,7 @@
       this.effects=this.effects.filter(e=>e.age<18).slice(-64);
     }
     count() {
-      const counts=new Uint32Array(11);for(const k of this.cells)counts[k]++;
+      const counts=new Uint32Array(materialCount);for(const k of this.cells)counts[k]++;
       return Array.from(counts);
     }
     generate(scene='cave') {

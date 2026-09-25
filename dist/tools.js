@@ -6,7 +6,7 @@
     {id:'water',name:'Painevesi',hint:'Työntää irtoainesta ja jäähdyttää laavaa. Säiliö täyttyy vedessä.'},
     {id:'mud',name:'Mutapommi',hint:'Levittää oikeaa mutaa osumassa. Kaksi pommia; uusi lataus 6 s välein.'},
     {id:'vacuum',name:'Imutykki',hint:'Tuhoaa hiekan, veden ja mudan keulan edestä. Laavan imeminen ylikuumentaa heti.'},
-    {id:'blaster',name:'Blasteri',hint:'Lataa pitämällä 1,2 s, vapauta ampuaksesi. Vain täysi lataus laukeaa. Täytenä pito ylikuumentaa 1,6 s:ssa.'},
+    {id:'blaster',name:'Blasteri',hint:'Pidä ja vapauta ampuaksesi. Vajaa laukaus on heikko; täysi lataus (1,2 s) antaa tehopiikin ja rikkoo lujaa kalliota. Täytenä pito ylikuumentaa 1,6 s:ssa.'},
   ];
   function equipment(){return {mudAmmo:2,mudReload:0,mudCooldown:0,vacuumHeat:0,vacuumHot:false,vacuumRays:[],
     charge:0,blasterHeat:0,blasterHot:false,blasterHeld:false,blasterNeedsRelease:false,blasterCooldown:0};}
@@ -75,7 +75,7 @@
         if(g.blasterHeat>=1){g.blasterHot=true;g.blasterNeedsRelease=true;g.charge=0;}
       }
     }else if(!pressed&&g.blasterHeld){
-      if(g.charge===1&&!g.blasterHot)combat.shoot(actor,'blaster');
+      if(g.charge>0&&!g.blasterHot)combat.shoot(actor,'blaster');
       g.charge=0;
     }
     g.blasterHeld=pressed;return held.has('water');

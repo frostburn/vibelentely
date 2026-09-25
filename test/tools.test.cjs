@@ -51,17 +51,64 @@ test('Vacuum consumes sand, water and mud, respects walls and range, and overhea
   assert.deepEqual(world.cells,cells,'hot vacuum must stop consuming');control(combat,{},220);assert.equal(player.gear.vacuumHot,false);
 });
 
-test('Blaster fires only on a fully charged release, fast enough to need swept collision, and breaks hard rock',()=>{
+test('Partial blaster releases grow in power but stay weak, retain their charge in flight and cannot break hard rock',()=>{
+  let previousPower=0;
+  for(const frames of [1,36,71]){
+    const {world,player,combat}=game(),second=frames===36;
+    Tools.setLoadout(player,second?['water','blaster']:['blaster','water']);rect(world,132,75,150,155,M.HARDROCK);
+    control(combat,second?{tool2:true}:{tool1:true},frames);
+    assert.equal(combat.projectiles.length,0,'holding alone never fires');const charge=player.gear.charge;
+    control(combat,{});assert.equal(combat.projectiles.length,1);const shot=combat.projectiles.pop();
+    assert.equal(shot.blast.charge,charge);assert.equal(player.gear.charge,0);
+    assert.ok(shot.blast.power>previousPower&&shot.blast.power<125*.4);previousPower=shot.blast.power;
+    assert.ok(shot.blast.radius<=14);assert.ok(shot.vx>190&&shot.vx<300);
+    assert.ok(player.gear.blasterHeat>0&&player.gear.blasterHeat<.5);assert.ok(player.vx<0&&player.vx>-10);
+    assert.equal(combat.shoot(player,'blaster'),false,'release consumes the charge');
+    const before=world.count()[M.HARDROCK];player.gear.charge=1;
+    let active=true;for(let i=0;i<30&&active;i++)active=combat.projectileStep(shot,1/60);
+    assert.equal(active,false);assert.equal(world.effects.length,1);
+    assert.equal(world.effects[0].power,shot.blast.power);assert.equal(world.effects[0].radius,shot.blast.radius);
+    assert.equal(world.count()[M.HARDROCK],before);assert.ok(shot.x<133,'partial shots also stop at the wall');
+  }
+});
+
+test('A full blaster release keeps its fast swept collision and hard-rock-breaking boost',()=>{
   const {world,player,combat}=game();Tools.setLoadout(player,['blaster','water']);
   rect(world,132,75,150,155,M.HARDROCK);
-  control(combat,{tool1:true},60);control(combat,{});assert.equal(combat.projectiles.length,0);
-  assert.equal(combat.shoot(player,'blaster'),false,'direct fire also rejects an incomplete charge');
+  control(combat,{});assert.equal(combat.projectiles.length,0);
+  assert.equal(combat.shoot(player,'blaster'),false,'an empty charge cannot fire');
   control(combat,{tool1:true},73);assert.equal(player.gear.charge,1);assert.equal(combat.projectiles.length,0);
   control(combat,{});const shot=combat.projectiles.pop();assert.equal(shot.kind,'blaster');assert.equal(shot.vx,430);
   const before=world.cells.filter(k=>k===M.HARDROCK).length;
   for(let i=0;i<30;i++)if(!combat.projectileStep(shot,1/60))break;
   assert.equal(world.effects.length,1);assert.equal(world.effects[0].radius,30);assert.equal(world.effects[0].power,125);
   assert.ok(world.cells.filter(k=>k===M.HARDROCK).length<before);assert.ok(shot.x<133,'the shot must not tunnel through the wall');
+});
+
+test('Partial explosions and direct shield hits inflict substantially less damage, knockback and shield drain',()=>{
+  function impact(charge,shield,direct=false){
+    const {player,combat}=game();combat.enabled=true;
+    const enemy=combat.enemy;Object.assign(enemy,{x:140,y:110,angle:Math.PI,vx:0,vy:0});enemy.gear.shield=shield;
+    player.gear.charge=charge;assert.equal(combat.shoot(player,'blaster'),true);const shot=combat.projectiles.pop();
+    if(direct){for(let n=0;n<30;n++)if(!combat.projectileStep(shot,1/60))break;}
+    else {shot.x=130;shot.y=110;combat.detonate(shot);combat.blasts();}
+    return {damage:100-enemy.health,knockback:enemy.vx,drain:100-enemy.gear.energy};
+  }
+  const weak=impact(.99,false),full=impact(1,false);
+  assert.ok(weak.damage>0&&weak.damage<full.damage/2);assert.ok(weak.knockback>0&&weak.knockback<full.knockback/2);
+  for(const direct of [false,true]){
+    const weak=impact(.99,true,direct),full=impact(1,true,direct);
+    assert.equal(weak.damage,0);assert.equal(full.damage,0);
+    assert.ok(weak.drain>0&&weak.drain<full.drain/2);
+  }
+});
+
+test('Cancelling a partial charge or raising the shield never turns it into a weak shot',()=>{
+  const {player,combat}=game();Tools.setLoadout(player,['blaster','water']);
+  control(combat,{tool1:true},30);Tools.cancel(player);control(combat,{});
+  assert.equal(player.gear.charge,0);assert.equal(combat.projectiles.length,0);
+  control(combat,{tool1:true},30);control(combat,{shield:true});
+  assert.equal(player.gear.charge,0);assert.equal(combat.projectiles.length,0);
 });
 
 test('Holding a full blaster overheats and discards it; cooling while held cannot restart a charge',()=>{
@@ -81,6 +128,7 @@ test('Hard rock blocks flight, sight, blink and ordinary explosions; blast damag
   world.clear();combat.setRoster(1,1);combat.enabled=true;combat.reset();
   const ally=combat.actors.find(a=>a!==player&&a.team===0),enemy=combat.enemy;
   Object.assign(player,{x:160,y:110});Object.assign(ally,{x:132,y:110});Object.assign(enemy,{x:180,y:110});
-  combat.detonate({kind:'blaster',owner:player,x:160,y:110});combat.blasts();
+  player.gear.charge=1;combat.shoot(player,'blaster');const shot=combat.projectiles.pop();shot.x=160;shot.y=110;
+  combat.detonate(shot);combat.blasts();
   assert.equal(player.dead,true);assert.ok(enemy.health<100);assert.equal(ally.health,100);
 });

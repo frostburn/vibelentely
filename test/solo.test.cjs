@@ -20,6 +20,8 @@ test('Solo missions wait for input, have safe reachable docks, and retry a prist
   assert.equal(list.length,8);
   for(let index=0;index<list.length;index++){
     const {world,player,combat,solo}=game(index),cells=world.cells.slice();
+    const counts=world.count();assert.equal(counts.reduce((sum,n)=>sum+n,0),world.size,'material totals include the entire mission map');
+    assert.equal(counts[M.HARDROCK],cells.filter(k=>k===M.HARDROCK).length);
     assert.ok(player.safeSpawn(player.x,player.y));assert.equal(combat.active().length,1);
     assert.equal(combat.enabled,false);assert.equal(combat.terrainCharges,true);
     for(const station of index===0?solo.stations:[]){

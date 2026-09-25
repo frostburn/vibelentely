@@ -216,10 +216,10 @@
       for(const p of combat.projectiles){
         const x=Math.round(p.x)-cx,y=Math.round(p.y)-cy;
         if(p.kind==='pulse'||p.kind==='blaster'){
-          const length=Math.hypot(p.vx,p.vy)||1;
+          const length=Math.hypot(p.vx,p.vy)||1,full=p.blast?.charge===1;
           ctx.fillStyle=p.owner.team?'#ffc383':'#bff7f1';
-          for(let n=0;n<(p.kind==='blaster'?11:4);n++)ctx.fillRect(x-Math.round(p.vx/length*n),y-Math.round(p.vy/length*n),p.kind==='blaster'?2:1,1);
-          if(p.kind==='blaster'){ctx.fillStyle='#fff7d7';ctx.fillRect(x-2,y-2,5,5);}
+          for(let n=0;n<(full?11:p.kind==='blaster'?6:4);n++)ctx.fillRect(x-Math.round(p.vx/length*n),y-Math.round(p.vy/length*n),full?2:1,1);
+          if(p.kind==='blaster'){const r=full?2:1;ctx.fillStyle=full?'#fff7d7':'#d4edff';ctx.fillRect(x-r,y-r,r*2+1,r*2+1);}
         }else if(p.kind==='grenade'){
           ctx.fillStyle='#131922';ctx.fillRect(x-2,y-2,5,5);
           ctx.fillStyle=Math.floor(p.age/(p.life<.4?.05:.15))%2?'#ffcb6c':'#e76c51';ctx.fillRect(x-1,y-1,3,3);

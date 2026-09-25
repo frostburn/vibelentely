@@ -114,17 +114,24 @@
       if(kind==='grenade'&&(g.grenade||!g.grenades))return false;
       if(kind==='water'&&(g.jet||g.water<1.5))return false;
       if(kind==='mud'&&(g.mudCooldown||!g.mudAmmo))return false;
-      if(kind==='blaster'&&(g.charge!==1||g.blasterHot||g.blasterCooldown))return false;
+      if(kind==='blaster'&&(g.charge<=0||g.blasterHot||g.blasterNeedsRelease||g.blasterCooldown))return false;
       const co=Math.cos(actor.angle),si=Math.sin(actor.angle);
-      const speed=kind==='blaster'?430:kind==='pulse'?230:kind==='grenade'||kind==='mud'?95:155;
+      const charge=kind==='blaster'?g.charge:0,full=charge===1;
+      // Snapshot the released charge: later charging or swapping tools cannot
+      // change an airborne shot. Only a full charge gets the hard-rock-breaking boost.
+      const blast=kind==='blaster'?{charge,radius:full?30:Math.round(5+9*charge),power:full?125:Math.round(12+33*charge*charge)}:null;
+      const speed=kind==='blaster'?(full?430:190+110*charge):kind==='pulse'?230:kind==='grenade'||kind==='mud'?95:155;
       this.projectiles.push({kind,owner:actor,x:actor.x+co*5,y:actor.y+si*5,
         vx:actor.vx+co*speed,vy:actor.vy+si*speed,life:kind==='grenade'?1.4:kind==='mud'?1.1:kind==='water'?.6:1.5,age:0,
-        sticky:kind==='grenade'&&this.terrainCharges});
+        sticky:kind==='grenade'&&this.terrainCharges,blast});
       if(kind==='pulse'){g.pulse=.13;g.heat=Math.min(1,g.heat+.17);if(g.heat>=.99)g.overheated=true;}
       if(kind==='grenade'){g.grenade=.65;g.grenades--;actor.vx-=co*7;actor.vy-=si*7;}
       if(kind==='water'){g.jet=.055;g.water-=1.5;actor.vx-=co*1.8;actor.vy-=si*1.8;}
       if(kind==='mud'){g.mudCooldown=.65;g.mudAmmo--;actor.vx-=co*5;actor.vy-=si*5;}
-      if(kind==='blaster'){g.charge=0;g.blasterCooldown=.6;g.blasterHeat=Math.min(1,g.blasterHeat+.5);g.blasterHot=g.blasterHeat>=1;actor.vx-=co*26;actor.vy-=si*26;}
+      if(kind==='blaster'){
+        g.charge=0;g.blasterCooldown=.6;g.blasterHeat=Math.min(1,g.blasterHeat+(full?.5:.12+.18*charge));g.blasterHot=g.blasterHeat>=1;
+        const recoil=full?26:4+6*charge;actor.vx-=co*recoil;actor.vy-=si*recoil;
+      }
       return true;
     }
     waterImpact(p,x=p.x,y=p.y){
@@ -150,7 +157,10 @@
       }
       w.brush(x,y,1,M.WATER);
     }
-    detonate(p){const blast=this.world.explode(Math.round(p.x),Math.round(p.y),p.kind==='blaster'?30:19);blast.owner=p.owner;if(p.kind==='blaster')blast.power=125;}
+    detonate(p){
+      const blast=this.world.explode(Math.round(p.x),Math.round(p.y),p.blast?.radius??19);blast.owner=p.owner;
+      if(p.blast){blast.power=p.blast.power;blast.impact=p.blast.power/125;}
+    }
     projectileStep(p,dt){
       p.life-=dt;p.age+=dt;
       if(p.life<=0){if(p.kind==='grenade'||p.kind==='blaster')this.detonate(p);else if(p.kind==='water')this.waterImpact(p);else if(p.kind==='mud')Tools.mudBurst(this,p);return false;}
@@ -191,7 +201,7 @@
           if(actor.dead||(actor!==p.owner&&actor.team===p.owner.team)||(actor===p.owner&&(p.kind!=='grenade'||p.age<.2)))continue;
           const r=actor.radius+(actor.gear.shield?3:0);
           if(Math.hypot(actor.x-p.x,actor.y-p.y)>r)continue;
-          if(this.guard(actor,p.x,p.y,p.kind==='blaster'?65:p.kind==='pulse'?12:p.kind==='grenade'?30:3)){
+          if(this.guard(actor,p.x,p.y,p.kind==='blaster'?65*p.blast.power/125:p.kind==='pulse'?12:p.kind==='grenade'?30:3)){
             if(p.kind!=='grenade')return false;
             const co=Math.cos(actor.angle),si=Math.sin(actor.angle),v=Math.max(65,Math.hypot(p.vx,p.vy));
             p.vx=co*v+actor.vx;p.vy=si*v+actor.vy;p.x=actor.x+co*(r+2);p.y=actor.y+si*(r+2);break;
@@ -214,9 +224,9 @@
           if(actor.dead||(e.owner&&actor!==e.owner&&actor.team===e.owner.team))continue;
           const dx=actor.x-e.x,dy=actor.y-e.y,d=Math.hypot(dx,dy),reach=e.radius+12;
           if(d>=reach)continue;
-          const power=1-d/reach;
-          if(this.guard(actor,e.x,e.y,65*power))continue;
-          actor.damage((e.power||85)*power);actor.vx+=dx/Math.max(1,d)*110*power;actor.vy+=dy/Math.max(1,d)*110*power;
+          const power=1-d/reach,impact=e.impact??1;
+          if(this.guard(actor,e.x,e.y,65*power*impact))continue;
+          actor.damage((e.power||85)*power);actor.vx+=dx/Math.max(1,d)*110*power*impact;actor.vy+=dy/Math.max(1,d)*110*power*impact;
         }
       }
     }
