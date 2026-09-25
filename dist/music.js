@@ -64,7 +64,7 @@
   const COPPER={
     id:'kuparisydan',title:'Kuparisydän',bpm:148,
     // A clipped D-minor motor riff answers a broad F-major refrain.
-    tone:{duty:.18,triangle:.08,arpHz:75,arpGain:.08},
+    tone:{duty:.18,triangle:.08,arpHz:225,arpGain:.06},
     drums:{kick:[0,3,8,10],snare:[4,12],hat:[0,2,4,6,8,10,12,14]},
     chords:{Dm:[38,50,53,57],Bb:[34,50,53,58],Gm:[43,55,58,62],A7:[33,49,52,55],
       F:[41,53,57,60],C:[36,52,55,60],Em7b5:[40,55,58,62]},
@@ -124,7 +124,7 @@
     id:'revontulivirta',title:'Revontulivirta',bpm:116,
     // A Dorian: the raised sixth lights up a spacious, half-time melody.
     // The borrowed F and E7 in the middle briefly turn it towards harmonic minor.
-    tone:{duty:.32,triangle:.55,arpHz:50,arpGain:.065,arpRows:4},
+    tone:{duty:.32,triangle:.55,arpHz:150,arpGain:.05,arpRows:4},
     drums:{kick:[0,10],snare:[8],hat:[0,3,6,8,11,14]},
     chords:{Am:[45,57,60,64],D:[38,54,57,62],G:[43,55,59,62],C:[36,55,60,64],
       Em:[40,55,59,64],F:[41,53,57,60],E7:[40,56,59,62]},
@@ -184,7 +184,7 @@
   class Tracker {
     constructor(rate,song=SONGS[0]){
       this.rate=rate;this.song=song;this.rowLength=rate*60/(song.bpm*4);this.smooth=1-Math.exp(-1/(rate*.02));
-      this.tone={duty:.26,triangle:0,arpHz:50,arpGain:.085,arpRows:2,...song.tone};
+      this.tone={duty:.26,triangle:0,arpHz:150,arpGain:.065,arpRows:2,...song.tone};
       this.drums=song.drums||{kick:[0,6,8],snare:[4,12],hat:[0,2,4,6,8,10,12,14]};
       this.echo=new Float32Array(Math.round(this.rowLength*3));
       this.notes=Object.fromEntries(Object.entries(song.phrases).map(([name,phrase])=>[name,phrase.split(' ').map(Tracker.note)]));
@@ -221,7 +221,8 @@
         let rows=1;while(step+rows<16&&pattern[step+rows]==='-')rows++;
         this.bass=this.voice(bar.chord[0]+bass,rows,'bass');
       }
-      if(step%this.tone.arpRows===0){this.arpAge=0;this.arpIndex=-1;}
+      if(step%this.tone.arpRows===0)this.arpAge=0;
+      if(step===0)this.arpIndex=-1; // Refresh the chord without restarting the pitch-effect clock.
       if(bar.style!=='intro'&&bar.style!=='break'){
         if(this.drums.kick.includes(step)||(bar.style==='fill'&&step===14)){this.kickAge=0;this.kickPhase=0;}
         if(this.drums.snare.includes(step)||(bar.style==='fill'&&step>=13)){this.snareAge=0;this.snarePhase=0;}
@@ -238,6 +239,14 @@
       if(this.playing)v.age+=dt;
       return (lead?pulse*(1-this.tone.triangle)+triangle*this.tone.triangle:pulse*.7+triangle*.3)*env*(lead?.16:.18);
     }
+    arpeggio(dt){
+      // Fast 0xy-style pitch cycling on one continuous oscillator. The sample clock
+      // keeps the effect running evenly across rhythmic accents and chord changes.
+      const index=Math.floor((this.frames-1)*this.tone.arpHz/this.rate)%3;
+      if(index!==this.arpIndex){this.arpIndex=index;this.arpFrequency=this.frequencies[this.bar.chord[index+1]+(this.bar.style==='chorus'?12:0)];}
+      this.arpPhase=(this.arpPhase+this.arpFrequency*dt)%1;
+      return (this.arpPhase<.125?1:-1/7)*(.65+.35*Math.exp(-this.arpAge*9))*this.tone.arpGain;
+    }
     sample(){
       this.gain+=((this.playing?this.level:0)-this.gain)*this.smooth;
       if(!this.audible){this.gain=0;return 0;}
@@ -247,10 +256,7 @@
       const lead=this.pitched(this.lead,dt),bass=this.pitched(this.bass,dt);
       const echo=this.echo[this.echoIndex];
       if(this.playing){this.echo[this.echoIndex]=lead+echo*.23;this.echoIndex=(this.echoIndex+1)%this.echo.length;}
-      const arpIndex=Math.floor(this.arpAge*this.tone.arpHz)%3;
-      if(arpIndex!==this.arpIndex){this.arpIndex=arpIndex;this.arpFrequency=this.frequencies[bar.chord[arpIndex+1]+(bar.style==='chorus'?12:0)];}
-      this.arpPhase=(this.arpPhase+this.arpFrequency*dt)%1;
-      const arp=(this.arpPhase<.125?1:-1/7)*Math.exp(-this.arpAge*9)*this.tone.arpGain;
+      const arp=this.arpeggio(dt);
       let n=this.seed;n^=n<<13;n^=n>>>17;n^=n<<5;this.seed=n;const noise=(n>>>0)/2147483648-1;
       this.kickPhase=(this.kickPhase+(48+125*Math.exp(-this.kickAge*48))*dt)%1;
       this.snarePhase=(this.snarePhase+185*dt)%1;

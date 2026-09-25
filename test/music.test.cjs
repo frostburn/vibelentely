@@ -33,6 +33,29 @@ test('The sample clock holds tempo across device rates and wraps into the first 
   }
 });
 
+test('Fast chord cycling keeps even pitch ticks and oscillator phase across rhythmic accents',()=>{
+  for(const rate of [44100,48000])for(const song of SONGS){
+    const t=new Tracker(rate,song);t.set(true,.45);
+    const chord=song.chords[song.order[0][0]].slice(1).map(n=>t.frequencies[n]),changes=[];
+    let previousFrequency=0;
+    for(let sample=0;sample<rate;sample++){
+      const phase=t.arpPhase;t.sample();
+      if(t.arpFrequency===previousFrequency)continue;
+      assert.equal(t.arpFrequency,chord[changes.length%3],'pitch sequence must not retrigger with the envelope');
+      assert.ok(Math.abs(t.arpPhase-(phase+t.arpFrequency/rate)%1)<1e-12,'pitch changes must preserve oscillator phase');
+      changes.push(sample);previousFrequency=t.arpFrequency;
+    }
+    assert.ok(changes.length>=150,'the effect must run at least 150 pitch steps per second');
+    assert.equal(changes.length,t.tone.arpHz);
+    for(let i=1;i<changes.length;i++){
+      const length=changes[i]-changes[i-1];
+      assert.ok(length===Math.floor(rate/t.tone.arpHz)||length===Math.ceil(rate/t.tone.arpHz),'accent boundaries must not shorten pitch ticks');
+    }
+    const frames=t.frames,index=t.arpIndex;t.set(false,.45);samples(t,1024);
+    assert.equal(t.frames,frames);assert.equal(t.arpIndex,index,'pausing also freezes the pitch-effect clock');
+  }
+});
+
 test('Pausing fades to silence while preserving notes, echo position and transport; resuming continues there',()=>{
   const t=new Tracker(48000);t.set(true,.45);samples(t,4800);
   const before={frames:t.frames,row:t.row,remaining:t.remaining,echo:t.echoIndex,age:t.lead?.age};
