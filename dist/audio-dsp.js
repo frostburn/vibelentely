@@ -56,7 +56,7 @@
         p[0]=(p[0]+(155+65*l.vacuum)*dt)%1;
         p[1]=(p[1]+(120+850*l.charge*l.charge+12*flutter)*dt)%1;
         p[2]=(p[2]+210*dt)%1;p[3]=(p[3]+37*dt)%1;
-        let mix=l.engine*this.engineNoise*(.125+.0125*flutter);
+        let mix=l.engine*this.engineNoise*(.1+.01*flutter);
         mix+=l.vacuum*(this.wave(p[0],1)*.035+n*.09);
         mix+=l.charge*this.wave(p[1],1)*(.065+(this.target.charge===1?.025*flutter:0));
         mix+=l.shield*this.wave(p[2],2)*.035;
