@@ -5,24 +5,32 @@
     constructor(){
       this.volume=60;this.muted=false;this.active=false;this.context=null;this.node=null;this.master=null;this.starting=null;
       this.status='idle';this.onchange=()=>{};this.combat=null;this.listener=null;
+      this.musicEnabled=true;this.musicVolume=45;this.musicActive=false;
       try{
         const saved=JSON.parse(root.localStorage?.getItem(storageKey)||'null');
         if(Number.isFinite(saved?.volume))this.volume=Math.max(0,Math.min(100,saved.volume));
         this.muted=saved?.muted===true;
+        if(Number.isFinite(saved?.musicVolume))this.musicVolume=Math.max(0,Math.min(100,saved.musicVolume));
+        this.musicEnabled=saved?.musicEnabled!==false;
       }catch{}
     }
-    save(){try{root.localStorage?.setItem(storageKey,JSON.stringify({volume:this.volume,muted:this.muted}));}catch{}}
-    setVolume(value){if(!Number.isFinite(value))return;this.volume=Math.max(0,Math.min(100,value));this.save();this.gain();this.onchange();}
-    toggleMute(){this.muted=!this.muted;this.save();this.clear();this.gain();this.onchange();}
+    save(){try{root.localStorage?.setItem(storageKey,JSON.stringify({volume:this.volume,muted:this.muted,musicVolume:this.musicVolume,musicEnabled:this.musicEnabled}));}catch{}}
+    setVolume(value){if(!Number.isFinite(value))return;this.volume=Math.max(0,Math.min(100,value));this.save();this.gain();this.updateMusic();this.onchange();}
+    toggleMute(){this.muted=!this.muted;this.save();this.clear();this.gain();this.updateMusic();this.onchange();}
+    setMusicVolume(value){if(!Number.isFinite(value))return;this.musicVolume=Math.max(0,Math.min(100,value));this.save();this.updateMusic();this.onchange();}
+    toggleMusic(){this.musicEnabled=!this.musicEnabled;this.save();this.updateMusic();this.gain();this.onchange();}
+    setMusicActive(value){value=!!value;if(value===this.musicActive)return;this.musicActive=value;this.updateMusic();this.gain();}
+    updateMusic(){this.send({type:'music',playing:this.musicActive&&this.musicEnabled&&!this.muted&&this.volume>0&&this.musicVolume>0,level:this.musicVolume/100});}
     gain(){
       if(!this.master)return;
       const now=this.context.currentTime,param=this.master.gain;
       // Squared slider taper, after quantisation AND filtering. No upstream volume changes.
-      param.cancelScheduledValues(now);param.setTargetAtTime(this.active&&!this.muted?(this.volume/100)**2:0,now,.012);
+      param.cancelScheduledValues(now);param.setTargetAtTime((this.active||this.musicActive&&this.musicEnabled)&&!this.muted?(this.volume/100)**2:0,now,.012);
     }
     send(message){if(this.node?.port)this.node.port.postMessage(message);else if(this.synth){
       if(message.type==='event')this.synth.event(message.kind,message.gain,message.power);
       else if(message.type==='controls')this.synth.controls(message.values);
+      else if(message.type==='music')this.synth.music.set(message.playing,message.level);
       else this.synth.clear();
     }}
     clear(){this.send({type:'clear'});}
@@ -41,7 +49,7 @@
         this.node.onaudioprocess=e=>this.synth.render(e.outputBuffer.getChannelData(0));
       }finally{if(url)URL.revokeObjectURL(url);}
       this.master=ctx.createGain();this.master.gain.value=0;
-      this.node.connect(this.master);this.master.connect(ctx.destination);this.gain();
+      this.node.connect(this.master);this.master.connect(ctx.destination);this.gain();this.updateMusic();
     }
     async unlock(){
       if(this.status==='unsupported')return false;

@@ -1,5 +1,6 @@
 (function(root){
   'use strict';
+  const {SONG,Tracker}=root.CaveMusic;
   // A mono 8-bit DAC at 11025 Hz, followed by the narrow speaker cabinet.
   // User volume is deliberately outside this processor, after the filters.
   class Cabinet {
@@ -18,7 +19,7 @@
   }
   class Synth {
     constructor(rate=48000){
-      this.rate=rate;this.cabinet=new Cabinet(rate);this.voices=[];this.seed=19790517;
+      this.rate=rate;this.cabinet=new Cabinet(rate);this.music=new Tracker(rate);this.voices=[];this.seed=19790517;
       this.target={engine:0,wet:0,lava:0,vacuum:0,charge:0,shield:0};this.level={...this.target};
       this.phases=new Float64Array(4);this.time=0;this.smooth=1-Math.exp(-1/(rate*.025));
       this.engineClock=1;this.engineNoise=0;this.rumbleLP=1-Math.exp(-2*Math.PI*340/rate);
@@ -44,7 +45,7 @@
     }
     wave(phase,shape){return shape===1?(phase<.35?1:-.54):shape===2?1-4*Math.abs(phase-.5):Math.sin(phase*Math.PI*2);}
     render(output){
-      if(!this.voices.length&&Object.keys(this.level).every(k=>this.target[k]===0&&this.level[k]<1e-7)&&Math.abs(this.cabinet.low2)<1e-8){output.fill(0);return;}
+      if(!this.music.audible&&!this.voices.length&&Object.keys(this.level).every(k=>this.target[k]===0&&this.level[k]<1e-7)&&Math.abs(this.cabinet.low2)<1e-8){output.fill(0);return;}
       const dt=1/this.rate,p=this.phases;
       for(let i=0;i<output.length;i++){
         this.time+=dt;
@@ -56,7 +57,7 @@
         p[0]=(p[0]+(155+65*l.vacuum)*dt)%1;
         p[1]=(p[1]+(120+850*l.charge*l.charge+12*flutter)*dt)%1;
         p[2]=(p[2]+210*dt)%1;p[3]=(p[3]+37*dt)%1;
-        let mix=l.engine*this.engineNoise*(.1+.01*flutter);
+        let mix=this.music.sample()+l.engine*this.engineNoise*(.1+.01*flutter);
         mix+=l.vacuum*(this.wave(p[0],1)*.035+n*.09);
         mix+=l.charge*this.wave(p[1],1)*(.065+(this.target.charge===1?.025*flutter:0));
         mix+=l.shield*this.wave(p[2],2)*.035;
@@ -92,11 +93,12 @@
       }
     }
   }
-  function workletSource(){return `${Cabinet.toString()}\n${Synth.toString()}\n
+  function workletSource(){return `const SONG=${JSON.stringify(SONG)};\n${Tracker.toString()}\n${Cabinet.toString()}\n${Synth.toString()}\n
     class CaveProcessor extends AudioWorkletProcessor {
       constructor(){super();this.synth=new Synth(sampleRate);this.port.onmessage=({data})=>{
         if(data.type==='event')this.synth.event(data.kind,data.gain,data.power);
         else if(data.type==='controls')this.synth.controls(data.values);
+        else if(data.type==='music')this.synth.music.set(data.playing,data.level);
         else if(data.type==='clear')this.synth.clear();
       };}
       process(inputs,outputs){this.synth.render(outputs[0][0]);return true;}

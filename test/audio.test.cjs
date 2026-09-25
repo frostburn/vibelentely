@@ -1,6 +1,7 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),vm=require('node:vm');
+require('../dist/music.js');
 const DSP=require('../dist/audio-dsp.js');
 const {World,M}=require('../dist/simulation.js');
 const {Drone}=require('../dist/flight.js');
@@ -83,7 +84,7 @@ test('One audio context feeds only the final master gain; volume changes do not 
   await Promise.all([s.unlock(),s.unlock()]);assert.equal(b.contexts.length,1);assert.equal(b.modules,1);
   assert.equal(s.node.connections[0],s.master);assert.equal(s.master.connections[0],s.context.destination);assert.equal(s.master.connections.length,1);
   assert.equal(s.master.gain.value,.36);const before=b.messages.length;s.setVolume(25);
-  assert.equal(b.messages.length,before,'volume must not alter drive, DAC or filters');assert.equal(s.master.gain.value,.0625);assert.ok(s.master.gain.smoothing>0);
+  assert.ok(b.messages.slice(before).every(m=>m.type==='music'&&m.level===.45),'master volume must not alter music mix level, drive, DAC or filters');assert.equal(s.master.gain.value,.0625);assert.ok(s.master.gain.smoothing>0);
   s.toggleMute();assert.equal(s.master.gain.value,0);assert.equal(s.volume,25);s.toggleMute();assert.equal(s.master.gain.value,.0625);
   s.setVolume(0);assert.equal(s.master.gain.value,0);assert.equal(b.writes.at(-1)[1].volume,0);
 });
@@ -125,4 +126,18 @@ test('Distant sounds attenuate, session changes discard old events, and continuo
   combat.finish('lost');s.update(player);assert.equal(Object.keys(b.messages.at(-1).values).length,0);
   const next=game();next.world.explode(100,110);s.watch(next.combat);assert.equal(combat.onSound,null);
   const old=b.messages.filter(m=>m.type==='event').length;s.update(next.player);assert.equal(b.messages.filter(m=>m.type==='event').length,old);
+});
+
+test('Menu music uses the final master, remembers its mix level, and can pause independently of effects',async()=>{
+  const b=browser({fallback:true,saved:'{"musicVolume":32,"musicEnabled":true}'}),s=b.sound;
+  s.setMusicActive(true);await s.unlock();assert.equal(s.active,false);assert.equal(s.master.gain.value,.36);
+  assert.equal(s.synth.music.level,.32);assert.equal(s.synth.music.playing,true);
+  s.synth.render(new Float32Array(1024));const position=s.synth.music.frames;
+  s.watch(game().combat);assert.equal(s.synth.music.frames,position);
+  s.setActive(true);s.toggleMusic();assert.equal(s.synth.music.playing,false);assert.equal(s.master.gain.value,.36);
+  s.cue('pulse');assert.equal(s.synth.voices.at(-1).kind,'pulse');
+  s.setMusicVolume(21);s.toggleMusic();assert.equal(s.synth.music.level,.21);
+  s.toggleMute();assert.equal(s.synth.music.playing,false);assert.equal(s.master.gain.value,0);
+  s.toggleMute();assert.equal(s.synth.music.playing,true);assert.equal(s.musicVolume,21);
+  s.setMusicActive(false);assert.equal(s.synth.music.playing,false);assert.equal(b.writes.at(-1)[1].musicVolume,21);
 });

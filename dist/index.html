@@ -17,6 +17,7 @@
   <script defer src="match.js"></script>
   <script defer src="solo.js"></script>
   <script defer src="render.js"></script>
+  <script defer src="music.js"></script>
   <script defer src="audio-dsp.js"></script>
   <script defer src="audio.js"></script>
   <script defer src="app.js"></script>
@@ -63,6 +64,11 @@
       <label for="menu-volume">Voimakkuus</label><input id="menu-volume" data-volume type="range" min="0" max="100" value="60" step="1">
       <output data-volume-readout for="menu-volume">60 %</output><span data-audio-status role="status"></span>
     </div>
+    <div class="sound-controls music-controls" role="group" aria-label="Taustamusiikki: Basalttiyö">
+      <button type="button" data-music aria-label="Taustamusiikki" aria-pressed="true" title="Basalttiyö">Musiikki päällä</button>
+      <label for="menu-music-volume">Taso</label><input id="menu-music-volume" data-music-volume type="range" min="0" max="100" value="45" step="1">
+      <output data-music-readout for="menu-music-volume">45 %</output><span class="track-name">Basalttiyö</span>
+    </div>
   </section>
   <div id="game-app" class="app" hidden>
     <header class="masthead">
@@ -79,6 +85,11 @@
       <button type="button" data-mute aria-pressed="false">Äänet päällä</button>
       <label for="game-volume">Voimakkuus</label><input id="game-volume" data-volume type="range" min="0" max="100" value="60" step="1">
       <output data-volume-readout for="game-volume">60 %</output><span data-audio-status role="status"></span>
+    </div>
+    <div class="sound-controls music-controls" role="group" aria-label="Taustamusiikki: Basalttiyö">
+      <button type="button" data-music aria-label="Taustamusiikki" aria-pressed="true" title="Basalttiyö">Musiikki päällä</button>
+      <label for="game-music-volume">Taso</label><input id="game-music-volume" data-music-volume type="range" min="0" max="100" value="45" step="1">
+      <output data-music-readout for="game-music-volume">45 %</output>
     </div>
     <main>
       <section class="play-area" aria-label="Maastosimulaatio">
