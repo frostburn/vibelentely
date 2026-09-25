@@ -8,6 +8,18 @@ Avaa `dist/index.html` selaimessa. Asennuksia, palvelinta, ulkoisia kirjastoja t
 
 Päävalikosta valitaan **Tiimitaistelu**, **Soolokeikat** tai **Luolalabra**. Valikko pysäyttää pelin; kaikkien kolmen pelimuodon tilanne säilyy erikseen niin kauan kuin sivu on auki. Sivun lataaminen uudelleen aloittaa alusta.
 
+## Äänet
+
+Moottori kohisee hillityllä voimakkuudella ajassa kvantisoidulla kohinalla: näyte vaihtuu noin 1,3–2 kHz tahdissa ja pysyy välissä vakiona. Pulssitykki sirisee, ja räjähdyksen alkupamausta seuraa matala, lyhyt kumina (noin 0,45–0,75 s koon mukaan). Mutapommin laukaisussa ja osumassa on pieni nouseva ”bloub!” ja karkea, märkä loppuääni. Vesi ja imu kuulostavat erilaisilta; blasterin nousuääni kertoo latauksesta, täysi lataus kilahtaa ja ylikuumeneminen lässähtää. Kilven osuma, lähisiirtymä, runkovaurio, nouto, toimitus ja erän tulos saavat omat lyhyet merkkinsä. Kaukaiset tapahtumat kuuluvat hiljempaa. Ei taustamusiikkia tai ladattavia äänitiedostoja.
+
+Koko monomiksaus kulkee yhden purkin läpi:
+
+`Synteesi ja miksaus → kiinteä ajotaso → 11 025 Hz näytteenpito + 8-bittinen kvantisointi → 180 Hz ylipäästö → kaksi 2 300 Hz alipäästöä → master-gain → kaiuttimet`
+
+Voimakkuussäädin on **kaiken tuhnutuksen jälkeen**. Se ei muuta kvantisoinnin askelkokoa, suodatusta tai miksauksen säröytymistä. Säädön vaste on neliöllinen ja muutokset pehmennetään, jotta pieniäkin voimakkuuksia on helppo käyttää. Mykistys säilyttää valitun voimakkuuden; molemmat asetukset muistetaan selaimessa, jos paikallinen tallennus on käytettävissä.
+
+Ääni käynnistyy ensimmäisestä näppäin- tai osoitineleestä. Valikko, tauko, ikkunan fokuksen menetys ja piilotettu välilehti hiljentävät pelin ja tyhjentävät kesken olevat äänet. Pelitilan vaihto tai uusi yritys ei toista vanhoja ääniä. Äänet toimivat ensisijaisesti AudioWorkletissa; jos se ei ole saatavilla esimerkiksi paikallista HTML-tiedostoa avattaessa, ScriptProcessor ajaa saman synteesin ja purkkiketjun. Peli toimii myös ilman Web Audiota.
+
 ## Soolokeikat
 
 Kahdeksan vapaasti valittavaa tehtävää omilla kartoillaan. Maasto, lennokki ja kello käynnistyvät ensimmäisestä ohjauksesta. Tavoite, eteneminen ja toimintaohje näkyvät peliruudun vieressä. Kohteet näkyvät pienoiskartalla ja ruudun reunoilla; vihreä **H** on kotiasema, keltainen henkilö tai paketti on noutopaikka, oranssi risti on avattava luukku ja ruskea plus on paikattava vuoto. Punainen huutomerkki ja ympyrä osoittavat räjähdyksille herkän koneiston.
@@ -172,6 +184,8 @@ Vienti tuottaa yhden itsenäisen HTML-tiedoston. `dist/`-hakemiston voi myös pa
 | `dist/solo.js` | Kahdeksan soolotehtävää, yhdistetyt maastotavoitteet, herkkä koneisto, lasti ja tulokset |
 | `dist/ai.js` | Reitinhaku, tähtäys, lentäminen ja tekoälyn varustevalinnat |
 | `dist/render.js` | Pikselipiirto, lennokin rasterisprite ja pienoiskartta |
+| `dist/audio-dsp.js` | Synteesi, 24 äänen raja, 8-bittinen näytteenpito ja purkkisuodatus |
+| `dist/audio.js` | Äänitapahtumat, selainäänen käynnistys, asetukset ja viimeinen master-gain |
 | `dist/app.js` | Päävalikko, erilliset pelitilanteet, ohjaimet, kamera ja kiinteä aika-askel |
 | `test/` | Materiaalien, lentämisen, taistelun, tekoälyn ja soolotehtävien regressiotestit |
 

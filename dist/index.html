@@ -17,6 +17,8 @@
   <script defer src="match.js"></script>
   <script defer src="solo.js"></script>
   <script defer src="render.js"></script>
+  <script defer src="audio-dsp.js"></script>
+  <script defer src="audio.js"></script>
   <script defer src="app.js"></script>
 </head>
 <body>
@@ -56,6 +58,11 @@
       </article>
     </div>
     <p class="menu-foot">Nuolet / WASD lentämiseen · J pulssi · K L varusteet · I kilpi · Q lähisiirtymä<br>Myös kosketusohjaimet. Päävalikko pysäyttää pelin; tilanne säilyy tämän sivun ajan.</p>
+    <div class="sound-controls" role="group" aria-label="Ääniasetukset">
+      <button type="button" data-mute aria-pressed="false">Äänet päällä</button>
+      <label for="menu-volume">Voimakkuus</label><input id="menu-volume" data-volume type="range" min="0" max="100" value="60" step="1">
+      <output data-volume-readout for="menu-volume">60 %</output><span data-audio-status role="status"></span>
+    </div>
   </section>
   <div id="game-app" class="app" hidden>
     <header class="masthead">
@@ -68,6 +75,11 @@
         <button id="fullscreen" title="Koko näyttö · F" aria-label="Koko näyttö"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg></button>
       </div>
     </header>
+    <div class="sound-controls game-sound" role="group" aria-label="Ääniasetukset">
+      <button type="button" data-mute aria-pressed="false">Äänet päällä</button>
+      <label for="game-volume">Voimakkuus</label><input id="game-volume" data-volume type="range" min="0" max="100" value="60" step="1">
+      <output data-volume-readout for="game-volume">60 %</output><span data-audio-status role="status"></span>
+    </div>
     <main>
       <section class="play-area" aria-label="Maastosimulaatio">
         <div class="stage-toolbar">

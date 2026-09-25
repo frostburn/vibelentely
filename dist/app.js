@@ -25,16 +25,33 @@
   }
   const sessions={lab:createSession('lab')};
   let {world,drone,combat,camera}=sessions.lab,match=null,solo=null,view='menu';
+  const audio=new CaveAudio.Sound();let focused=true;
   const renderer=new CaveRenderer(world,screen,$('minimap'));
   let selected=0,radius=5,paused=false,scene='cave',panTool=false,speed=1,mode='edit';
   let rosterActors=[];
   let accumulator=0,lastTime=0,statTime=0,frameCount=0,stepCount=0,raf=0,simMS=0,lastBrush=null;
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  function audioReadout(){
+    for(const el of document.querySelectorAll('[data-volume]'))el.value=String(audio.volume);
+    for(const el of document.querySelectorAll('[data-volume-readout]'))el.textContent=Math.round(audio.volume)+' %';
+    for(const el of document.querySelectorAll('[data-mute]')){
+      el.textContent=audio.muted?'Äänet pois':'Äänet päällä';el.setAttribute('aria-pressed',String(audio.muted));
+      el.setAttribute('aria-label',audio.muted?'Ota äänet käyttöön':'Mykistä äänet');el.disabled=audio.status==='unsupported';
+    }
+    for(const el of document.querySelectorAll('[data-audio-status]'))el.textContent=audio.status==='unsupported'?'Selain ei tue ääntä.':'';
+  }
+  function syncAudio(){audio.setActive(view!=='menu'&&!paused&&!document.hidden&&focused);}
+  audio.onchange=audioReadout;audioReadout();
+  for(const el of document.querySelectorAll('[data-volume]'))el.addEventListener('input',()=>audio.setVolume(Number(el.value)));
+  for(const el of document.querySelectorAll('[data-mute]'))el.addEventListener('click',()=>{audio.toggleMute();audio.unlock();});
+  // Capture gestures also on the menu and touch controls; loading alone stays silent.
+  for(const event of ['pointerdown','keydown'])window.addEventListener(event,()=>{if(!document.hidden)audio.unlock();},{capture:true});
   function clampCamera(){camera.x=clamp(Math.round(camera.x),0,world.width-320);camera.y=clamp(Math.round(camera.y),0,world.height-200);}
   function setMode(value,recenter=true){
     if((view==='match'||view==='solo')&&value!=='fly')return;
     mode=value;keys.clear();held.clear();document.querySelectorAll('[data-flight]').forEach(b=>b.classList.remove('is-held'));pointer.down=false;pointer.panning=false;pointer.inside=false;lastBrush=null;
     CaveTools.cancel(drone);$('loadout').hidden=mode!=='fly';
+    audio.watch(combat,solo);
     panTool=false;$('pan').setAttribute('aria-pressed','false');screen.classList.remove('panning','dragging');
     screen.classList.toggle('flying',mode==='fly');
     $('fly-mode').setAttribute('aria-pressed',String(mode==='fly'));
@@ -64,6 +81,7 @@
     $('pause').querySelector('path').setAttribute('d',value?'M4 2l9 6-9 6z':'M5 3v10M11 3v10');
     $('paused-label').hidden=!value;
     $('performance').textContent=value?'Tauolla':'60 askelta/s';
+    syncAudio();
   }
   function reset(){
     if(view!=='lab')return;
@@ -71,6 +89,7 @@
     camera.x=drone.x-160;camera.y=drone.y-100;clampCamera();accumulator=0;
     $('follow').checked=true;if(mode==='edit')$('pointer-status').textContent='Valitse aine ja piirrä luolaan.';
     $('sources').disabled=scene==='empty';
+    audio.watch(combat,solo);
   }
   function resize(){
     const compact=window.innerWidth<=680;
@@ -142,6 +161,7 @@
       setPaused(false);
     }else combat.reset();
     accumulator=0;centerCamera();levelReadout();battleReadout();
+    audio.watch(combat,solo);if(combat.result)audio.cue(combat.result);
   }
   $('respawn').addEventListener('click',respawn);
   $('next-round').addEventListener('click',respawn);
@@ -152,6 +172,7 @@
   }
   function openMenu(){
     saveSession();clearInput();view='menu';accumulator=0;lastTime=0;
+    syncAudio();
     $('game-app').hidden=true;$('main-menu').hidden=false;
     const saved=sessions.match?.match,canContinue=saved&&saved.phase!=='finished';
     $('continue-match').hidden=!canContinue;$('saved-match').hidden=!saved;
@@ -281,8 +302,9 @@
   });
   window.addEventListener('keyup',e=>keys.delete(e.code));
   function clearInput(){keys.clear();held.clear();CaveTools.cancel(drone);mapDown=false;release();document.querySelectorAll('[data-flight]').forEach(b=>b.classList.remove('is-held'));}
-  window.addEventListener('blur',()=>{clearInput();if((view==='match'||view==='solo')&&!combat.result)setPaused(true);});
-  document.addEventListener('visibilitychange',()=>{clearInput();lastTime=0;accumulator=0;if(document.hidden&&(view==='match'||view==='solo')&&!combat.result)setPaused(true);});
+  window.addEventListener('blur',()=>{focused=false;clearInput();if((view==='match'||view==='solo')&&!combat.result)setPaused(true);syncAudio();});
+  window.addEventListener('focus',()=>{focused=true;syncAudio();});
+  document.addEventListener('visibilitychange',()=>{clearInput();lastTime=0;accumulator=0;if(document.hidden&&(view==='match'||view==='solo')&&!combat.result)setPaused(true);syncAudio();});
   window.addEventListener('resize',resize);
   function flightInput(){return {
     thrust:keys.has('KeyW')||keys.has('ArrowUp')||held.has('thrust'),
@@ -296,6 +318,7 @@
     if(view==='match')match.step(flightInput());
     else if(view==='solo')solo.step(flightInput());
     else if(view==='lab'){world.step();if(mode==='fly')combat.step(flightInput());}
+    audio.update(focusActor(),solo,mode==='fly');
   }
   function renderRoster(){
     const actors=combat.active();
@@ -411,7 +434,7 @@
   // Inspectable references always point at the session currently shown.
   window.vibelentely=window.luolalabra={
     get world(){return world;},get drone(){return drone;},get combat(){return combat;},get match(){return match;},
-    get solo(){return solo;},
+    get solo(){return solo;},audio,
     get camera(){return camera;},materials,pause:setPaused,reset,respawn,setMode,renderer,openMenu,enterSession,
     get scene(){return world.level?.id||scene;},get state(){return{view,paused,selected,radius,speed,mode,simMS,screen:[screen.width,screen.height],camera:{...camera}};},
   };
