@@ -4,6 +4,7 @@
   const rgb=(r,g,b)=>((255<<24)|(b<<16)|(g<<8)|r)>>>0;
   const allyPalette={'1':'#396b57','2':'#82cea0','3':'#e5ffca','4':'#254737'};
   const actorColor=a=>a.team?'#ffb784':a.pilot?'#9ce4a6':'#b5f1ec';
+  const goalColor=g=>g.materials.includes(M.MUD)&&!g.clear?'#ce9c70':g.materials.includes(M.LAVA)?'#ff965f':g.materials.includes(M.BASALT)?'#c2ada0':g.materials.includes(M.SAND)?'#d9b568':'#78ccd9';
   const enemyPalette={'1':'#834840','2':'#e59067','3':'#fff0c1','4':'#4c2339'};
   const palettes={
     [M.ROCK]:[[40,47,59],[44,51,64],[47,54,66],[50,57,69],[54,61,72]],
@@ -145,7 +146,7 @@
     missions(cx,cy,solo){
       const ctx=this.ctx;
       for(const g of solo.goals){
-        const z=g.zone;ctx.fillStyle=g.materials.includes(M.MUD)&&!g.clear?'#ce9c70':g.materials.includes(M.SAND)?'#d9b568':'#78ccd9';
+        const z=g.zone;ctx.fillStyle=goalColor(g);
         for(let x=z.x;x<z.x+z.width;x+=4){ctx.fillRect(x-cx,z.y-cy,2,1);ctx.fillRect(x-cx,z.y+z.height-1-cy,2,1);}
         for(let y=z.y;y<z.y+z.height;y+=4){ctx.fillRect(z.x-cx,y-cy,1,2);ctx.fillRect(z.x+z.width-1-cx,y-cy,1,2);}
       }
@@ -253,7 +254,7 @@
       this.mapCtx.putImageData(this.mapImage,0,0);
       if(solo){
         const ctx=this.mapCtx;
-        for(const g of solo.goals){const z=g.zone;ctx.strokeStyle=g.materials.includes(M.MUD)&&!g.clear?'#ce9c70':g.materials.includes(M.SAND)?'#d9b568':'#78ccd9';ctx.lineWidth=1;ctx.strokeRect(Math.floor(z.x/4)+.5,Math.floor(z.y/4)+.5,Math.floor(z.width/4),Math.floor(z.height/4));}
+        for(const g of solo.goals){const z=g.zone;ctx.strokeStyle=goalColor(g);ctx.lineWidth=1;ctx.strokeRect(Math.floor(z.x/4)+.5,Math.floor(z.y/4)+.5,Math.floor(z.width/4),Math.floor(z.height/4));}
         for(const p of solo.markers())if(p.kind!=='target'){
           const x=Math.round(p.x/4),y=Math.round(p.y/4);
           ctx.fillStyle='#101820';ctx.fillRect(x-3,y-3,7,7);

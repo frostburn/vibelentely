@@ -150,7 +150,11 @@
         const k=c[j];
         if(k===M.WATER) {this.set(j,M.STEAM);h[i]-=190;}
         else if(k===M.POWDER) {this.blasts.push(j);this.set(j,M.FIRE);}
-        else if(k===M.MUD) {this.set(j,M.SAND);h[i]-=15;}
+        else if(k===M.MUD) {
+          // Drying a wet parcel absorbs a fixed amount of heat. A thin lava film
+          // crusts over against a mud dam; a full reservoir stays hot much longer.
+          this.set(j,M.SAND);h[i]=Math.max(20,h[i]-180*256/Math.max(32,this.lavaFill[i]));
+        }
         else if(k===M.AIR||k===M.STEAM||k===M.SMOKE)cooling+=0.28;
         else if(k===M.ROCK||k===M.HARDROCK||k===M.BASALT)cooling+=0.12;
         else if(k===M.LAVA) {

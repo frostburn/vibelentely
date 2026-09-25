@@ -52,7 +52,7 @@ Ensimmäisellä avauksella debug-build soolottaa arpin nopeudella 50 sävelenvai
 
 ## Soolokeikat
 
-Kahdeksan vapaasti valittavaa tehtävää omilla kartoillaan. Maasto, lennokki ja kello käynnistyvät ensimmäisestä ohjauksesta. Tavoite, eteneminen ja toimintaohje näkyvät peliruudun vieressä. Kohteet näkyvät pienoiskartalla ja ruudun reunoilla; vihreä **H** on kotiasema, keltainen henkilö tai paketti on noutopaikka, oranssi risti on avattava luukku ja ruskea plus on paikattava vuoto. Punainen huutomerkki ja ympyrä osoittavat räjähdyksille herkän koneiston.
+Kaksitoista vapaasti valittavaa tehtävää omilla kartoillaan. Maasto, lennokki ja kello käynnistyvät ensimmäisestä ohjauksesta. Tavoite, eteneminen ja toimintaohje näkyvät peliruudun vieressä. Kohteet näkyvät pienoiskartalla ja ruudun reunoilla; vihreä **H** on kotiasema, keltainen henkilö tai paketti on noutopaikka, oranssi risti on avattava luukku ja ruskea plus on paikattava vuoto. Punainen huutomerkki ja ympyrä osoittavat räjähdyksille herkän koneiston.
 
 | Tehtävä | Tavoite | Ratkaisu ja vaarat |
 | --- | --- | --- |
@@ -64,6 +64,10 @@ Kahdeksan vapaasti valittavaa tehtävää omilla kartoillaan. Maasto, lennokki j
 | Kuivatelakka | Paikkaa syöttöputki mudalla ja ime telakka kuivaksi | Mutapaikan ja kuivan altaan pitää säilyä yhtä aikaa. Räjäyttäminen rikkoo telakan. |
 | Kova kuori | Nouda ydinmoduuli lujan kallion sisältä | Tavallinen kranaatti ei riko juovaista lujaa kiveä. Avaa lennokin levyinen reitti täysillä blasterilaukauksilla. |
 | Uusi vesireitti | Paikkaa alavuoto ja avaa luja yläpato; kerää 1 100 solua vettä | Mutapommi ja blasteri toimivat työparina. Tee paikka ennen veden vapauttamista. |
+| Tulivirran tulppa | Patoa jatkuva laavavirta mudalla ja pidä alavirta kylmänä 5 sekuntia | Kivihylly tukee mutapatoa. Laava kuivattaa kosketuspinnan hiekaksi; kuivuminen jäähdyttää ohuen laavakalvon kivikuoreksi. Jälkivirtaa voi jäähdyttää painevedellä. |
+| Kadonnut arkisto | Ime kaksi hiekka- ja mutakerrostumaa pois ja tuo molemmat moduulit kotiin | Kaiva kerros kerrallaan. Arkisto ei kestä räjähdyksiä. Molempien noutopaikkojen pitää pysyä avoimina myös kuljetuksen valmistuessa. |
+| Jäähdytyskeikka | Kivetä vähintään 300 solua laavaa ja jätä altaaseen 500 solua vettä | Jäähdytä läheltä ja täytä korkeammalta, jotta pisarat satavat altaaseen. Täydennä vesivarastoa vasemmalla. Altaassa ei saa olla sulaa laavaa. |
+| Kaksi janoa | Jaa äärellinen vesivarasto kahteen altaaseen, vähintään 900 solua kumpaankin | Paikkaa vasen pohjavuoto mudalla ennen kahden syöttöluukun avaamista blasterilla. Yhden altaan ylitäyttö ei korvaa toista. |
 
 Soolokeikoilla **Kranaatti / panos** ampuu maastoon tarttuvan louhintapanoksen. Sulake kestää 1,4 sekuntia laukaisusta, panoksia on kolme ja yksi palautuu neljässä sekunnissa. Oma räjähdys sattuu. Tiimitaistelussa ja Luolalabrassa tämä varuste käyttää pomppivaa kranaattia.
 
@@ -81,7 +85,7 @@ Vaihda varusteita ennen lähtöä, taisteluerien välissä tai soolokeikalla pys
 
 Lataus ja lämpö näkyvät varustenapissa sekä blasterin keulavalossa. Tauko, valikko, ikkunan tai välilehden jättäminen ja varusteen vaihtaminen peruuttavat latauksen ampumatta. Jäähdytys ja lataus käyttävät samaa pysähtyvää peliaikaa kuin muutkin aseet.
 
-Altaan tai kuilun tavoitemäärän pitää säilyä vähintään sekunti. Pelkkä täyttö ei riitä: palaa elossa kotiasemalle ja hidasta. Jos täyttö laskee alle tavoitteen ennen paluuta, sitä pitää korjata. Kotiasema tai suojan merkki toimii alle 19 solun etäisyydeltä, alle 18 solun sekuntinopeudella ja esteettömällä näkölinjalla. Noudon ja purun eteneminen näkyy tilatekstissä.
+Maastotavoitteiden pitää säilyä yhtä aikaa vähintään sekunti; Tulivirran tulpassa varmistus kestää viisi sekuntia ja Jäähdytyskeikalla kolme. Laskuri näkyy tehtäväpaneelissa ja alkaa alusta, jos yksikin tavoite pettää. Arkistokeikalla sekä kuljetus että noutopaikkojen puhdistus vaaditaan. Pelkkä täyttö ei riitä: palaa elossa kotiasemalle ja hidasta. Jos täyttö laskee alle tavoitteen ennen paluuta, sitä pitää korjata. Kotiasema tai suojan merkki toimii alle 19 solun etäisyydeltä, alle 18 solun sekuntinopeudella ja esteettömällä näkölinjalla. Noudon ja purun eteneminen näkyy tilatekstissä.
 
 **R / Yritä alusta** palauttaa saman tehtävän kartan, kellon ja varusteet. Voiton jälkeen R jatkaa seuraavaan tehtävään ja viimeisestä päävalikkoon. Valikosta voi valita minkä tahansa tehtävän uudelleen. Suoritukset ja parhaat ajat säilyvät sivun aukiolon ajan. Valikko ja tauko pysäyttävät myös määräajan; ikkunan tai välilehden jättäminen tauottaa tehtävän automaattisesti.
 
@@ -92,13 +96,13 @@ Jokaisella vaikeustasolla pelataan samalla kokoonpanolla, kunnes jompikumpi jouk
 | Taso | Kokoonpano koko viiden voiton sarjan ajan |
 | --- | --- |
 | 1 | Sinä + Siipi vastaan 1 vihollinen |
-| 2 | Sinä vastaan 1 vihollinen |
-| 3 | Sinä vastaan 2 vihollista |
-| 4 | Sinä vastaan 3 vihollista |
-| 5 | Sinä vastaan 4 vihollista |
+| 2 | Sinä + 2 siipimiestä vastaan 2 vihollista |
+| 3 | Sinä + 2 siipimiestä vastaan 3 vihollista |
+| 4 | Sinä + 2 siipimiestä vastaan 4 vihollista |
+| 5 | Sinä + 2 siipimiestä vastaan 5 vihollista |
 | … | Seuraavilla tasoilla aina yksi vihollinen lisää |
 
-Erä ratkeaa vasta koko joukkueen tuhouduttua. Jos putoat ensin, Siipi jatkaa taistelua ja kamera seuraa sitä. Erätauolla näkyvät pisteet, seuraava kokoonpano ja seuraavan kentän nimi. Seuraava erä vaihtaa luolan ja palauttaa kaikki varusteet; maasto ja lennokit odottavat ensimmäistä ohjausta. Ottelun aikana **R / Luovuta erä** antaa vihollisille yhden pisteen. Erätauolla R jatkaa samalla tasolla. Viidennen voiton jälkeen **R / Seuraava taso** jatkaa seuraavaan kokoonpanoon. Häviön jälkeen R aloittaa uuden ottelun alusta.
+Erä ratkeaa vasta koko joukkueen tuhouduttua. Jos putoat ensin, siipimiehet jatkavat taistelua ja kamera seuraa elossa olevaa kaveria. Toiselta vaikeustasolta lähtien molemmat siipimiehet pysyvät mukana; myöhemmillä tasoilla vihollisten määrä kasvaa. Erätauolla näkyvät pisteet, seuraava kokoonpano ja seuraavan kentän nimi. Seuraava erä vaihtaa luolan ja palauttaa kaikki varusteet; maasto ja lennokit odottavat ensimmäistä ohjausta. Ottelun aikana **R / Luovuta erä** antaa vihollisille yhden pisteen. Erätauolla R jatkaa samalla tasolla. Viidennen voiton jälkeen **R / Seuraava taso** jatkaa seuraavaan kokoonpanoon. Häviön jälkeen R aloittaa uuden ottelun alusta.
 
 **Esc / Valikko** säilyttää tilanteen. Uusi ottelu aloitetaan valikosta. Välilyönti pysäyttää pelin, ja selainikkunan tai välilehden jättäminen pysäyttää taistelun automaattisesti. Maaston muokkaaminen, ajan nopeuttaminen ja vastustajan poistaminen kuuluvat Luolalabraan.
 
@@ -212,7 +216,7 @@ Vienti tuottaa yhden itsenäisen HTML-tiedoston. `dist/`-hakemiston voi myös pa
 | `dist/combat.js` | Joukkueet, aseet, ammusten törmäykset, kilpi, siirtymä ja eräpisteet |
 | `dist/tools.js` | Kaksi varustepaikkaa, mutapommi, imu, blasterin lataus ja ylikuumeneminen |
 | `dist/match.js` | Viiden voiton sarjat, vaikeusportaat, jokaisen erän kenttävaihto ja luovutus |
-| `dist/solo.js` | Kahdeksan soolotehtävää, yhdistetyt maastotavoitteet, herkkä koneisto, lasti ja tulokset |
+| `dist/solo.js` | Kaksitoista soolotehtävää, maasto- ja kuljetustavoitteet, varmistusajat, herkkä koneisto ja tulokset |
 | `dist/ai.js` | Reitinhaku, tähtäys, lentäminen ja tekoälyn varustevalinnat |
 | `dist/render.js` | Pikselipiirto, lennokin rasterisprite ja pienoiskartta |
 | `dist/music.js` | Kolme 64 tahdin vuoropuhelua, pulssi ja FM-kantele, tracker-soitin ja toistokierto |
