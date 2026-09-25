@@ -36,6 +36,14 @@ Sointuarpeggio on nopeutettu [trackerien `0xy`-efektin](https://milkytracker.org
 
 Musiikilla on oma muistettava tasosäädin ja päälle/pois-painike. Tasosäädin muuttaa musiikin osuutta **ennen yhteistä tuhnuketjua**; yleinen voimakkuussäädin on edelleen ketjun jälkeen. Musiikin mykistys tai nollataso pysäyttää sen toiston samaan kohtaan, eikä hiljainen aika kuluta kierroksia. Soitin seuraa äänilaitteen näytekelloa, joten grafiikan hidastuminen tai Luolalabran nopeussäädin eivät muuta tempoa. Nuotit, soinnut ja kappalerakenteet ovat muokattavissa `dist/music.js`-tiedostossa; piste on tauko ja viiva pitää edellisen nuotin. Kaikki kolme sävellystä sisältyvät yhden HTML-tiedoston exportiin.
 
+### Arppilabra-debug-build
+
+CI:n **vibelentely-debug**-paketissa on itsenäinen `vibelentely-debug.html`. Avaa se ja paina **Kuuntele**. Sivun yläreunan paneelissa voi valita biisin, soolottaa arppikanavan ja säätää nopeutta lennossa **1–300 sävelenvaihtoon sekunnissa**. Liukusäätimen lisäksi on numerokenttä ja vertailupresetit 25, 50, 75, 100, 150 ja 225. Lukema näyttää myös yhden sävelen keston ja kokonaisen kolmisoinnun kiertotaajuuden. **Biisin oletus** palauttaa kappalekohtaisen nopeuden.
+
+Soolotus hiljentää melodian, basson, kaiun, rummut ja pelitehosteet. **Ohita tuhnuketju** ohittaa sekä kvantisoinnin että suodatuksen vertailukuuntelua varten. Lopullinen master-gain toimii myös ohituksessa. Nopeuden vaihto säilyttää toistokohdan ja efektin vaiheen; soolotus ja suodatuksen vaihto häivytetään lyhyesti.
+
+Ensimmäisellä avauksella debug-build soolottaa arpin nopeudella 50 sävelenvaihtoa/s ja pitää automaattisen biisivaihdon pois päältä. Debug-kuuntelun asetukset tallennetaan erikseen. Tavallinen export sisältää normaalin pelin käyttöliittymän ja käyttää omia ääniasetuksiaan.
+
 ## Soolokeikat
 
 Kahdeksan vapaasti valittavaa tehtävää omilla kartoillaan. Maasto, lennokki ja kello käynnistyvät ensimmäisestä ohjauksesta. Tavoite, eteneminen ja toimintaohje näkyvät peliruudun vieressä. Kohteet näkyvät pienoiskartalla ja ruudun reunoilla; vihreä **H** on kotiasema, keltainen henkilö tai paketti on noutopaikka, oranssi risti on avattava luukku ja ruskea plus on paikattava vuoto. Punainen huutomerkki ja ympyrä osoittavat räjähdyksille herkän koneiston.
@@ -179,12 +187,13 @@ Node.js 24 riittää tarkistuksiin ja vientiin. Riippuvuuksia ei tarvitse asenta
 
 GitHub Actions ajaa alla olevat tarkistukset yhdellä Node 24 -työllä PR:issä sekä `main`-haaran päivityksissä. Uusi päivitys peruuttaa saman haaran vanhentuneen ajon.
 
-Valmiin CI-ajon **Artifacts**-osiosta voi ladata `vibelentely`-paketin. Pura ZIP ja avaa sen sisältämä itsenäinen `vibelentely.html` selaimessa.
+Valmiin CI-ajon **Artifacts**-osiosta voi ladata `vibelentely`-paketin tai kuuntelusäätimillä varustetun `vibelentely-debug`-paketin. Pura ZIP ja avaa sen sisältämä itsenäinen HTML-tiedosto selaimessa.
 
 ```
 npm run check
 npm test
 npm run export -- /absoluuttinen/polku/vibelentely.html
+npm run export:debug -- /absoluuttinen/polku/vibelentely-debug.html
 ```
 
 Vienti tuottaa yhden itsenäisen HTML-tiedoston. `dist/`-hakemiston voi myös palvella sellaisenaan millä tahansa staattisella web-palvelimella.
@@ -203,6 +212,7 @@ Vienti tuottaa yhden itsenäisen HTML-tiedoston. `dist/`-hakemiston voi myös pa
 | `dist/music.js` | Kolme 64 tahdin sävellystä, tracker-soitin, toistokierto ja ristihäivytys |
 | `dist/audio-dsp.js` | Synteesi, 24 äänen raja, 8-bittinen näytteenpito ja purkkisuodatus |
 | `dist/audio.js` | Äänitapahtumat, selainäänen käynnistys, asetukset ja viimeinen master-gain |
+| `debug/audio.html`, `debug/audio.js` | Debug-exportin arppisoolo, nopeussäädin ja tuhnuketjun vertailu |
 | `dist/app.js` | Päävalikko, erilliset pelitilanteet, ohjaimet, kamera ja kiinteä aika-askel |
 | `test/` | Materiaalien, lentämisen, taistelun, tekoälyn ja soolotehtävien regressiotestit |
 

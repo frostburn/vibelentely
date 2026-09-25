@@ -1,12 +1,13 @@
 (function(root){
   'use strict';
-  const DSP=root.CaveAudioDSP,{SONGS}=root.CaveMusic,storageKey='vibelentely.audio';
+  const DSP=root.CaveAudioDSP,{SONGS}=root.CaveMusic,debugBuild=!!root.CAVE_AUDIO_DEBUG,storageKey=debugBuild?'vibelentely.audio.debug':'vibelentely.audio';
   class Sound {
     constructor(){
       this.volume=60;this.muted=false;this.active=false;this.context=null;this.node=null;this.master=null;this.starting=null;
       this.status='idle';this.onchange=()=>{};this.combat=null;this.listener=null;
       this.musicEnabled=true;this.musicVolume=45;this.musicActive=false;
-      this.musicTrack=SONGS[0].id;this.musicRotation=true;this.musicRequest=0;
+      this.musicTrack=SONGS[0].id;this.musicRotation=!debugBuild;this.musicRequest=0;
+      this.debug={arpSolo:debugBuild,arpHz:debugBuild?50:null,bypass:false};
       try{
         const saved=JSON.parse(root.localStorage?.getItem(storageKey)||'null');
         if(Number.isFinite(saved?.volume))this.volume=Math.max(0,Math.min(100,saved.volume));
@@ -14,10 +15,11 @@
         if(Number.isFinite(saved?.musicVolume))this.musicVolume=Math.max(0,Math.min(100,saved.musicVolume));
         this.musicEnabled=saved?.musicEnabled!==false;
         if(SONGS.some(song=>song.id===saved?.musicTrack))this.musicTrack=saved.musicTrack;
-        this.musicRotation=saved?.musicRotation!==false;
+        if(typeof saved?.musicRotation==='boolean')this.musicRotation=saved.musicRotation;
+        if(debugBuild&&saved?.debug&&typeof saved.debug==='object')this.debug=DSP.debugSettings(this.debug,saved.debug);
       }catch{}
     }
-    save(){try{root.localStorage?.setItem(storageKey,JSON.stringify({volume:this.volume,muted:this.muted,musicVolume:this.musicVolume,musicEnabled:this.musicEnabled,musicTrack:this.musicTrack,musicRotation:this.musicRotation}));}catch{}}
+    save(){try{root.localStorage?.setItem(storageKey,JSON.stringify({volume:this.volume,muted:this.muted,musicVolume:this.musicVolume,musicEnabled:this.musicEnabled,musicTrack:this.musicTrack,musicRotation:this.musicRotation,...(debugBuild?{debug:this.debug}:{})}));}catch{}}
     setVolume(value){if(!Number.isFinite(value))return;this.volume=Math.max(0,Math.min(100,value));this.save();this.gain();this.updateMusic();this.onchange();}
     toggleMute(){this.muted=!this.muted;this.save();this.clear();this.gain();this.updateMusic();this.onchange();}
     setMusicVolume(value){if(!Number.isFinite(value))return;this.musicVolume=Math.max(0,Math.min(100,value));this.save();this.updateMusic();this.onchange();}
@@ -29,6 +31,7 @@
       this.musicTrack=track;this.musicRequest++;this.send({type:'playlist',track,request:this.musicRequest});this.save();this.onchange();
     }
     setMusicRotation(value){this.musicRotation=!!value;this.send({type:'playlist',autoAdvance:this.musicRotation});this.save();this.onchange();}
+    setDebug(values){if(!debugBuild)return;this.debug=DSP.debugSettings(this.debug,values);this.send({type:'debug',values:this.debug});this.save();this.onchange();}
     musicState(state){
       // An automatic advance already in flight must not undo a newer manual choice.
       if(state?.type!=='music-state'||state.request!==this.musicRequest||state.track===this.musicTrack||!SONGS.some(song=>song.id===state.track))return;
@@ -45,6 +48,7 @@
       else if(message.type==='controls')this.synth.controls(message.values);
       else if(message.type==='music')this.synth.music.set(message.playing,message.level);
       else if(message.type==='playlist')this.synth.music.configure(message);
+      else if(message.type==='debug')this.synth.debug(message.values);
       else this.synth.clear();
     }}
     clear(){this.send({type:'clear'});}
@@ -65,6 +69,7 @@
       }finally{if(url)URL.revokeObjectURL(url);}
       this.master=ctx.createGain();this.master.gain.value=0;
       this.node.connect(this.master);this.master.connect(ctx.destination);
+      if(debugBuild)this.send({type:'debug',values:this.debug});
       this.send({type:'playlist',track:this.musicTrack,autoAdvance:this.musicRotation,request:this.musicRequest});this.gain();this.updateMusic();
     }
     async unlock(){

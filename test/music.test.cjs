@@ -139,3 +139,48 @@ test('Track changes fade the outgoing sound, clear old notes and echo, and keep 
   a.music.configure({track:SONGS[0].id});assert.equal(a.music.current.frames,0);assert.equal(a.music.current.loops,0);
   assert.ok(a.music.current.echo.every(x=>x===0),'returning to a previously played song starts cleanly');
 });
+
+test('Live debug rate changes preserve playback and oscillator position; overrides survive song changes',()=>{
+  for(const rate of [44100,48000]){
+    const s=new Synth(rate);s.music.set(true,.45);s.render(new Float32Array(1024));const t=s.music.current;
+    const before={frames:t.frames,row:t.row,phase:t.arpPhase,index:t.arpIndex,echo:t.echoIndex};
+    s.debug({arpHz:50});assert.deepEqual({frames:t.frames,row:t.row,phase:t.arpPhase,index:t.arpIndex,echo:t.echoIndex},before);
+    const changes=[];let last=t.arpIndex;
+    for(let i=0;i<rate;i++){t.sample();if(t.arpIndex!==last){changes.push(i);last=t.arpIndex;}}
+    assert.equal(changes.length,50);
+    for(let i=1;i<changes.length;i++)assert.equal(changes[i]-changes[i-1],rate/50);
+    t.set(false,.45);s.debug({arpHz:1});const frame=t.frames,index=t.arpIndex;samples(t,2048);
+    assert.equal(t.frames,frame);assert.equal(t.arpIndex,index);
+    s.music.configure({track:SONGS[1].id});assert.equal(s.music.current.arpHz,1);
+    s.debug({arpHz:999});assert.equal(s.music.current.arpHz,300);
+    s.debug({arpHz:NaN});assert.equal(s.music.current.arpHz,300);
+    s.debug({arpHz:null});assert.equal(s.music.current.arpHz,null);assert.equal(s.music.current.tone.arpHz,225);
+  }
+});
+
+test('Arp solo removes every other instrument and game effect, through either the cabinet or its debug bypass',()=>{
+  for(const bypass of [false,true]){
+    const s=new Synth(),cabinet=new Cabinet(48000),raw=[];s.debug({arpSolo:true,arpHz:50,bypass});s.music.set(true,.45);
+    const t=s.music.current,arp=t.arpeggio.bind(t);
+    t.arpeggio=dt=>{const value=arp(dt);raw.push(value*t.gain*1.8);return value;};
+    t.kickAge=t.snareAge=t.hatAge=0;t.echo.fill(.2);
+    s.controls({engine:1,vacuum:1,charge:1,shield:1,wet:1,lava:1});s.event('explosion');s.event('pulse');
+    const out=new Float32Array(24000);s.render(out);
+    const expected=Float32Array.from(raw,x=>bypass?Math.max(-1,Math.min(127/128,x)):cabinet.process(x));
+    assert.deepEqual(out,expected,'solo must contain only the single arpeggio channel');
+    const position=t.frames;s.debug({arpSolo:false,bypass:!bypass});s.render(new Float32Array(24000));
+    assert.equal(t.frames,position+24000);assert.equal(s.effectsMix,1);assert.equal(s.bypassMix,Number(!bypass));
+    assert.equal(t.soloMix,0,'the full arrangement returns without restarting transport');
+  }
+});
+
+test('AudioWorklet debug messages control rate, solo and cabinet bypass with identical sample output',()=>{
+  let Processor;const scope={sampleRate:48000,AudioWorkletProcessor:class{constructor(){this.port={postMessage(){}};}},registerProcessor:(_,ctor)=>Processor=ctor};
+  vm.createContext(scope);vm.runInContext(workletSource(),scope);
+  const p=new Processor(),reference=new Synth(),actual=new Float32Array(1024),expected=new Float32Array(1024);
+  p.port.onmessage({data:{type:'music',playing:true,level:.45}});reference.music.set(true,.45);
+  for(const values of [{arpSolo:true,arpHz:25},{bypass:true,arpHz:75},{arpSolo:false,arpHz:300},{bypass:false,arpHz:null}]){
+    p.port.onmessage({data:{type:'debug',values}});reference.debug(values);
+    for(let i=0;i<4;i++){p.process([],[[actual]]);reference.render(expected);assert.deepEqual(actual,expected);}
+  }
+});

@@ -9,8 +9,8 @@ require('../dist/ai.js');require('../dist/tools.js');
 const {Combat}=require('../dist/combat.js');
 const rms=a=>Math.sqrt(a.reduce((s,x)=>s+x*x,0)/a.length);
 
-function browser({fallback=false,blocked=false,saved=null}={}){
-  const messages=[],contexts=[],writes=[];let modules=0;
+function browser({fallback=false,blocked=false,saved=null,debug=false}={}){
+  const messages=[],contexts=[],writes=[],reads=[];let modules=0;
   class Node {
     constructor(){this.connections=[];}
     connect(node){this.connections.push(node);}
@@ -24,11 +24,11 @@ function browser({fallback=false,blocked=false,saved=null}={}){
     createScriptProcessor(size,inputs,outputs){assert.equal(outputs,1);this.fallback=new Node();return this.fallback;}
   }
   class Worklet extends Node {constructor(){super();this.port={postMessage:m=>messages.push(m)};}}
-  const context={CaveMusic:Music,CaveAudioDSP:DSP,AudioContext:Context,AudioWorkletNode:Worklet,Blob,
+  const context={CAVE_AUDIO_DEBUG:debug,CaveMusic:Music,CaveAudioDSP:DSP,AudioContext:Context,AudioWorkletNode:Worklet,Blob,
     URL:{createObjectURL:()=> 'blob:audio-test',revokeObjectURL(){}},
-    localStorage:{getItem:()=>saved,setItem:(k,v)=>writes.push([k,JSON.parse(v)])}};
+    localStorage:{getItem:k=>{reads.push(k);return saved;},setItem:(k,v)=>writes.push([k,JSON.parse(v)])}};
   vm.createContext(context);vm.runInContext(fs.readFileSync(require.resolve('../dist/audio.js'),'utf8'),context);
-  return {sound:new context.CaveAudio.Sound(),messages,contexts,writes,get modules(){return modules;}};
+  return {sound:new context.CaveAudio.Sound(),messages,contexts,writes,reads,get modules(){return modules;}};
 }
 function game(){const world=new World(320,240);world.spawn={x:80,y:110};const player=new Drone(world),combat=new Combat(world,player);combat.enabled=false;player.angle=0;return {world,player,combat};}
 
@@ -168,4 +168,23 @@ test('Local-file playback reports real automatic track changes and preserves rep
   s.toggleMute();const position=s.synth.music.current.frames;render();assert.equal(s.synth.music.current.frames,position);
   s.setMusicTrack('revontulivirta');render();assert.equal(s.musicTrack,'revontulivirta');assert.equal(s.synth.music.current.frames,0);
   s.toggleMute();render();assert.ok(s.synth.music.current.frames>0);
+});
+
+test('Debug builds retain separate validated listening preferences and route both modes through the final master',async()=>{
+  for(const fallback of [false,true]){
+    const b=browser({debug:true,fallback}),s=b.sound;
+    assert.equal(s.debug.arpHz,50);assert.equal(s.debug.arpSolo,true);assert.equal(s.musicRotation,false);
+    assert.equal(b.reads[0],'vibelentely.audio.debug');
+    s.setDebug({arpHz:75,bypass:true});s.setMusicActive(true);await s.unlock();
+    assert.equal(s.node.connections[0],s.master);assert.equal(s.master.connections[0],s.context.destination);
+    if(fallback){assert.equal(s.synth.debugState.bypass,true);assert.equal(s.synth.music.current.arpHz,75);}
+    else assert.ok(b.messages.some(m=>m.type==='debug'&&m.values.bypass&&m.values.arpHz===75));
+    s.setVolume(20);assert.equal(s.master.gain.value,(20/100)**2);assert.equal(s.debug.bypass,true);
+    s.setDebug({arpHz:Infinity});assert.equal(s.debug.arpHz,75);
+    const [key,saved]=b.writes.at(-1);assert.equal(key,'vibelentely.audio.debug');assert.equal(saved.debug.arpHz,75);
+    assert.equal(browser({debug:true,saved:JSON.stringify(saved)}).sound.debug.bypass,true);
+  }
+  const normal=browser();normal.sound.setDebug({arpSolo:true,arpHz:50,bypass:true});
+  assert.equal(normal.sound.debug.arpHz,null);assert.equal(normal.messages.length,0);assert.equal(normal.writes.length,0);
+  assert.equal(normal.reads[0],'vibelentely.audio');
 });

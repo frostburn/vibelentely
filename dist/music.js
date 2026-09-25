@@ -180,11 +180,12 @@
     bass:{drive:[0,'-','-','.',7,'-','.',12,0,'-','-','.',12,'.',7,'.'],
       sparse:[0,'-','-','-','-','-','.','.',7,'-','-','-','.','.',12,'.']},
   };
-  const SONGS=[SONG,COPPER,AURORA],REPEATS=3;
+  const SONGS=[SONG,COPPER,AURORA],REPEATS=3,ARP_HZ=150;
   class Tracker {
     constructor(rate,song=SONGS[0]){
       this.rate=rate;this.song=song;this.rowLength=rate*60/(song.bpm*4);this.smooth=1-Math.exp(-1/(rate*.02));
-      this.tone={duty:.26,triangle:0,arpHz:150,arpGain:.065,arpRows:2,...song.tone};
+      this.tone={duty:.26,triangle:0,arpHz:ARP_HZ,arpGain:.065,arpRows:2,...song.tone};
+      this.arpHz=null;this.arpSolo=false;
       this.drums=song.drums||{kick:[0,6,8],snare:[4,12],hat:[0,2,4,6,8,10,12,14]};
       this.echo=new Float32Array(Math.round(this.rowLength*3));
       this.notes=Object.fromEntries(Object.entries(song.phrases).map(([name,phrase])=>[name,phrase.split(' ').map(Tracker.note)]));
@@ -195,6 +196,7 @@
       this.remaining=0;this.row=-1;this.frames=0;this.loops=0;this.bar=null;
       this.playing=false;this.level=0;this.gain=0;this.seed=73129;
       this.lead=null;this.bass=null;this.arpPhase=0;this.arpAge=0;this.arpFrequency=0;this.arpIndex=-1;
+      this.arpOffset=0;this.arpBaseFrame=0;this.soloMix=Number(this.arpSolo);
       this.kickAge=1;this.kickPhase=0;this.snareAge=1;this.snarePhase=0;this.hatAge=1;this.hatLength=.035;this.lastNoise=0;
       this.echo.fill(0);this.echoIndex=0;
     }
@@ -205,6 +207,13 @@
       return (Number(match[3])+1)*12+{C:0,D:2,E:4,F:5,G:7,A:9,B:11}[match[1]]+(match[2]?1:0);
     }
     set(playing,level){this.playing=!!playing;this.level=Math.max(0,Math.min(1,level||0));}
+    debug({arpSolo,arpHz}){
+      this.arpSolo=arpSolo;if(!this.frames&&!this.gain)this.soloMix=Number(arpSolo);
+      if(arpHz===this.arpHz)return;
+      const frame=Math.max(0,this.frames-1);
+      this.arpOffset=(this.arpOffset+(frame-this.arpBaseFrame)*(this.arpHz??this.tone.arpHz)/this.rate)%3;
+      this.arpBaseFrame=frame;this.arpHz=arpHz;
+    }
     get audible(){return this.playing&&this.level>0||this.gain>1e-7;}
     voice(note,rows,kind){return {frequency:this.frequencies[note],age:0,phase:0,gate:rows*this.rowLength/this.rate*.88,kind};}
     advance(){
@@ -242,13 +251,15 @@
     arpeggio(dt){
       // Fast 0xy-style pitch cycling on one continuous oscillator. The sample clock
       // keeps the effect running evenly across rhythmic accents and chord changes.
-      const index=Math.floor((this.frames-1)*this.tone.arpHz/this.rate)%3;
+      const index=Math.floor(this.arpOffset+(this.frames-1-this.arpBaseFrame)*(this.arpHz??this.tone.arpHz)/this.rate+1e-10)%3;
       if(index!==this.arpIndex){this.arpIndex=index;this.arpFrequency=this.frequencies[this.bar.chord[index+1]+(this.bar.style==='chorus'?12:0)];}
       this.arpPhase=(this.arpPhase+this.arpFrequency*dt)%1;
       return (this.arpPhase<.125?1:-1/7)*(.65+.35*Math.exp(-this.arpAge*9))*this.tone.arpGain;
     }
     sample(){
       this.gain+=((this.playing?this.level:0)-this.gain)*this.smooth;
+      this.soloMix+=(Number(this.arpSolo)-this.soloMix)*this.smooth;
+      if(Math.abs(Number(this.arpSolo)-this.soloMix)<1e-7)this.soloMix=Number(this.arpSolo);
       if(!this.audible){this.gain=0;return 0;}
       if(this.playing){if(this.remaining<=0){this.advance();this.remaining+=this.rowLength;}this.remaining--;this.frames++;}
       if(!this.bar)return 0;
@@ -264,7 +275,9 @@
       const snare=this.snareAge<.16?(noise*.75+Math.sin(this.snarePhase*Math.PI*2)*.25)*Math.exp(-this.snareAge*24)*.16:0;
       const hat=this.hatAge<this.hatLength?(noise-this.lastNoise)*Math.exp(-this.hatAge/this.hatLength*5)*.043:0;this.lastNoise=noise;
       if(this.playing){this.arpAge+=dt;this.kickAge+=dt;this.snareAge+=dt;this.hatAge+=dt;}
-      return (lead*(sparse?.72:1)+bass+arp+echo*.25+kick+snare+hat)*this.gain;
+      const mix=lead*(sparse?.72:1)+bass+arp+echo*.25+kick+snare+hat;
+      if(this.soloMix===1)return arp*this.gain;
+      return (mix+(arp-mix)*this.soloMix)*this.gain;
     }
   }
   class Playlist {
@@ -304,6 +317,6 @@
       return value;
     }
   }
-  root.CaveMusic={SONG,SONGS,REPEATS,Tracker,Playlist};
+  root.CaveMusic={SONG,SONGS,REPEATS,ARP_HZ,Tracker,Playlist};
   if(typeof module!=='undefined')module.exports=root.CaveMusic;
 })(globalThis);
