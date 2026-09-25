@@ -31,13 +31,18 @@
   let rosterActors=[];
   let accumulator=0,lastTime=0,statTime=0,frameCount=0,stepCount=0,raf=0,simMS=0,lastBrush=null;
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  for(const song of CaveMusic.SONGS){const option=document.createElement('option');option.value=song.id;option.textContent=song.title;$('music-track').append(option);}
   function audioReadout(){
+    const song=CaveMusic.SONGS.find(song=>song.id===audio.musicTrack);
+    $('music-track').value=audio.musicTrack;$('music-rotation').checked=audio.musicRotation;
+    for(const el of document.querySelectorAll('[data-music-title]'))el.textContent=song.title;
     for(const el of document.querySelectorAll('[data-volume]'))el.value=String(audio.volume);
     for(const el of document.querySelectorAll('[data-volume-readout]'))el.textContent=Math.round(audio.volume)+' %';
     for(const el of document.querySelectorAll('[data-music-volume]'))el.value=String(audio.musicVolume);
     for(const el of document.querySelectorAll('[data-music-readout]'))el.textContent=Math.round(audio.musicVolume)+' %';
     for(const el of document.querySelectorAll('[data-music]')){
       el.textContent=audio.musicEnabled?'Musiikki päällä':'Musiikki pois';el.setAttribute('aria-pressed',String(audio.musicEnabled));
+      el.title=song.title;
       el.disabled=audio.status==='unsupported';
     }
     for(const el of document.querySelectorAll('[data-mute]')){
@@ -56,6 +61,8 @@
   for(const el of document.querySelectorAll('[data-mute]'))el.addEventListener('click',()=>{audio.toggleMute();audio.unlock();});
   for(const el of document.querySelectorAll('[data-music-volume]'))el.addEventListener('input',()=>audio.setMusicVolume(Number(el.value)));
   for(const el of document.querySelectorAll('[data-music]'))el.addEventListener('click',()=>{audio.toggleMusic();audio.unlock();});
+  $('music-track').addEventListener('change',()=>audio.setMusicTrack($('music-track').value));
+  $('music-rotation').addEventListener('change',()=>audio.setMusicRotation($('music-rotation').checked));
   // Capture gestures also on the menu and touch controls; loading alone stays silent.
   for(const event of ['pointerdown','keydown'])window.addEventListener(event,()=>{if(!document.hidden)audio.unlock();},{capture:true});
   function clampCamera(){camera.x=clamp(Math.round(camera.x),0,world.width-320);camera.y=clamp(Math.round(camera.y),0,world.height-200);}

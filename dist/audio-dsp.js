@@ -1,6 +1,11 @@
 (function(root){
   'use strict';
-  const {SONG,Tracker}=root.CaveMusic;
+  const {SONGS,REPEATS,ARP_HZ,Tracker,Playlist}=root.CaveMusic;
+  function debugSettings(current,values={}){
+    return {arpSolo:typeof values.arpSolo==='boolean'?values.arpSolo:current.arpSolo,
+      arpHz:values.arpHz===null?null:Number.isFinite(values.arpHz)?Math.round(Math.max(1,Math.min(300,values.arpHz))):current.arpHz,
+      bypass:typeof values.bypass==='boolean'?values.bypass:current.bypass};
+  }
   // A mono 8-bit DAC at 11025 Hz, followed by the narrow speaker cabinet.
   // User volume is deliberately outside this processor, after the filters.
   class Cabinet {
@@ -19,10 +24,15 @@
   }
   class Synth {
     constructor(rate=48000){
-      this.rate=rate;this.cabinet=new Cabinet(rate);this.music=new Tracker(rate);this.voices=[];this.seed=19790517;
+      this.rate=rate;this.cabinet=new Cabinet(rate);this.music=new Playlist(rate);this.voices=[];this.seed=19790517;
       this.target={engine:0,wet:0,lava:0,vacuum:0,charge:0,shield:0};this.level={...this.target};
       this.phases=new Float64Array(4);this.time=0;this.smooth=1-Math.exp(-1/(rate*.025));
       this.engineClock=1;this.engineNoise=0;this.rumbleLP=1-Math.exp(-2*Math.PI*340/rate);
+      this.debugState={arpSolo:false,arpHz:null,bypass:false};this.effectsMix=1;this.bypassMix=0;
+    }
+    debug(values){
+      this.debugState=debugSettings(this.debugState,values);for(const track of this.music.tracks)track.debug(this.debugState);
+      if(!this.time){this.effectsMix=Number(!this.debugState.arpSolo);this.bypassMix=Number(this.debugState.bypass);}
     }
     controls(values){for(const key of Object.keys(this.target))this.target[key]=Math.max(0,Math.min(1,values[key]||0));}
     clear(){this.voices.length=0;this.controls({});}
@@ -57,7 +67,7 @@
         p[0]=(p[0]+(155+65*l.vacuum)*dt)%1;
         p[1]=(p[1]+(120+850*l.charge*l.charge+12*flutter)*dt)%1;
         p[2]=(p[2]+210*dt)%1;p[3]=(p[3]+37*dt)%1;
-        let mix=this.music.sample()+l.engine*this.engineNoise*(.1+.01*flutter);
+        const music=this.music.sample();let mix=music+l.engine*this.engineNoise*(.1+.01*flutter);
         mix+=l.vacuum*(this.wave(p[0],1)*.035+n*.09);
         mix+=l.charge*this.wave(p[1],1)*(.065+(this.target.charge===1?.025*flutter:0));
         mix+=l.shield*this.wave(p[2],2)*.035;
@@ -89,21 +99,29 @@
           }
           mix+=sample*env*v.gain;v.age+=dt;
         }
-        output[i]=this.cabinet.process(mix*1.8);
+        const effects=Number(!this.debugState.arpSolo),bypass=Number(this.debugState.bypass);
+        this.effectsMix+=(effects-this.effectsMix)*this.smooth;this.bypassMix+=(bypass-this.bypassMix)*this.smooth;
+        if(Math.abs(effects-this.effectsMix)<1e-7)this.effectsMix=effects;
+        if(Math.abs(bypass-this.bypassMix)<1e-7)this.bypassMix=bypass;
+        if(this.effectsMix<1)mix=music+(mix-music)*this.effectsMix;
+        const input=mix*1.8,wet=this.cabinet.process(input),dry=Math.max(-1,Math.min(127/128,input));
+        output[i]=wet+(dry-wet)*this.bypassMix;
       }
     }
   }
-  function workletSource(){return `const SONG=${JSON.stringify(SONG)};\n${Tracker.toString()}\n${Cabinet.toString()}\n${Synth.toString()}\n
+  function workletSource(){return `const SONGS=${JSON.stringify(SONGS)},REPEATS=${REPEATS},ARP_HZ=${ARP_HZ};\n${debugSettings.toString()}\n${Tracker.toString()}\n${Playlist.toString()}\n${Cabinet.toString()}\n${Synth.toString()}\n
     class CaveProcessor extends AudioWorkletProcessor {
       constructor(){super();this.synth=new Synth(sampleRate);this.port.onmessage=({data})=>{
         if(data.type==='event')this.synth.event(data.kind,data.gain,data.power);
         else if(data.type==='controls')this.synth.controls(data.values);
         else if(data.type==='music')this.synth.music.set(data.playing,data.level);
+        else if(data.type==='playlist')this.synth.music.configure(data);
+        else if(data.type==='debug')this.synth.debug(data.values);
         else if(data.type==='clear')this.synth.clear();
       };}
-      process(inputs,outputs){this.synth.render(outputs[0][0]);return true;}
+      process(inputs,outputs){this.synth.render(outputs[0][0]);const state=this.synth.music.takeState();if(state)this.port.postMessage(state);return true;}
     }
     registerProcessor('cave-speaker',CaveProcessor);`;}
-  root.CaveAudioDSP={Cabinet,Synth,workletSource};
+  root.CaveAudioDSP={Cabinet,Synth,workletSource,debugSettings};
   if(typeof module!=='undefined')module.exports=root.CaveAudioDSP;
 })(globalThis);

@@ -20,21 +20,33 @@ Voimakkuussäädin on **kaiken tuhnutuksen jälkeen**. Se ei muuta kvantisoinnin
 
 Ääni käynnistyy ensimmäisestä näppäin- tai osoitineleestä. Valikko pysäyttää tehosteet, mutta musiikki jatkuu. Tauko, ikkunan fokuksen menetys ja piilotettu välilehti hiljentävät kaiken; musiikin paikka säilyy. Pelitilan vaihto tai uusi yritys ei toista vanhoja tehosteita eikä aloita biisiä alusta. Äänet toimivat ensisijaisesti AudioWorkletissa; jos se ei ole saatavilla esimerkiksi paikallista HTML-tiedostoa avattaessa, ScriptProcessor ajaa saman synteesin ja purkkiketjun. Peli toimii myös ilman Web Audiota.
 
-### Basalttiyö
+### Taustamusiikki
 
-Alkuperäinen suomichip-henkinen taustabiisi: **E-molli, 132 BPM, 4/4, 64 tahtia, noin 1:56**. Pulssiaalto kantaa mollimelodiaa, basso vuorottelee oktaaveja ja kvinttejä, soinnut vaihtuvat 50 Hz tracker-arpeggioina. Viivästetty melodia, viivästetty vibrato ja kohinarummut täydentävät sovituksen. B-osan suhteellinen duuri ja lainattu F-duurisointu tuovat vaihtelua ennen dominantin paluuta E-molliin.
+Kolme alkuperäistä suomichip-kappaletta, jokainen 64 tahtia ja 4/4. Kaikilla on oma melodia, sointukierto ja sovitus.
 
-| Tahdit | Sovitus |
-| --- | --- |
-| 1–4 | Harva alkusoitto ja nousu komppiin |
-| 5–20 | Pääteema ja sen melodinen muunnelma |
-| 21–28 | Vastateema ja soinnullinen sivupolku |
-| 29–36 | Hiljaisempi väliosa ja uusi nousu |
-| 37–52 | Pääteeman paluu korkeampien arpeggioiden kanssa |
-| 53–60 | Vastateeman kertaus |
-| 61–64 | Rauhoittuminen ja dominantti takaisin alkuun |
+| Biisi | Sävellaji | Tempo | Yksi kierto | Sovitus |
+| --- | --- | --- | --- | --- |
+| Basalttiyö | E-molli | 132 BPM | 1:56 | Pulssimelodia, oktaavibasso, duuriin avautuva vastateema ja hiljainen väliosa |
+| Kuparisydän | D-molli | 148 BPM | 1:44 | Katkonainen riffi, synkopoitu basso ja komppi, leveä F-duurinen vastateema |
+| Revontulivirta | A-doorinen | 116 BPM | 2:12 | Pehmeä pulssi–kolmio-melodia, harva puolitempoinen komppi, harmoniseen molliin tummuva väliosa |
 
-Musiikilla on oma muistettava tasosäädin ja päälle/pois-painike. Tasosäädin muuttaa musiikin osuutta **ennen yhteistä tuhnuketjua**; yleinen voimakkuussäädin on edelleen ketjun jälkeen. Musiikin mykistys tai nollataso pysäyttää sen toiston samaan kohtaan. Soitin seuraa äänilaitteen näytekelloa, joten grafiikan hidastuminen tai Luolalabran nopeussäädin eivät muuta tempoa. Nuotit, soinnut ja kappalerakenne ovat muokattavissa `dist/music.js`-tiedostossa; piste on tauko ja viiva pitää edellisen nuotin.
+Sointuarpeggio on [trackerien `0xy`-efektin](https://milkytracker.org/docs/manual/MilkyTracker.html#fx0xy) tapainen yhden pulssikanavan sävelkorkeuskierto. Sävel vaihtuu kaikissa biiseissä **50 kertaa sekunnissa**: yksi sävel kestää 20 ms ja kolmen sävelen sointu kiertää noin 16,7 kertaa sekunnissa. Efektin näytekello ja oskillaattorin vaihe jatkuvat kompin iskujen ja arpin taukojen yli.
+
+Arpilla on kussakin biisissä oma sovitus: hiljaisempia säestysiskuja, melodian loppuun vastaavia pyrähdyksiä ja kokonaisia taukotahteja. Väliosassa melodia antaa sille neljän tahdin etualajakson; myöhemmin tulee lyhyt kahden tahdin paluu. Etualalla arppi soi voimakkaammin ja oktaavia ylempää. Basalttiyössä kaaret ovat pitkiä, Kuparisydämessä synkopoituja ja katkonaisia, Revontulivirrassa väljempiä. Sisääntulot ja tauot häivytetään lyhyesti. Melodiakaiku ja viiveellä alkava vibrato täydentävät tracker-soinnin.
+
+`dist/music.js`-tiedoston `arps` sisältää arppikuviot: `x` aloittaa painotuksen, `-` pitää ääntä ja `.` vapauttaa sen. `gain` määrää kuvion tason ja `octave` valinnaisen siirron puolisävelaskelina. `order`-rivin valinnainen neljäs alkio valitsee kuvion; ilman sitä arppi pitää tahdin taukoa.
+
+**Päävalikon Biisi-valitsin** vaihtaa kappaletta heti lyhyellä ristihäivytyksellä ja aloittaa uuden kappaleen alusta. Oletuksena soitin käy listaa järjestyksessä: kolme kokonaista toistoa per kappale, sitten seuraava; viimeisestä palataan ensimmäiseen. Poista valinta **Vaihda biisiä 3 kierroksen jälkeen**, jos haluat kuunnella valittua biisiä jatkuvasti. Toistotavan vaihtaminen ei aloita kappaletta alusta. Biisivalinta ja toistotapa muistetaan selaimessa. Pelin äänisäätimien vieressä näkyy kulloinenkin kappale myös automaattisen vaihdon jälkeen.
+
+Musiikilla on oma muistettava tasosäädin ja päälle/pois-painike. Tasosäädin muuttaa musiikin osuutta **ennen yhteistä tuhnuketjua**; yleinen voimakkuussäädin on edelleen ketjun jälkeen. Musiikin mykistys tai nollataso pysäyttää sen toiston samaan kohtaan, eikä hiljainen aika kuluta kierroksia. Soitin seuraa äänilaitteen näytekelloa, joten grafiikan hidastuminen tai Luolalabran nopeussäädin eivät muuta tempoa. Nuotit, soinnut ja kappalerakenteet ovat muokattavissa `dist/music.js`-tiedostossa; piste on tauko ja viiva pitää edellisen nuotin. Kaikki kolme sävellystä sisältyvät yhden HTML-tiedoston exportiin.
+
+### Arppilabra-debug-build
+
+CI:n **vibelentely-debug**-paketissa on itsenäinen `vibelentely-debug.html`. Avaa se ja paina **Kuuntele**. Sivun yläreunan paneelissa voi valita biisin, soolottaa arppikanavan ja säätää nopeutta lennossa **1–300 sävelenvaihtoon sekunnissa**. Liukusäätimen lisäksi on numerokenttä ja vertailupresetit 25, 50, 75, 100, 150 ja 225. Lukema näyttää myös yhden sävelen keston ja kokonaisen kolmisoinnun kiertotaajuuden. **Biisin oletus** palauttaa kappalekohtaisen nopeuden.
+
+Soolotus hiljentää melodian, basson, kaiun, rummut ja pelitehosteet. Arpin sovituksen tauot kuuluvat myös soolotettuna. **Ohita tuhnuketju** ohittaa sekä kvantisoinnin että suodatuksen vertailukuuntelua varten. Lopullinen master-gain toimii myös ohituksessa. Nopeuden vaihto säilyttää toistokohdan ja efektin vaiheen; soolotus ja suodatuksen vaihto häivytetään lyhyesti.
+
+Ensimmäisellä avauksella debug-build soolottaa arpin nopeudella 50 sävelenvaihtoa/s ja pitää automaattisen biisivaihdon pois päältä. Debug-kuuntelun asetukset tallennetaan erikseen. Tavallinen export sisältää normaalin pelin käyttöliittymän ja käyttää omia ääniasetuksiaan.
 
 ## Soolokeikat
 
@@ -179,12 +191,13 @@ Node.js 24 riittää tarkistuksiin ja vientiin. Riippuvuuksia ei tarvitse asenta
 
 GitHub Actions ajaa alla olevat tarkistukset yhdellä Node 24 -työllä PR:issä sekä `main`-haaran päivityksissä. Uusi päivitys peruuttaa saman haaran vanhentuneen ajon.
 
-Valmiin CI-ajon **Artifacts**-osiosta voi ladata `vibelentely`-paketin. Pura ZIP ja avaa sen sisältämä itsenäinen `vibelentely.html` selaimessa.
+Valmiin CI-ajon **Artifacts**-osiosta voi ladata `vibelentely`-paketin tai kuuntelusäätimillä varustetun `vibelentely-debug`-paketin. Pura ZIP ja avaa sen sisältämä itsenäinen HTML-tiedosto selaimessa.
 
 ```
 npm run check
 npm test
 npm run export -- /absoluuttinen/polku/vibelentely.html
+npm run export:debug -- /absoluuttinen/polku/vibelentely-debug.html
 ```
 
 Vienti tuottaa yhden itsenäisen HTML-tiedoston. `dist/`-hakemiston voi myös palvella sellaisenaan millä tahansa staattisella web-palvelimella.
@@ -200,9 +213,10 @@ Vienti tuottaa yhden itsenäisen HTML-tiedoston. `dist/`-hakemiston voi myös pa
 | `dist/solo.js` | Kahdeksan soolotehtävää, yhdistetyt maastotavoitteet, herkkä koneisto, lasti ja tulokset |
 | `dist/ai.js` | Reitinhaku, tähtäys, lentäminen ja tekoälyn varustevalinnat |
 | `dist/render.js` | Pikselipiirto, lennokin rasterisprite ja pienoiskartta |
-| `dist/music.js` | Basalttiyön nuotit, 64 tahdin rakenne ja näytekelloon sidottu tracker-soitin |
+| `dist/music.js` | Kolme 64 tahdin sävellystä, tracker-soitin, toistokierto ja ristihäivytys |
 | `dist/audio-dsp.js` | Synteesi, 24 äänen raja, 8-bittinen näytteenpito ja purkkisuodatus |
 | `dist/audio.js` | Äänitapahtumat, selainäänen käynnistys, asetukset ja viimeinen master-gain |
+| `debug/audio.html`, `debug/audio.js` | Debug-exportin arppisoolo, nopeussäädin ja tuhnuketjun vertailu |
 | `dist/app.js` | Päävalikko, erilliset pelitilanteet, ohjaimet, kamera ja kiinteä aika-askel |
 | `test/` | Materiaalien, lentämisen, taistelun, tekoälyn ja soolotehtävien regressiotestit |
 

@@ -1,7 +1,7 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),vm=require('node:vm');
-require('../dist/music.js');
+const Music=require('../dist/music.js');
 const DSP=require('../dist/audio-dsp.js');
 const {World,M}=require('../dist/simulation.js');
 const {Drone}=require('../dist/flight.js');
@@ -9,8 +9,8 @@ require('../dist/ai.js');require('../dist/tools.js');
 const {Combat}=require('../dist/combat.js');
 const rms=a=>Math.sqrt(a.reduce((s,x)=>s+x*x,0)/a.length);
 
-function browser({fallback=false,blocked=false,saved=null}={}){
-  const messages=[],contexts=[],writes=[];let modules=0;
+function browser({fallback=false,blocked=false,saved=null,debug=false}={}){
+  const messages=[],contexts=[],writes=[],reads=[];let modules=0;
   class Node {
     constructor(){this.connections=[];}
     connect(node){this.connections.push(node);}
@@ -24,11 +24,11 @@ function browser({fallback=false,blocked=false,saved=null}={}){
     createScriptProcessor(size,inputs,outputs){assert.equal(outputs,1);this.fallback=new Node();return this.fallback;}
   }
   class Worklet extends Node {constructor(){super();this.port={postMessage:m=>messages.push(m)};}}
-  const context={CaveAudioDSP:DSP,AudioContext:Context,AudioWorkletNode:Worklet,Blob,
+  const context={CAVE_AUDIO_DEBUG:debug,CaveMusic:Music,CaveAudioDSP:DSP,AudioContext:Context,AudioWorkletNode:Worklet,Blob,
     URL:{createObjectURL:()=> 'blob:audio-test',revokeObjectURL(){}},
-    localStorage:{getItem:()=>saved,setItem:(k,v)=>writes.push([k,JSON.parse(v)])}};
+    localStorage:{getItem:k=>{reads.push(k);return saved;},setItem:(k,v)=>writes.push([k,JSON.parse(v)])}};
   vm.createContext(context);vm.runInContext(fs.readFileSync(require.resolve('../dist/audio.js'),'utf8'),context);
-  return {sound:new context.CaveAudio.Sound(),messages,contexts,writes,get modules(){return modules;}};
+  return {sound:new context.CaveAudio.Sound(),messages,contexts,writes,reads,get modules(){return modules;}};
 }
 function game(){const world=new World(320,240);world.spawn={x:80,y:110};const player=new Drone(world),combat=new Combat(world,player);combat.enabled=false;player.angle=0;return {world,player,combat};}
 
@@ -70,7 +70,7 @@ test('Render block boundaries do not reset oscillator phase, sample hold or filt
 });
 
 test('The exported AudioWorklet executes the same DSP and responds to clear messages',()=>{
-  let Processor;const scope={sampleRate:48000,AudioWorkletProcessor:class{constructor(){this.port={};}},registerProcessor:(name,ctor)=>{assert.equal(name,'cave-speaker');Processor=ctor;}};
+  let Processor;const scope={sampleRate:48000,AudioWorkletProcessor:class{constructor(){this.port={postMessage(){}};}},registerProcessor:(name,ctor)=>{assert.equal(name,'cave-speaker');Processor=ctor;}};
   vm.createContext(scope);vm.runInContext(DSP.workletSource(),scope);
   const p=new Processor(),reference=new DSP.Synth();
   p.port.onmessage({data:{type:'event',kind:'pulse',gain:1,power:1}});reference.event('pulse');
@@ -100,7 +100,7 @@ test('Local-file fallback uses the same cabinet, and blocked autoplay can recove
 test('Saved mute/volume are validated and missing or denied audio/storage cannot break the game',async()=>{
   const b=browser({saved:'{"volume":23,"muted":true}'});assert.equal(b.sound.volume,23);assert.equal(b.sound.muted,true);
   b.sound.setActive(true);await b.sound.unlock();assert.equal(b.sound.master.gain.value,0);
-  const scope={CaveAudioDSP:DSP};Object.defineProperty(scope,'localStorage',{get(){throw Error('blocked');}});
+  const scope={CaveMusic:Music,CaveAudioDSP:DSP};Object.defineProperty(scope,'localStorage',{get(){throw Error('blocked');}});
   vm.createContext(scope);vm.runInContext(fs.readFileSync(require.resolve('../dist/audio.js'),'utf8'),scope);
   const s=new scope.CaveAudio.Sound();s.setVolume(30);assert.equal(await s.unlock(),false);assert.equal(s.status,'unsupported');
   assert.equal(browser({saved:'not json'}).sound.volume,60);
@@ -132,12 +132,59 @@ test('Menu music uses the final master, remembers its mix level, and can pause i
   const b=browser({fallback:true,saved:'{"musicVolume":32,"musicEnabled":true}'}),s=b.sound;
   s.setMusicActive(true);await s.unlock();assert.equal(s.active,false);assert.equal(s.master.gain.value,.36);
   assert.equal(s.synth.music.level,.32);assert.equal(s.synth.music.playing,true);
-  s.synth.render(new Float32Array(1024));const position=s.synth.music.frames;
-  s.watch(game().combat);assert.equal(s.synth.music.frames,position);
+  s.synth.render(new Float32Array(1024));const position=s.synth.music.current.frames;
+  s.watch(game().combat);assert.equal(s.synth.music.current.frames,position);
   s.setActive(true);s.toggleMusic();assert.equal(s.synth.music.playing,false);assert.equal(s.master.gain.value,.36);
   s.cue('pulse');assert.equal(s.synth.voices.at(-1).kind,'pulse');
   s.setMusicVolume(21);s.toggleMusic();assert.equal(s.synth.music.level,.21);
   s.toggleMute();assert.equal(s.synth.music.playing,false);assert.equal(s.master.gain.value,0);
   s.toggleMute();assert.equal(s.synth.music.playing,true);assert.equal(s.musicVolume,21);
   s.setMusicActive(false);assert.equal(s.synth.music.playing,false);assert.equal(b.writes.at(-1)[1].musicVolume,21);
+});
+
+test('Playlist choices survive reloads and automatic updates cannot overwrite a newer manual choice',async()=>{
+  const b=browser({saved:'{"musicTrack":"kuparisydan","musicRotation":false}'}),s=b.sound;
+  assert.equal(s.musicTrack,'kuparisydan');assert.equal(s.musicRotation,false);
+  s.setMusicActive(true);await s.unlock();
+  assert.ok(b.messages.some(m=>m.type==='playlist'&&m.track==='kuparisydan'&&m.autoAdvance===false));
+  s.setMusicTrack('revontulivirta');const request=s.musicRequest;
+  s.node.port.onmessage({data:{type:'music-state',track:'basalttiyo',request:request-1}});
+  assert.equal(s.musicTrack,'revontulivirta','queued auto-advance must not undo manual selection');
+  s.node.port.onmessage({data:{type:'music-state',track:'basalttiyo',request}});
+  assert.equal(s.musicTrack,'basalttiyo');assert.equal(b.writes.at(-1)[1].musicTrack,'basalttiyo');
+  s.setMusicRotation(true);assert.equal(b.messages.at(-1).autoAdvance,true);assert.equal(b.writes.at(-1)[1].musicRotation,true);
+  s.setMusicTrack('missing');assert.equal(s.musicTrack,'basalttiyo');
+  assert.equal(browser({saved:'{"musicTrack":"removed"}'}).sound.musicTrack,'basalttiyo');
+  assert.equal(browser({saved:'{"volume":30}'}).sound.musicRotation,true,'old preferences enable rotation by default');
+});
+
+test('Local-file playback reports real automatic track changes and preserves repeat mode when adjusting volume',async()=>{
+  const b=browser({fallback:true}),s=b.sound;s.setMusicActive(true);await s.unlock();
+  const render=()=>s.node.onaudioprocess({outputBuffer:{getChannelData:()=>new Float32Array(1024)}});
+  const t=s.synth.music.current;t.row=t.progression.length*16-1;t.loops=2;t.remaining=0;render();
+  assert.equal(s.musicTrack,'kuparisydan');assert.equal(b.writes.at(-1)[1].musicTrack,'kuparisydan');
+  s.setMusicRotation(false);s.setMusicVolume(28);s.setVolume(42);
+  assert.equal(s.synth.music.autoAdvance,false);assert.equal(s.synth.music.current.song.id,'kuparisydan');
+  s.toggleMute();const position=s.synth.music.current.frames;render();assert.equal(s.synth.music.current.frames,position);
+  s.setMusicTrack('revontulivirta');render();assert.equal(s.musicTrack,'revontulivirta');assert.equal(s.synth.music.current.frames,0);
+  s.toggleMute();render();assert.ok(s.synth.music.current.frames>0);
+});
+
+test('Debug builds retain separate validated listening preferences and route both modes through the final master',async()=>{
+  for(const fallback of [false,true]){
+    const b=browser({debug:true,fallback}),s=b.sound;
+    assert.equal(s.debug.arpHz,50);assert.equal(s.debug.arpSolo,true);assert.equal(s.musicRotation,false);
+    assert.equal(b.reads[0],'vibelentely.audio.debug');
+    s.setDebug({arpHz:75,bypass:true});s.setMusicActive(true);await s.unlock();
+    assert.equal(s.node.connections[0],s.master);assert.equal(s.master.connections[0],s.context.destination);
+    if(fallback){assert.equal(s.synth.debugState.bypass,true);assert.equal(s.synth.music.current.arpHz,75);}
+    else assert.ok(b.messages.some(m=>m.type==='debug'&&m.values.bypass&&m.values.arpHz===75));
+    s.setVolume(20);assert.equal(s.master.gain.value,(20/100)**2);assert.equal(s.debug.bypass,true);
+    s.setDebug({arpHz:Infinity});assert.equal(s.debug.arpHz,75);
+    const [key,saved]=b.writes.at(-1);assert.equal(key,'vibelentely.audio.debug');assert.equal(saved.debug.arpHz,75);
+    assert.equal(browser({debug:true,saved:JSON.stringify(saved)}).sound.debug.bypass,true);
+  }
+  const normal=browser();normal.sound.setDebug({arpSolo:true,arpHz:50,bypass:true});
+  assert.equal(normal.sound.debug.arpHz,null);assert.equal(normal.messages.length,0);assert.equal(normal.writes.length,0);
+  assert.equal(normal.reads[0],'vibelentely.audio');
 });

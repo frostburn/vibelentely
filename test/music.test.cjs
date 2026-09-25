@@ -1,31 +1,89 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const vm=require('node:vm');
-const {SONG,Tracker}=require('../dist/music.js');
+const {SONGS,REPEATS,Tracker,Playlist}=require('../dist/music.js');
 const {Synth,Cabinet,workletSource}=require('../dist/audio-dsp.js');
 function samples(tracker,n){const out=new Float32Array(n);for(let i=0;i<n;i++)out[i]=tracker.sample();return out;}
 
-test('The complete score has valid pitched notes, sixteen-row bars, contrasting sections and a playable arrangement',()=>{
-  const tracker=new Tracker(48000);assert.equal(SONG.order.length,64);
-  for(const phrase of Object.values(tracker.notes)){
-    assert.equal(phrase.length,16);assert.notEqual(phrase[0],'-','holds must have a preceding note in the bar');
-    for(const n of phrase)assert.ok(n==='-'||n==='.'||Number.isInteger(n)&&n>=0&&n<128);
+test('Every score has valid pitched notes, sixteen-row bars, contrasting sections and a playable arrangement',()=>{
+  assert.equal(new Set(SONGS.map(song=>song.id)).size,3);
+  for(const song of SONGS){
+    const tracker=new Tracker(48000,song);assert.equal(song.order.length,64);
+    for(const phrase of Object.values(tracker.notes)){
+      assert.equal(phrase.length,16);assert.notEqual(phrase[0],'-','holds must have a preceding note in the bar');
+      for(const n of phrase)assert.ok(n==='-'||n==='.'||Number.isInteger(n)&&n>=0&&n<128);
+    }
+    for(const [i,bar] of tracker.progression.entries()){
+      assert.ok(bar.notes);assert.equal(bar.chord.length,4);
+      if(song.order[i][3])assert.ok(bar.arp,'named arp patterns must exist');
+    }
+    for(const part of Object.values(tracker.arps)){
+      assert.equal(part.rows.length,16);assert.notEqual(part.rows[0],'-');
+      assert.ok(part.rows.every(row=>row==='x'||row==='-'||row==='.'));
+      assert.ok(Number.isFinite(part.gain)&&part.gain>0);
+      for(const chord of Object.values(song.chords))for(const note of chord.slice(1))assert.ok(tracker.frequencies[note+(part.octave??0)]);
+    }
+    assert.ok(new Set(tracker.progression.map(b=>b.notes)).size>20);assert.ok(new Set(tracker.progression.map(b=>b.style)).size>=5);
+    for(const pattern of Object.values(song.bass))assert.equal(pattern.length,16);
   }
-  for(const bar of tracker.progression){assert.ok(bar.notes);assert.equal(bar.chord.length,4);}
-  assert.ok(new Set(tracker.progression.map(b=>b.notes)).size>20);assert.ok(new Set(tracker.progression.map(b=>b.style)).size>=5);
   assert.equal(Tracker.note('A4'),69);assert.equal(Tracker.note('D#5'),75);
 });
 
 test('The sample clock holds tempo across device rates and wraps into the first bar without an empty row',()=>{
-  for(const rate of [44100,48000]){
-    const tracker=new Tracker(rate);tracker.set(true,.45);
+  for(const rate of [44100,48000])for(const song of SONGS){
+    const tracker=new Tracker(rate,song);tracker.set(true,.45);
     const length=Math.ceil(tracker.rowLength*16);samples(tracker,length);
     assert.equal(tracker.row,15);tracker.sample();assert.equal(tracker.row,16);
     assert.equal(tracker.frames,length+1);
-    tracker.row=SONG.order.length*16-2;tracker.remaining=0;
+    tracker.row=song.order.length*16-2;tracker.remaining=0;
     samples(tracker,Math.ceil(tracker.rowLength));assert.equal(tracker.row,1023);
     tracker.sample();assert.equal(tracker.row,0);assert.equal(tracker.loops,1);
-    assert.equal(tracker.bar.chord,SONG.chords.Em);
+    assert.equal(tracker.bar.chord,song.chords[song.order[0][0]]);
+  }
+});
+
+test('Fast chord cycling keeps even pitch ticks and oscillator phase across rhythmic accents',()=>{
+  for(const rate of [44100,48000])for(const song of SONGS){
+    const t=new Tracker(rate,song);t.set(true,.45);
+    const chord=song.chords[song.order[0][0]].slice(1).map(n=>t.frequencies[n]),changes=[];
+    let previousFrequency=0;
+    for(let sample=0;sample<rate;sample++){
+      const phase=t.arpPhase;t.sample();
+      if(t.arpFrequency===previousFrequency)continue;
+      assert.equal(t.arpFrequency,chord[changes.length%3],'pitch sequence must not retrigger with the envelope');
+      assert.ok(Math.abs(t.arpPhase-(phase+t.arpFrequency/rate)%1)<1e-12,'pitch changes must preserve oscillator phase');
+      changes.push(sample);previousFrequency=t.arpFrequency;
+    }
+    assert.equal(changes.length,50,'normal playback uses the accepted debug speed');
+    assert.equal(changes.length,t.tone.arpHz);
+    for(let i=1;i<changes.length;i++){
+      const length=changes[i]-changes[i-1];
+      assert.ok(length===Math.floor(rate/t.tone.arpHz)||length===Math.ceil(rate/t.tone.arpHz),'accent boundaries must not shorten pitch ticks');
+    }
+    const frames=t.frames,index=t.arpIndex;t.set(false,.45);samples(t,1024);
+    assert.equal(t.frames,frames);assert.equal(t.arpIndex,index,'pausing also freezes the pitch-effect clock');
+  }
+});
+
+test('Arp rests fade fully, feature phrases sound alone, and returning accents keep the pitch clock running',()=>{
+  const rate=48000;
+  for(const song of SONGS){
+    const t=new Tracker(rate,song);t.debug({arpSolo:true,arpHz:null});t.set(true,.45);
+    function bar(index){t.row=index*16-1;t.remaining=0;t.frames=Math.ceil(index*16*t.rowLength);}
+    const feature=t.progression.findIndex(part=>part.arp?.gain>1),rest=t.progression.findIndex(part=>!part.arp);
+    assert.ok(feature>=0&&rest>=0);
+    assert.ok(t.progression[feature].notes.every(note=>note==='.'),'the melody must leave room for the featured arp');
+    bar(feature);const active=samples(t,4800);assert.ok(active.some(x=>Math.abs(x)>.01));
+    bar(rest);const release=samples(t,18000);
+    assert.ok(release.subarray(0,128).some(x=>Math.abs(x)>.001),'release must fade instead of cutting the oscillator');
+    assert.equal(t.arpLevel,0);assert.ok(release.subarray(-128).every(x=>x===0),'omitted patterns must be genuinely silent even in solo');
+    const phase=t.arpPhase;bar(feature);const frame=t.frames;t.sample();
+    assert.equal(t.arpIndex,Math.floor(frame*50/rate+1e-10)%3,'re-entry uses the running pitch clock');
+    assert.ok(Math.abs(t.arpPhase-(phase+t.arpFrequency/rate)%1)<1e-12,'re-entry must preserve oscillator phase');
+    assert.ok(t.arpLevel>0&&t.arpLevel<.01,'new accents fade in');
+    samples(t,2048);const level=t.arpLevel;
+    t.set(false,.45);samples(t,2048);assert.equal(t.arpLevel,level,'pause must freeze the arrangement envelope');
+    t.reset();assert.equal(t.arpLevel,0);assert.equal(t.arpTarget,0);
   }
 });
 
@@ -45,15 +103,115 @@ test('Music and effects share one nonlinear cabinet and render identically acros
   const a=new Float32Array(8192),b=new Float32Array(8192),dry=new Float32Array(8192);whole.render(a);raw.render(dry);
   for(let i=0;i<b.length;i+=128)blocks.render(b.subarray(i,i+128));
   assert.deepEqual(a,b);assert.deepEqual(a,Float32Array.from(expected));assert.ok(a.some((v,i)=>Math.abs(v-dry[i])>.01));
-  const position=whole.music.frames;whole.clear();whole.render(new Float32Array(128));
-  assert.equal(whole.music.frames,position+128,'clearing transient effects must not restart or stop music');
+  const position=whole.music.current.frames;whole.clear();whole.render(new Float32Array(128));
+  assert.equal(whole.music.current.frames,position+128,'clearing transient effects must not restart or stop music');
 });
 
 test('The standalone worklet carries the score, music transport and the same filtered mix',()=>{
-  let Processor;const scope={sampleRate:48000,AudioWorkletProcessor:class{constructor(){this.port={};}},registerProcessor:(_,ctor)=>Processor=ctor};
+  let Processor;const states=[],scope={sampleRate:48000,AudioWorkletProcessor:class{constructor(){this.port={postMessage:s=>states.push(s)};}},registerProcessor:(_,ctor)=>Processor=ctor};
   vm.createContext(scope);vm.runInContext(workletSource(),scope);
   const p=new Processor(),reference=new Synth();p.port.onmessage({data:{type:'music',playing:true,level:.45}});reference.music.set(true,.45);
   const out=new Float32Array(1024),expected=new Float32Array(1024);p.process([],[[out]]);reference.render(expected);assert.deepEqual(out,expected);
+  const choice={type:'playlist',track:SONGS[2].id,autoAdvance:false,request:7};
+  p.port.onmessage({data:choice});reference.music.configure(choice);p.process([],[[out]]);reference.render(expected);assert.deepEqual(out,expected);
+  assert.equal(states.at(-1).track,SONGS[2].id);assert.equal(states.at(-1).request,7);
+  assert.equal(p.synth.music.autoAdvance,false);
   p.port.onmessage({data:{type:'music',playing:false,level:.45}});p.process([],[[new Float32Array(24000)]]);
   p.process([],[[out]]);assert.ok(out.every(v=>Math.abs(v)<1e-7));
+});
+
+function lastRow(playlist,loops){
+  const t=playlist.current;t.loops=loops;t.row=t.progression.length*16-2;t.remaining=0;
+  t.sample();assert.equal(t.row,t.progression.length*16-1);return t;
+}
+
+test('The playlist completes three full loops per track, follows each new tempo and wraps to the first song',()=>{
+  for(const rate of [44100,48000]){
+    const p=new Playlist(rate);p.set(true,.45);
+    for(let index=0;index<SONGS.length;index++){
+      assert.equal(p.current.song,SONGS[index]);assert.equal(p.current.frames, index?1:0);
+      for(let loop=0;loop<REPEATS;loop++){
+        const t=lastRow(p,loop);samples(p,Math.ceil(t.remaining));
+        assert.equal(p.current,t,'the last row must finish before switching');
+        p.sample();
+        if(loop<REPEATS-1){assert.equal(p.current,t);assert.equal(t.row,0);assert.equal(t.loops,loop+1);}
+      }
+      assert.equal(p.current.song,SONGS[(index+1)%SONGS.length]);assert.equal(p.current.row,0);
+      assert.equal(p.current.loops,0);assert.equal(p.current.rowLength,rate*60/(p.current.song.bpm*4));
+    }
+    assert.equal(p.takeState().track,SONGS[0].id);assert.equal(p.takeState(),null,'no per-block UI traffic');
+  }
+});
+
+test('Holding a song survives loop boundaries, silence and pauses; manual selection starts a fresh three-loop run',()=>{
+  const p=new Playlist(48000);p.set(true,.45);p.configure({autoAdvance:false});
+  let t=lastRow(p,8);t.remaining=0;p.sample();assert.equal(p.current,t);assert.equal(t.loops,9);
+  p.configure({autoAdvance:true});lastRow(p,9).remaining=0;
+  p.set(false,.45);samples(p,24000);assert.equal(p.current,t,'pause must not rotate at a pending boundary');
+  p.set(true,0);samples(p,1024);assert.equal(p.current,t,'zero music level must not rotate');
+  p.set(true,.45);p.sample();assert.equal(p.current.song,SONGS[1]);
+  p.configure({track:SONGS[2].id,request:4});assert.equal(p.current.row,-1);assert.equal(p.current.loops,0);
+  samples(p,128);t=p.current;const frames=t.frames;
+  p.configure({autoAdvance:false});assert.equal(t.frames,frames,'changing repeat mode must not restart the song');
+  p.configure({track:'missing',request:5});assert.equal(p.current,t);assert.equal(p.request,4);
+  p.configure({track:SONGS[2].id,request:6});assert.equal(t.frames,frames,'reselecting the same song must not restart it');
+});
+
+test('Track changes fade the outgoing sound, clear old notes and echo, and keep render-block-independent output',()=>{
+  const a=new Synth(),b=new Synth();
+  for(const s of [a,b]){s.music.set(true,.45);s.render(new Float32Array(12000));}
+  const outgoing=a.music.current,oldGain=outgoing.gain;
+  for(const s of [a,b])s.music.configure({track:SONGS[1].id});
+  assert.equal(a.music.current.gain,0);assert.ok(a.music.current.echo.every(x=>x===0));
+  const whole=new Float32Array(24000),blocks=new Float32Array(24000);a.render(whole);
+  for(let i=0;i<blocks.length;i+=128)b.render(blocks.subarray(i,i+128));assert.deepEqual(whole,blocks);
+  assert.ok(oldGain>.4);assert.equal(outgoing.gain,0);assert.equal(a.music.previous,null);
+  assert.ok(whole.every(x=>Number.isFinite(x)&&Math.abs(x)<1));
+  a.music.configure({track:SONGS[0].id});assert.equal(a.music.current.frames,0);assert.equal(a.music.current.loops,0);
+  assert.ok(a.music.current.echo.every(x=>x===0),'returning to a previously played song starts cleanly');
+});
+
+test('Live debug rate changes preserve playback and oscillator position; overrides survive song changes',()=>{
+  for(const rate of [44100,48000]){
+    const s=new Synth(rate);s.debug({arpHz:75});s.music.set(true,.45);s.render(new Float32Array(1024));const t=s.music.current;
+    const before={frames:t.frames,row:t.row,phase:t.arpPhase,index:t.arpIndex,echo:t.echoIndex};
+    s.debug({arpHz:50});assert.deepEqual({frames:t.frames,row:t.row,phase:t.arpPhase,index:t.arpIndex,echo:t.echoIndex},before);
+    const changes=[];let last=t.arpIndex;
+    for(let i=0;i<rate;i++){t.sample();if(t.arpIndex!==last){changes.push(i);last=t.arpIndex;}}
+    assert.equal(changes.length,50);
+    for(let i=1;i<changes.length;i++)assert.equal(changes[i]-changes[i-1],rate/50);
+    t.set(false,.45);s.debug({arpHz:1});const frame=t.frames,index=t.arpIndex;samples(t,2048);
+    assert.equal(t.frames,frame);assert.equal(t.arpIndex,index);
+    s.music.configure({track:SONGS[1].id});assert.equal(s.music.current.arpHz,1);
+    s.debug({arpHz:999});assert.equal(s.music.current.arpHz,300);
+    s.debug({arpHz:NaN});assert.equal(s.music.current.arpHz,300);
+    s.debug({arpHz:null});assert.equal(s.music.current.arpHz,null);assert.equal(s.music.current.tone.arpHz,50);
+  }
+});
+
+test('Arp solo removes every other instrument and game effect, through either the cabinet or its debug bypass',()=>{
+  for(const bypass of [false,true]){
+    const s=new Synth(),cabinet=new Cabinet(48000),raw=[];s.debug({arpSolo:true,arpHz:50,bypass});s.music.set(true,.45);
+    const t=s.music.current,arp=t.arpeggio.bind(t);
+    t.arpeggio=dt=>{const value=arp(dt);raw.push(value*t.gain*1.8);return value;};
+    t.kickAge=t.snareAge=t.hatAge=0;t.echo.fill(.2);
+    s.controls({engine:1,vacuum:1,charge:1,shield:1,wet:1,lava:1});s.event('explosion');s.event('pulse');
+    const out=new Float32Array(24000);s.render(out);
+    const expected=Float32Array.from(raw,x=>bypass?Math.max(-1,Math.min(127/128,x)):cabinet.process(x));
+    assert.deepEqual(out,expected,'solo must contain only the single arpeggio channel');
+    const position=t.frames;s.debug({arpSolo:false,bypass:!bypass});s.render(new Float32Array(24000));
+    assert.equal(t.frames,position+24000);assert.equal(s.effectsMix,1);assert.equal(s.bypassMix,Number(!bypass));
+    assert.equal(t.soloMix,0,'the full arrangement returns without restarting transport');
+  }
+});
+
+test('AudioWorklet debug messages control rate, solo and cabinet bypass with identical sample output',()=>{
+  let Processor;const scope={sampleRate:48000,AudioWorkletProcessor:class{constructor(){this.port={postMessage(){}};}},registerProcessor:(_,ctor)=>Processor=ctor};
+  vm.createContext(scope);vm.runInContext(workletSource(),scope);
+  const p=new Processor(),reference=new Synth(),actual=new Float32Array(1024),expected=new Float32Array(1024);
+  p.port.onmessage({data:{type:'music',playing:true,level:.45}});reference.music.set(true,.45);
+  for(const values of [{arpSolo:true,arpHz:25},{bypass:true,arpHz:75},{arpSolo:false,arpHz:300},{bypass:false,arpHz:null}]){
+    p.port.onmessage({data:{type:'debug',values}});reference.debug(values);
+    for(let i=0;i<4;i++){p.process([],[[actual]]);reference.render(expected);assert.deepEqual(actual,expected);}
+  }
 });

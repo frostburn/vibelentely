@@ -83,4 +83,5 @@
 .sound-controls input[type=range]{width:130px;max-width:35vw;height:24px;margin:0}
 .sound-controls output{min-width:36px;font-variant-numeric:tabular-nums}.game-sound{padding-top:14px}
 .music-controls{margin-top:8px}.music-controls button[aria-pressed=true]{color:#bddbd3;border-color:#52766a}.track-name{font-size:11px;color:#91a6a8}
+.music-library{display:flex;align-items:center;flex-wrap:wrap;gap:12px 24px;margin-top:12px;color:var(--muted);font-size:12px}.track-picker{display:flex;align-items:center;gap:10px;max-width:100%}.track-picker select{width:190px;max-width:100%;min-height:36px}.music-rotation{display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer}.music-rotation input{margin:0;accent-color:#9cc998;flex-shrink:0}
 @media(max-width:680px){.sound-controls{gap:8px}.sound-controls label{font-size:11px}.sound-controls input[type=range]{width:100px}}

@@ -1,0 +1,36 @@
+<style>
+.audio-debug{width:min(1120px,calc(100% - 32px));margin:24px auto 0;padding:20px;border:1px solid #7c6845;border-radius:8px;background:#211e18;color:#e5dece;font-size:13px}
+.audio-debug h2{font-size:20px;margin:0}.audio-debug .debug-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}.audio-debug .debug-actions{display:flex;gap:8px}.audio-debug .debug-heading p{margin:0 0 5px;color:#edbc6c;font-size:10px;letter-spacing:.15em}
+.audio-debug .debug-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:16px;margin-top:18px}.audio-debug label{display:flex;align-items:center;gap:9px}.audio-debug .debug-track{flex-wrap:wrap}.audio-debug select{max-width:100%;min-height:36px}.audio-debug input[type=checkbox]{accent-color:#edbc6c;margin:0;flex-shrink:0}
+.audio-debug .debug-rate{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:18px 0 8px}.audio-debug input[type=range]{flex:1;min-width:120px;accent-color:#edbc6c}.audio-debug input[type=number]{width:76px;min-height:36px;background:#151819;color:inherit;border:1px solid #6f6551;border-radius:4px;padding:5px}
+.audio-debug output{font-variant-numeric:tabular-nums}.audio-debug #debug-rate-readout{display:block;color:#cfbea0;line-height:1.6}.audio-debug .debug-presets{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}.audio-debug .debug-presets button{font-size:12px}.audio-debug .debug-presets button[aria-pressed=true]{border-color:#edbc6c;color:#edbc6c}
+.audio-debug .sound-controls{margin-top:16px}.audio-debug .debug-help{color:#b5ad9e;line-height:1.6;margin:12px 0 0}
+</style>
+<section id="audio-debug" class="audio-debug" aria-labelledby="audio-debug-title">
+  <div class="debug-heading"><div><p>DEBUG-BUILD</p><h2 id="audio-debug-title">Arppilabra</h2></div><div class="debug-actions"><button id="debug-listen" type="button">Kuuntele</button><button id="debug-pause" type="button">Tauota</button></div></div>
+  <div class="debug-grid">
+    <label class="debug-track" for="debug-track">Biisi <select id="debug-track"></select></label>
+    <label for="debug-solo"><input id="debug-solo" type="checkbox" checked> Vain arppikanava</label>
+    <label for="debug-bypass"><input id="debug-bypass" type="checkbox"> Ohita tuhnuketju</label>
+  </div>
+  <div class="debug-rate">
+    <label for="debug-arp-rate">Sävelenvaihtoja / s</label>
+    <input id="debug-arp-rate" type="range" min="1" max="300" step="1" value="50">
+    <input id="debug-arp-number" type="number" min="1" max="300" step="1" value="50" aria-label="Sävelenvaihtoja sekunnissa">
+  </div>
+  <output id="debug-rate-readout" for="debug-arp-rate debug-arp-number">50 sävelenvaihtoa/s · 20,0 ms per sävel · 16,7 sointukiertoa/s</output>
+  <div class="debug-presets" role="group" aria-label="Arpin vertailunopeudet">
+    <button type="button" data-arp-rate="25" aria-pressed="false">25</button>
+    <button type="button" data-arp-rate="50" aria-pressed="true">50</button>
+    <button type="button" data-arp-rate="75" aria-pressed="false">75</button>
+    <button type="button" data-arp-rate="100" aria-pressed="false">100</button>
+    <button type="button" data-arp-rate="150" aria-pressed="false">150</button>
+    <button type="button" data-arp-rate="225" aria-pressed="false">225</button>
+    <button id="debug-arp-default" type="button">Biisin oletus</button>
+  </div>
+  <div class="sound-controls" role="group" aria-label="Debug-kuuntelun voimakkuus">
+    <label for="debug-volume">Voimakkuus</label><input id="debug-volume" data-volume type="range" min="0" max="100" value="60" step="1">
+    <output data-volume-readout for="debug-volume">60 %</output><span data-audio-status role="status"></span>
+  </div>
+  <p class="debug-help">Soolotus hiljentää muut soittimet ja pelitehosteet. Arpin sovituksen tauot kuuluvat myös soolossa. Nopeutta voi muuttaa kesken biisin. Tuhnuketjun ohitus poistaa kvantisoinnin ja suodatuksen; voimakkuussäädin toimii kummassakin tilassa. Automaattinen biisivaihto on aluksi pois päältä.</p>
+</section>

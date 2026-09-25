@@ -34,3 +34,11 @@ jobs:
           name: vibelentely
           path: ${{ runner.temp }}/vibelentely.html
           if-no-files-found: error
+      - name: Export audio debug HTML
+        run: npm run export:debug -- "$RUNNER_TEMP/vibelentely-debug.html"
+      - name: Upload audio debug HTML
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: vibelentely-debug
+          path: ${{ runner.temp }}/vibelentely-debug.html
+          if-no-files-found: error
