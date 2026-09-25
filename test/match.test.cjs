@@ -4,6 +4,7 @@ const {World,M}=require('../dist/simulation.js');
 require('../dist/levels.js');
 const {Drone}=require('../dist/flight.js');
 require('../dist/ai.js');
+require('../dist/tools.js');
 const {Combat}=require('../dist/combat.js');
 const {Match}=require('../dist/match.js');
 

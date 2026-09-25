@@ -1,10 +1,10 @@
 {
   "name": "vibelentely",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "description": "A pixel cave flyer with cellular sand, water, viscoplastic mud and cohesive lava",
   "scripts": {
-    "check": "node --check dist/simulation.js && node --check dist/levels.js && node --check dist/flight.js && node --check dist/ai.js && node --check dist/combat.js && node --check dist/match.js && node --check dist/solo.js && node --check dist/render.js && node --check dist/app.js",
+    "check": "node --check dist/simulation.js && node --check dist/levels.js && node --check dist/flight.js && node --check dist/ai.js && node --check dist/tools.js && node --check dist/combat.js && node --check dist/match.js && node --check dist/solo.js && node --check dist/render.js && node --check dist/app.js",
     "test": "node --test",
     "export": "node scripts/export-html.mjs"
   }

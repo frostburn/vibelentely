@@ -4,6 +4,7 @@ const {World,M}=require('../dist/simulation.js');
 require('../dist/levels.js');
 const {Drone}=require('../dist/flight.js');
 const {Pilot}=require('../dist/ai.js');
+require('../dist/tools.js');
 const {Combat}=require('../dist/combat.js');
 const {Solo,list}=require('../dist/solo.js');
 
@@ -16,12 +17,12 @@ function park(player,point){Object.assign(player,{x:point.x,y:point.y,vx:0,vy:0,
 function run(solo,n){for(let i=0;i<n;i++)solo.step({brake:true});}
 
 test('Solo missions wait for input, have safe reachable docks, and retry a pristine map and equipment',()=>{
-  assert.equal(list.length,3);
+  assert.equal(list.length,8);
   for(let index=0;index<list.length;index++){
     const {world,player,combat,solo}=game(index),cells=world.cells.slice();
     assert.ok(player.safeSpawn(player.x,player.y));assert.equal(combat.active().length,1);
     assert.equal(combat.enabled,false);assert.equal(combat.terrainCharges,true);
-    for(const station of solo.stations){
+    for(const station of index===0?solo.stations:[]){
       const pilot=new Pilot(combat,player);pilot.plan(station);const end=pilot.route.at(-1);
       assert.ok(end&&Math.hypot(end.x-station.x,end.y-station.y)<19,'each shelter has a hull-wide route');
       assert.ok(pilot.passage(end.x,end.y,station.x,station.y));
@@ -91,7 +92,7 @@ for(const index of [1,2])test(list[index].name+': demolition charges release rea
   assert.ok(solo.readyToReturn);assert.equal(solo.phase,'playing','filling alone does not end the mission');
   park(player,solo.base);run(solo,50);assert.equal(solo.phase,'won');assert.ok(solo.records[solo.mission.id]>0);
   const tick=world.tick;run(solo,10);assert.equal(world.tick,tick);
-  if(index===2)assert.equal(solo.next(),false,'the last mission returns to the menu via the app');
+  if(index===2){assert.equal(solo.next(),true);assert.equal(solo.mission.id,'leaking-dam');}
 });
 
 test('Only the requested material inside the marked basin counts, and loss of fill cancels extraction',()=>{
@@ -113,4 +114,38 @@ test('Destruction, a burning occupied shelter, and the rescue deadline fail once
     const tick=world.tick,elapsed=solo.elapsed;run(solo,30);assert.equal(world.tick,tick);assert.equal(solo.elapsed,elapsed);
     assert.equal(solo.next(),false);solo.start();assert.equal(solo.phase,'ready');assert.equal(solo.remaining,180);
   }
+});
+
+test('New engineering missions require all their physical goals together, and explosions ruin protected equipment',()=>{
+  for(const index of [3,4,5,7]){
+    const {solo,world,player}=game(index);assert.deepEqual(player.loadout,solo.mission.loadout);
+    park(player,{x:150,y:230});solo.checkObjective(1);
+    assert.equal(solo.readyToReturn,false,'a new mission must need work');
+    function satisfy(goal){
+      const z=goal.zone;
+      for(let y=z.y;y<z.y+z.height;y++)for(let x=z.x;x<z.x+z.width;x++)world.set(y*640+x,goal.clear?M.AIR:goal.materials[0]);
+    }
+    satisfy(solo.goals[0]);solo.checkObjective(1);
+    if(solo.goals.length>1)assert.equal(solo.readyToReturn,false,'one objective cannot stand in for the other');
+    for(const goal of solo.goals)satisfy(goal);solo.checkObjective(1);assert.equal(solo.readyToReturn,true);
+    const goal=solo.goals[0],z=goal.zone;
+    for(let y=z.y;y<z.y+z.height;y++)for(let x=z.x;x<z.x+z.width;x++)world.set(y*640+x,goal.clear?goal.materials[0]:M.AIR);
+    solo.checkObjective(1);assert.equal(solo.readyToReturn,false,'a broken repair cancels extraction');
+    if(solo.mission.fragile){const f=solo.mission.fragile;world.explode(f.x,f.y,19);solo.checkObjective(1/60);assert.equal(solo.phase,'lost');}
+  }
+});
+
+test('The hard shell starts sealed and real blaster impacts open a flyable route to the deliverable module',()=>{
+  const {world,player,combat,solo}=game(6),station=solo.stations[0],pilot=new Pilot(combat,player);
+  pilot.plan(station);assert.ok(Math.hypot(pilot.route.at(-1).x-station.x,pilot.route.at(-1).y-station.y)>19);
+  for(let n=0;n<3;n++){
+    park(player,{x:352,y:211});player.angle=0;player.gear.charge=1;player.gear.blasterHot=false;player.gear.blasterCooldown=0;
+    assert.ok(combat.shoot(player,'blaster'));const shot=combat.projectiles.pop();
+    for(let frame=0;frame<90;frame++)if(!combat.projectileStep(shot,1/60))break;
+  }
+  for(let n=0;n<90;n++)world.step();
+  pilot.plan(station);const end=pilot.route.at(-1);assert.ok(Math.hypot(end.x-station.x,end.y-station.y)<19);
+  assert.ok(pilot.passage(end.x,end.y,station.x,station.y));
+  park(player,station);run(solo,50);assert.equal(solo.cargo,1);assert.equal(solo.phase,'playing');
+  park(player,solo.base);run(solo,50);assert.equal(solo.phase,'won');assert.equal(solo.rescued,1);
 });

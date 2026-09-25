@@ -1,7 +1,7 @@
 (function(root){
   'use strict';
-  const {M}=root.CaveSim;
-  const solid=k=>k===M.ROCK||k===M.BASALT||k===M.SAND||k===M.MUD||k===M.POWDER;
+  const {M}=root.CaveSim,Tools=root.CaveTools;
+  const solid=k=>k===M.ROCK||k===M.HARDROCK||k===M.BASALT||k===M.SAND||k===M.MUD||k===M.POWDER;
   function equipment(){return {heat:0,overheated:false,pulse:0,grenades:3,reload:0,grenade:0,water:100,jet:0,energy:100,shield:false,shieldLock:0,blink:0,blinkHeld:false};}
   class Combat {
     constructor(world,player){
@@ -31,7 +31,7 @@
         const base=actor.team?(w.enemySpawn||{x:w.spawn.x+110,y:w.spawn.y-15}):w.spawn;
         actor.spawn=w.teamSpawns?.[actor.team]?.[actor.slot||0]||
           {x:base.x+(actor.slot||0)*(actor.team?24:-24),y:base.y};
-        actor.respawn(occupied);actor.gear=equipment();actor.pilot?.reset();
+        actor.respawn(occupied);actor.gear={...equipment(),...Tools.equipment()};actor.loadout??=['grenade','water'];actor.pilot?.reset();
         if(!actor.dead)occupied.push(actor);
       }
       this.projectiles.length=0;this.effects.length=0;this.time=0;this.result=null;this.started=false;
@@ -41,7 +41,7 @@
     setOpponent(value){
       this.enabled=value;this.projectiles=this.projectiles.filter(p=>p.owner===this.player);
       if(value)for(const actor of this.actors)if(actor!==this.player){
-        actor.respawn(this.actors.filter(a=>a!==actor&&!a.dead));actor.gear=equipment();actor.pilot.reset();
+        actor.respawn(this.actors.filter(a=>a!==actor&&!a.dead));actor.gear={...equipment(),...Tools.equipment()};actor.pilot.reset();
       }
     }
     active(){return this.enabled?this.actors:[this.player];}
@@ -50,7 +50,7 @@
       if(this.result)return;
       this.result=result;
       if(this.enabled&&result!=='draw')this.score[result==='won'?0:1]++;
-      for(const actor of this.actors){actor.throttle=0;actor.gear.shield=false;}
+      for(const actor of this.actors){actor.throttle=0;actor.gear.shield=false;Tools.cancel(actor);}
     }
     resolve(){
       const ours=this.living(0).length,theirs=this.enabled?this.living(1).length:1;
@@ -90,6 +90,7 @@
     }
     prepare(actor,input,dt){
       const g=actor.gear;
+      Tools.tick(actor,dt);
       for(const key of ['pulse','grenade','jet','shieldLock','blink'])g[key]=Math.max(0,g[key]-dt);
       g.heat=Math.max(0,g.heat-dt*.3);if(g.heat<.28)g.overheated=false;
       if(g.grenades<3){g.reload+=dt;if(g.reload>=4){g.reload-=4;g.grenades++;}}else g.reload=0;
@@ -112,14 +113,18 @@
       if(kind==='pulse'&&(g.pulse||g.overheated))return false;
       if(kind==='grenade'&&(g.grenade||!g.grenades))return false;
       if(kind==='water'&&(g.jet||g.water<1.5))return false;
+      if(kind==='mud'&&(g.mudCooldown||!g.mudAmmo))return false;
+      if(kind==='blaster'&&(g.charge!==1||g.blasterHot||g.blasterCooldown))return false;
       const co=Math.cos(actor.angle),si=Math.sin(actor.angle);
-      const speed=kind==='pulse'?230:kind==='grenade'?95:155;
+      const speed=kind==='blaster'?430:kind==='pulse'?230:kind==='grenade'||kind==='mud'?95:155;
       this.projectiles.push({kind,owner:actor,x:actor.x+co*5,y:actor.y+si*5,
-        vx:actor.vx+co*speed,vy:actor.vy+si*speed,life:kind==='grenade'?1.4:kind==='water'?.6:1.5,age:0,
+        vx:actor.vx+co*speed,vy:actor.vy+si*speed,life:kind==='grenade'?1.4:kind==='mud'?1.1:kind==='water'?.6:1.5,age:0,
         sticky:kind==='grenade'&&this.terrainCharges});
       if(kind==='pulse'){g.pulse=.13;g.heat=Math.min(1,g.heat+.17);if(g.heat>=.99)g.overheated=true;}
       if(kind==='grenade'){g.grenade=.65;g.grenades--;actor.vx-=co*7;actor.vy-=si*7;}
       if(kind==='water'){g.jet=.055;g.water-=1.5;actor.vx-=co*1.8;actor.vy-=si*1.8;}
+      if(kind==='mud'){g.mudCooldown=.65;g.mudAmmo--;actor.vx-=co*5;actor.vy-=si*5;}
+      if(kind==='blaster'){g.charge=0;g.blasterCooldown=.6;g.blasterHeat=Math.min(1,g.blasterHeat+.5);g.blasterHot=g.blasterHeat>=1;actor.vx-=co*26;actor.vy-=si*26;}
       return true;
     }
     waterImpact(p,x=p.x,y=p.y){
@@ -145,18 +150,20 @@
       }
       w.brush(x,y,1,M.WATER);
     }
-    detonate(p){this.world.explode(Math.round(p.x),Math.round(p.y),19).owner=p.owner;}
+    detonate(p){const blast=this.world.explode(Math.round(p.x),Math.round(p.y),p.kind==='blaster'?30:19);blast.owner=p.owner;if(p.kind==='blaster')blast.power=125;}
     projectileStep(p,dt){
       p.life-=dt;p.age+=dt;
-      if(p.life<=0){if(p.kind==='grenade')this.detonate(p);else if(p.kind==='water')this.waterImpact(p);return false;}
+      if(p.life<=0){if(p.kind==='grenade'||p.kind==='blaster')this.detonate(p);else if(p.kind==='water')this.waterImpact(p);else if(p.kind==='mud')Tools.mudBurst(this,p);return false;}
       if(p.stuck)return true;
-      if(p.kind!=='pulse')p.vy+=dt*70;
+      if(p.kind!=='pulse'&&p.kind!=='blaster')p.vy+=dt*70;
       if(this.cell(p.x,p.y)===M.WATER){const drag=Math.exp(-dt*(p.kind==='grenade'?3:1));p.vx*=drag;p.vy*=drag;}
       const steps=Math.max(1,Math.ceil(Math.hypot(p.vx,p.vy)*dt/.45));
       for(let n=0;n<steps;n++){
         const ox=p.x,oy=p.y,nx=ox+p.vx*dt/steps,ny=oy+p.vy*dt/steps,k=this.cell(nx,ny);
-        const hitTerrain=solid(k)||(p.kind==='water'&&(k===M.LAVA||k===M.FIRE));
+        const hitTerrain=solid(k)||(p.kind==='water'&&(k===M.LAVA||k===M.FIRE))||(p.kind==='mud'&&(k===M.WATER||k===M.LAVA));
         if(hitTerrain){
+          if(p.kind==='blaster'){this.detonate(p);return false;}
+          if(p.kind==='mud'){Tools.mudBurst(this,{...p,x:ox,y:oy});return false;}
           if(p.kind==='grenade'){
             // Solo demolition charges attach at the swept contact point; the
             // original fuse keeps running. Duel grenades retain their bounce.
@@ -184,13 +191,14 @@
           if(actor.dead||(actor!==p.owner&&actor.team===p.owner.team)||(actor===p.owner&&(p.kind!=='grenade'||p.age<.2)))continue;
           const r=actor.radius+(actor.gear.shield?3:0);
           if(Math.hypot(actor.x-p.x,actor.y-p.y)>r)continue;
-          if(this.guard(actor,p.x,p.y,p.kind==='pulse'?12:p.kind==='grenade'?30:3)){
+          if(this.guard(actor,p.x,p.y,p.kind==='blaster'?65:p.kind==='pulse'?12:p.kind==='grenade'?30:3)){
             if(p.kind!=='grenade')return false;
             const co=Math.cos(actor.angle),si=Math.sin(actor.angle),v=Math.max(65,Math.hypot(p.vx,p.vy));
             p.vx=co*v+actor.vx;p.vy=si*v+actor.vy;p.x=actor.x+co*(r+2);p.y=actor.y+si*(r+2);break;
           }
           if(Math.hypot(actor.x-p.x,actor.y-p.y)>actor.radius)continue;
-          if(p.kind==='grenade'){this.detonate(p);return false;}
+          if(p.kind==='grenade'||p.kind==='blaster'){this.detonate(p);return false;}
+          if(p.kind==='mud'){Tools.mudBurst(this,p);return false;}
           if(p.kind==='pulse')actor.damage(9);
           else {const len=Math.hypot(p.vx,p.vy)||1;actor.vx+=p.vx/len*14;actor.vy+=p.vy/len*14;this.waterImpact(p);}
           return false;
@@ -208,7 +216,7 @@
           if(d>=reach)continue;
           const power=1-d/reach;
           if(this.guard(actor,e.x,e.y,65*power))continue;
-          actor.damage(85*power);actor.vx+=dx/Math.max(1,d)*110*power;actor.vy+=dy/Math.max(1,d)*110*power;
+          actor.damage((e.power||85)*power);actor.vx+=dx/Math.max(1,d)*110*power;actor.vy+=dy/Math.max(1,d)*110*power;
         }
       }
     }
@@ -237,9 +245,8 @@
       this.bump();
       for(const [i,actor] of actors.entries()){
         const keys=inputs[i];
-        // Water takes precedence when both triggers are held; shields suppress all fire.
-        if(keys.water)this.shoot(actor,'water');else if(keys.fire)this.shoot(actor,'pulse');
-        if(keys.grenade)this.shoot(actor,'grenade');
+        const water=Tools.use(this,actor,keys,dt);
+        if(keys.fire&&!water)this.shoot(actor,'pulse');
       }
       this.projectiles=this.projectiles.filter(p=>this.projectileStep(p,dt));this.blasts();
       for(const e of this.effects)e.life-=dt;this.effects=this.effects.filter(e=>e.life>0).slice(-128);
