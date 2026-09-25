@@ -10,7 +10,7 @@ Päävalikosta valitaan **Tiimitaistelu**, **Soolokeikat** tai **Luolalabra**. V
 
 ## Äänet
 
-Moottori kohisee ajassa kvantisoidulla kohinalla: näyte vaihtuu noin 1,3–2 kHz tahdissa ja pysyy välissä vakiona. Pulssitykki sirisee, ja räjähdyksen alkupamausta seuraa matala, resonoiva kumina (noin 1–1,6 s koon mukaan). Mutapommin laukaisu ja osuma alkavat nousevalla ”bloub!”-äänellä ja laskevat märäksi plopsahdukseksi. Vesi ja imu kuulostavat erilaisilta; blasterin nousuääni kertoo latauksesta, täysi lataus kilahtaa ja ylikuumeneminen lässähtää. Kilven osuma, lähisiirtymä, runkovaurio, nouto, toimitus ja erän tulos saavat omat lyhyet merkkinsä. Kaukaiset tapahtumat kuuluvat hiljempaa. Ei taustamusiikkia tai ladattavia äänitiedostoja.
+Moottori kohisee hillityllä voimakkuudella ajassa kvantisoidulla kohinalla: näyte vaihtuu noin 1,3–2 kHz tahdissa ja pysyy välissä vakiona. Pulssitykki sirisee, ja räjähdyksen alkupamausta seuraa matala, lyhyt kumina (noin 0,45–0,75 s koon mukaan). Mutapommin laukaisussa ja osumassa on pieni nouseva ”bloub!” ja karkea, märkä loppuääni. Vesi ja imu kuulostavat erilaisilta; blasterin nousuääni kertoo latauksesta, täysi lataus kilahtaa ja ylikuumeneminen lässähtää. Kilven osuma, lähisiirtymä, runkovaurio, nouto, toimitus ja erän tulos saavat omat lyhyet merkkinsä. Kaukaiset tapahtumat kuuluvat hiljempaa. Ei taustamusiikkia tai ladattavia äänitiedostoja.
 
 Koko monomiksaus kulkee yhden purkin läpi:
 

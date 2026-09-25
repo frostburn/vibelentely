@@ -30,9 +30,9 @@
       // Frequency sweeps, waveform, noise share, duration and level. No samples.
       const sounds={
         pulse:[1100,170,1,.12,.105,.22],grenade:[170,62,2,.35,.15,.28],water:[420,160,2,.92,.08,.095],
-        mud:[85,420,0,.08,.29,.34],splat:[70,340,0,.18,.4,.4],
+        mud:[105,230,0,.15,.22,.27],splat:[90,195,0,.25,.28,.32],
         blaster:power>=1?[1350,65,1,.35,.3,.52]:[750,160,1,.22,.13,.17+.1*power],
-        explosion:[165,95,0,0,.95+.65*power,.32+.2*power],
+        explosion:[110,62,0,0,.45+.3*power,.32+.2*power],
         shield:[1700,850,1,.16,.12,.24],blink:[180,1600,2,.2,.24,.28],
         hurt:[110,40,1,.5,.14,.2],hot:[700,65,1,.72,.42,.24],ready:[1450,960,2,.04,.13,.2],
         pickup:[520,1040,2,0,.18,.22],delivered:[660,1320,2,0,.22,.25],objective:[550,1100,2,0,.3,.24],
@@ -56,7 +56,7 @@
         p[0]=(p[0]+(155+65*l.vacuum)*dt)%1;
         p[1]=(p[1]+(120+850*l.charge*l.charge+12*flutter)*dt)%1;
         p[2]=(p[2]+210*dt)%1;p[3]=(p[3]+37*dt)%1;
-        let mix=l.engine*this.engineNoise*(.25+.025*flutter);
+        let mix=l.engine*this.engineNoise*(.125+.0125*flutter);
         mix+=l.vacuum*(this.wave(p[0],1)*.035+n*.09);
         mix+=l.charge*this.wave(p[1],1)*(.065+(this.target.charge===1?.025*flutter:0));
         mix+=l.shield*this.wave(p[2],2)*.035;
@@ -68,23 +68,23 @@
           let frequency=v.from*Math.pow(v.to/v.from,t);
           if(v.kind==='won')frequency=[523.25,659.25,783.99,1046.5][Math.min(3,Math.floor(t*4))];
           if(v.kind==='lost')frequency=[330,247,165][Math.min(2,Math.floor(t*3))];
-          const bubble=v.kind==='mud'||v.kind==='splat',rise=v.kind==='mud'?.08:.1;
-          if(bubble)frequency=v.age<rise?v.from*Math.pow(v.to/v.from,v.age/rise):v.to*Math.pow(.24,(v.age-rise)/(v.length-rise));
-          if(v.kind==='explosion')frequency=v.to+(v.from-v.to)*Math.exp(-v.age*10);
+          const bubble=v.kind==='mud'||v.kind==='splat',rise=v.kind==='mud'?.055:.07;
+          if(bubble)frequency=v.age<rise?v.from*Math.pow(v.to/v.from,v.age/rise):v.to*Math.pow(.5,(v.age-rise)/(v.length-rise));
+          if(v.kind==='explosion')frequency=v.to+(v.from-v.to)*Math.exp(-v.age*14);
           v.phase=(v.phase+frequency*dt)%1;
           let env=Math.min(1,v.age/(bubble?.012:.004))*(1-t)*(1-t);
           let sample=this.wave(v.phase,v.shape)*(1-v.noise)+n*v.noise;
           if(bubble){
-            // A voiced upward gulp, then a falling wet pop. Keep the onset clear of hiss.
+            // A small upward gulp and a wet settling sound, with a restrained pitch arc.
             const hiss=v.noise*Math.min(1,(v.age/rise)**2);
-            sample=(Math.sin(v.phase*Math.PI*2)+.18*Math.sin(v.phase*Math.PI*4))*(1-hiss)+n*hiss;
+            sample=(Math.sin(v.phase*Math.PI*2)+.08*Math.sin(v.phase*Math.PI*4))*(1-hiss)+n*hiss;
           }else if(v.kind==='explosion'){
             // A low boom plus an inharmonic cavity mode survives the small-speaker HP.
             // Filtered noise sustains the rumble; only the first few ms carry a crack.
-            v.bodyPhase=(v.bodyPhase+(182+44*Math.exp(-v.age*5))*dt)%1;
+            v.bodyPhase=(v.bodyPhase+(100+28*Math.exp(-v.age*7))*dt)%1;
             v.rumble+=this.rumbleLP*(n-v.rumble);v.rumble2+=this.rumbleLP*(v.rumble-v.rumble2);
-            sample=.62*Math.sin(v.phase*Math.PI*2)+.26*Math.sin(v.bodyPhase*Math.PI*2)+3.4*v.rumble2+.16*n*Math.exp(-v.age*35);
-            env=Math.min(1,v.age/.003)*Math.exp(-v.age/(v.length*.36))*Math.min(1,(v.length-v.age)/.18);
+            sample=.62*Math.sin(v.phase*Math.PI*2)+.13*Math.sin(v.bodyPhase*Math.PI*2)+3.4*v.rumble2+.16*n*Math.exp(-v.age*35);
+            env=Math.min(1,v.age/.003)*Math.exp(-v.age/(v.length*.3))*Math.min(1,(v.length-v.age)/.12);
           }
           mix+=sample*env*v.gain;v.age+=dt;
         }
