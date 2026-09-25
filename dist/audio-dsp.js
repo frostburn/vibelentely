@@ -20,7 +20,8 @@
     constructor(rate=48000){
       this.rate=rate;this.cabinet=new Cabinet(rate);this.voices=[];this.seed=19790517;
       this.target={engine:0,wet:0,lava:0,vacuum:0,charge:0,shield:0};this.level={...this.target};
-      this.phases=new Float64Array(5);this.time=0;this.smooth=1-Math.exp(-1/(rate*.025));
+      this.phases=new Float64Array(4);this.time=0;this.smooth=1-Math.exp(-1/(rate*.025));
+      this.engineClock=1;this.engineNoise=0;this.rumbleLP=1-Math.exp(-2*Math.PI*340/rate);
     }
     controls(values){for(const key of Object.keys(this.target))this.target[key]=Math.max(0,Math.min(1,values[key]||0));}
     clear(){this.voices.length=0;this.controls({});}
@@ -29,9 +30,9 @@
       // Frequency sweeps, waveform, noise share, duration and level. No samples.
       const sounds={
         pulse:[1100,170,1,.12,.105,.22],grenade:[170,62,2,.35,.15,.28],water:[420,160,2,.92,.08,.095],
-        mud:[115,42,0,.7,.21,.3],splat:[230,38,0,.8,.28,.32],
+        mud:[85,420,0,.08,.29,.34],splat:[70,340,0,.18,.4,.4],
         blaster:power>=1?[1350,65,1,.35,.3,.52]:[750,160,1,.22,.13,.17+.1*power],
-        explosion:[95,28,2,.86,.3+.24*power,.25+.25*power],
+        explosion:[165,95,0,0,.95+.65*power,.32+.2*power],
         shield:[1700,850,1,.16,.12,.24],blink:[180,1600,2,.2,.24,.28],
         hurt:[110,40,1,.5,.14,.2],hot:[700,65,1,.72,.42,.24],ready:[1450,960,2,.04,.13,.2],
         pickup:[520,1040,2,0,.18,.22],delivered:[660,1320,2,0,.22,.25],objective:[550,1100,2,0,.3,.24],
@@ -39,7 +40,7 @@
       };
       const s=sounds[kind];if(!s||!Number.isFinite(gain)||gain<=0)return;
       if(this.voices.length>=24)this.voices.shift();
-      this.voices.push({kind,from:s[0],to:s[1],shape:s[2],noise:s[3],length:s[4],gain:s[5]*Math.min(1,gain),age:0,phase:0});
+      this.voices.push({kind,from:s[0],to:s[1],shape:s[2],noise:s[3],length:s[4],gain:s[5]*Math.min(1,gain),age:0,phase:0,bodyPhase:0,rumble:0,rumble2:0});
     }
     wave(phase,shape){return shape===1?(phase<.35?1:-.54):shape===2?1-4*Math.abs(phase-.5):Math.sin(phase*Math.PI*2);}
     render(output){
@@ -49,25 +50,43 @@
         this.time+=dt;
         for(const key in this.level)this.level[key]+=(this.target[key]-this.level[key])*this.smooth;
         const l=this.level,n=this.noise(),flutter=Math.sin(this.time*2*Math.PI*23);
-        p[0]=(p[0]+(58+34*l.engine-18*l.wet)*dt)%1;
-        p[1]=(p[1]+(155+65*l.vacuum)*dt)%1;
-        p[2]=(p[2]+(120+850*l.charge*l.charge+12*flutter)*dt)%1;
-        p[3]=(p[3]+210*dt)%1;p[4]=(p[4]+37*dt)%1;
-        let mix=l.engine*(this.wave(p[0],2)*.18+n*(.055+.025*flutter));
-        mix+=l.vacuum*(this.wave(p[1],1)*.035+n*.09);
-        mix+=l.charge*this.wave(p[2],1)*(.065+(this.target.charge===1?.025*flutter:0));
-        mix+=l.shield*this.wave(p[3],2)*.035;
+        // Coarse sample-and-hold noise is the engine itself, ahead of the master DAC.
+        this.engineClock+=(1300+700*l.engine-400*l.wet)*dt;
+        if(this.engineClock>=1){this.engineClock%=1;this.engineNoise=n;}
+        p[0]=(p[0]+(155+65*l.vacuum)*dt)%1;
+        p[1]=(p[1]+(120+850*l.charge*l.charge+12*flutter)*dt)%1;
+        p[2]=(p[2]+210*dt)%1;p[3]=(p[3]+37*dt)%1;
+        let mix=l.engine*this.engineNoise*(.25+.025*flutter);
+        mix+=l.vacuum*(this.wave(p[0],1)*.035+n*.09);
+        mix+=l.charge*this.wave(p[1],1)*(.065+(this.target.charge===1?.025*flutter:0));
+        mix+=l.shield*this.wave(p[2],2)*.035;
         mix+=l.wet*n*.025*(1+Math.sin(this.time*47));
-        mix+=l.lava*(n*.055+this.wave(p[4],2)*.04);
+        mix+=l.lava*(n*.055+this.wave(p[3],2)*.04);
         for(let j=this.voices.length-1;j>=0;j--){
           const v=this.voices[j],t=v.age/v.length;
           if(t>=1){this.voices.splice(j,1);continue;}
           let frequency=v.from*Math.pow(v.to/v.from,t);
           if(v.kind==='won')frequency=[523.25,659.25,783.99,1046.5][Math.min(3,Math.floor(t*4))];
           if(v.kind==='lost')frequency=[330,247,165][Math.min(2,Math.floor(t*3))];
+          const bubble=v.kind==='mud'||v.kind==='splat',rise=v.kind==='mud'?.08:.1;
+          if(bubble)frequency=v.age<rise?v.from*Math.pow(v.to/v.from,v.age/rise):v.to*Math.pow(.24,(v.age-rise)/(v.length-rise));
+          if(v.kind==='explosion')frequency=v.to+(v.from-v.to)*Math.exp(-v.age*10);
           v.phase=(v.phase+frequency*dt)%1;
-          const env=Math.min(1,v.age/.004)*(1-t)*(1-t);
-          mix+=(this.wave(v.phase,v.shape)*(1-v.noise)+n*v.noise)*env*v.gain;v.age+=dt;
+          let env=Math.min(1,v.age/(bubble?.012:.004))*(1-t)*(1-t);
+          let sample=this.wave(v.phase,v.shape)*(1-v.noise)+n*v.noise;
+          if(bubble){
+            // A voiced upward gulp, then a falling wet pop. Keep the onset clear of hiss.
+            const hiss=v.noise*Math.min(1,(v.age/rise)**2);
+            sample=(Math.sin(v.phase*Math.PI*2)+.18*Math.sin(v.phase*Math.PI*4))*(1-hiss)+n*hiss;
+          }else if(v.kind==='explosion'){
+            // A low boom plus an inharmonic cavity mode survives the small-speaker HP.
+            // Filtered noise sustains the rumble; only the first few ms carry a crack.
+            v.bodyPhase=(v.bodyPhase+(182+44*Math.exp(-v.age*5))*dt)%1;
+            v.rumble+=this.rumbleLP*(n-v.rumble);v.rumble2+=this.rumbleLP*(v.rumble-v.rumble2);
+            sample=.62*Math.sin(v.phase*Math.PI*2)+.26*Math.sin(v.bodyPhase*Math.PI*2)+3.4*v.rumble2+.16*n*Math.exp(-v.age*35);
+            env=Math.min(1,v.age/.003)*Math.exp(-v.age/(v.length*.36))*Math.min(1,(v.length-v.age)/.18);
+          }
+          mix+=sample*env*v.gain;v.age+=dt;
         }
         output[i]=this.cabinet.process(mix*1.8);
       }
