@@ -47,7 +47,7 @@
       }
       this.x=point?point.x:s.x;this.y=point?point.y:s.y;
       this.vx=0;this.vy=0;this.angle=-Math.PI/2;this.spin=0;this.health=point?100:0;
-      this.started=false;this.dead=!point;this.blocked=!point;this.throttle=0;this.wet=0;this.impactCooldown=0;
+      this.started=false;this.dead=!point;this.blocked=!point;this.throttle=0;this.wet=0;this.impactCooldown=0;this.payload=0;
       return !!point;
     }
     medium(){
@@ -86,7 +86,8 @@
       this.angle+=this.spin*dt;
       this.angle=((this.angle+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
       this.throttle=Math.max(0,Math.min(1,Number(input.thrust)||0));
-      const thrust=115*this.throttle*(1-medium.wet*.58)*(1-medium.hot*.78)*(1-medium.sand*.25);
+      // Passengers add inertia: the same engine accelerates a loaded craft less.
+      const thrust=115*this.throttle*(1-medium.wet*.58)*(1-medium.hot*.78)*(1-medium.sand*.25)/(1+this.payload*.22);
       this.vx+=Math.cos(this.angle)*thrust*dt;
       this.vy+=(Math.sin(this.angle)*thrust+34*(1-medium.wet*.8))*dt;
       const drag=Math.exp(-(0.22+medium.wet*3+medium.hot*9+medium.sand*1.8+(input.brake?3.8:0))*dt);

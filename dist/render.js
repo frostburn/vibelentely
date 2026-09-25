@@ -34,7 +34,7 @@
         [M.WATER]:'rgb('+this.surface.join(',')+')',[M.LAVA]:'#ffae5a',
       };
     }
-    render(cx,cy,pointer,tool,radius,drone,combat){
+    render(cx,cy,pointer,tool,radius,drone,combat,solo){
       this.syncTheme();
       const w=this.world.width,c=this.world.cells,h=this.world.heat,life=this.world.life,t=this.world.tick,p=this.pixels,light=this.light;
       const theme=this.theme,colors=this.palettes,sky=this.sky;
@@ -107,6 +107,7 @@
         this.ctx.fillStyle=this.sourceColors[s.material]||'#e8cb8c';
         this.ctx.fillRect(x-1,y,3,1);this.ctx.fillRect(x,y+1,1,1);
       }
+      if(solo)this.missions(cx,cy,solo);
       if(drone)this.drone(cx,cy,drone);
       if(combat){
         for(const actor of combat.active())if(actor!==drone)this.drone(cx,cy,actor);
@@ -116,6 +117,42 @@
         const x=pointer.x-cx,y=pointer.y-cy;
         this.ring(x,y,radius,tool===M.AIR?'#ef998e':'#e1e3c9',false);
         this.ctx.fillStyle='#f5eed6';this.ctx.fillRect(x,y,1,1);
+      }
+    }
+    marker(ctx,x,y,kind,active=false){
+      x=Math.round(x);y=Math.round(y);
+      ctx.fillStyle='#111c22';ctx.fillRect(x-5,y-6,11,13);
+      ctx.fillStyle=kind==='base'?(active?'#cdffbb':'#83cba3'):kind==='person'?'#ffe099':kind==='gate'?'#ffac77':'#84d8e4';
+      if(kind==='base'){
+        ctx.fillRect(x-3,y-4,2,9);ctx.fillRect(x+2,y-4,2,9);ctx.fillRect(x-1,y,3,2);
+      }else if(kind==='person'){
+        ctx.fillRect(x-1,y-5,3,3);ctx.fillRect(x-2,y-1,5,4);ctx.fillRect(x-2,y+3,2,3);ctx.fillRect(x+1,y+3,2,3);
+      }else if(kind==='gate'){
+        for(let i=-3;i<=3;i++){ctx.fillRect(x+i,y+i,1,1);ctx.fillRect(x+i,y-i,1,1);}
+      }else{
+        ctx.fillRect(x-4,y+3,9,2);ctx.fillRect(x-4,y-3,2,6);ctx.fillRect(x+3,y-3,2,6);
+      }
+    }
+    missions(cx,cy,solo){
+      const ctx=this.ctx,z=solo.mission.zone;
+      if(z){
+        ctx.fillStyle=solo.mission.material===M.SAND?'#d9b568':'#78ccd9';
+        for(let x=z.x;x<z.x+z.width;x+=4){ctx.fillRect(x-cx,z.y-cy,2,1);ctx.fillRect(x-cx,z.y+z.height-1-cy,2,1);}
+        for(let y=z.y;y<z.y+z.height;y+=4){ctx.fillRect(z.x-cx,y-cy,1,2);ctx.fillRect(z.x+z.width-1-cx,y-cy,1,2);}
+      }
+      for(const point of solo.markers()){
+        let x=point.x-cx,y=point.y-cy;
+        if(x<9||x>310||y<9||y>190){
+          const dx=x-160,dy=y-100,f=1/Math.max(Math.abs(dx)/149,Math.abs(dy)/88);
+          x=160+dx*f;y=100+dy*f;
+          this.marker(ctx,x,y,point.kind,point.active);
+        }else{
+          if(point.kind==='base'||point.kind==='person'){
+            ctx.fillStyle=point.kind==='base'?'#83cba3':'#d8ad62';ctx.fillRect(Math.round(x)-15,Math.round(y)+13,31,2);
+            // Keep the landing spot visible beneath a hovering craft.
+            this.marker(ctx,x,y-19,point.kind,point.active);
+          }else this.marker(ctx,x,y,point.kind,point.active);
+        }
       }
     }
     ring(x,y,r,color,dotted){
@@ -150,6 +187,7 @@
         ctx.fillStyle='#25353d';ctx.fillRect(cxp-6,cyp-12,12,2);
         ctx.fillStyle=actorColor(drone);ctx.fillRect(cxp-6,cyp-12,Math.ceil(drone.health*.12),2);
       }
+      if(drone.payload){ctx.fillStyle='#ffe099';for(let n=0;n<drone.payload;n++)ctx.fillRect(cxp-4+n*5,cyp+13,3,3);}
       if(drone.gear?.shield){
         ctx.fillStyle='#b8f5ee';
         for(let a=-1.21;a<=1.21;a+=.07){const angle=drone.angle+a;ctx.fillRect(cxp+Math.round(Math.cos(angle)*10),cyp+Math.round(Math.sin(angle)*10),1,1);}
@@ -188,11 +226,23 @@
         }
       }
     }
-    minimap(cx,cy,drone,combat){
+    minimap(cx,cy,drone,combat,solo){
       this.syncTheme();
       const c=this.world.cells,w=this.world.width;
       for(let y=0;y<100;y++)for(let x=0;x<160;x++)this.mapPixels[y*160+x]=this.mapColors[c[y*4*w+x*4]];
       this.mapCtx.putImageData(this.mapImage,0,0);
+      if(solo){
+        const ctx=this.mapCtx,z=solo.mission.zone;
+        if(z){ctx.strokeStyle=solo.mission.material===M.SAND?'#d9b568':'#78ccd9';ctx.lineWidth=1;ctx.strokeRect(Math.floor(z.x/4)+.5,Math.floor(z.y/4)+.5,Math.floor(z.width/4),Math.floor(z.height/4));}
+        for(const p of solo.markers())if(p.kind!=='target'){
+          const x=Math.round(p.x/4),y=Math.round(p.y/4);
+          ctx.fillStyle='#101820';ctx.fillRect(x-3,y-3,7,7);
+          ctx.fillStyle=p.kind==='base'?'#9de4ab':p.kind==='person'?'#ffe099':'#ffac77';
+          if(p.kind==='base'){ctx.fillRect(x-2,y-2,1,5);ctx.fillRect(x+2,y-2,1,5);ctx.fillRect(x-1,y,3,1);}
+          else if(p.kind==='person'){ctx.fillRect(x,y-2,1,1);ctx.fillRect(x-1,y,3,3);}
+          else for(let n=-2;n<=2;n++){ctx.fillRect(x+n,y+n,1,1);ctx.fillRect(x+n,y-n,1,1);}
+        }
+      }
       this.mapCtx.strokeStyle='#f1d598';this.mapCtx.lineWidth=1;
       this.mapCtx.strokeRect(Math.floor(cx/4)+.5,Math.floor(cy/4)+.5,79,49);
       if(drone&&!drone.dead){this.mapCtx.fillStyle='#b5f1ec';this.mapCtx.fillRect(Math.round(drone.x/4)-1,Math.round(drone.y/4)-1,3,3);}

@@ -6,7 +6,7 @@
   class Combat {
     constructor(world,player){
       this.world=world;this.player=player;player.team=0;player.name='Sinä';
-      this.projectiles=[];this.effects=[];this.enabled=true;this.score=[0,0];
+      this.projectiles=[];this.effects=[];this.enabled=true;this.score=[0,0];this.terrainCharges=false;
       this.setRoster(0,1);this.reset();
     }
     get enemy(){return this.actors.find(a=>a.team===1);}
@@ -115,7 +115,8 @@
       const co=Math.cos(actor.angle),si=Math.sin(actor.angle);
       const speed=kind==='pulse'?230:kind==='grenade'?95:155;
       this.projectiles.push({kind,owner:actor,x:actor.x+co*5,y:actor.y+si*5,
-        vx:actor.vx+co*speed,vy:actor.vy+si*speed,life:kind==='grenade'?1.4:kind==='water'?.6:1.5,age:0});
+        vx:actor.vx+co*speed,vy:actor.vy+si*speed,life:kind==='grenade'?1.4:kind==='water'?.6:1.5,age:0,
+        sticky:kind==='grenade'&&this.terrainCharges});
       if(kind==='pulse'){g.pulse=.13;g.heat=Math.min(1,g.heat+.17);if(g.heat>=.99)g.overheated=true;}
       if(kind==='grenade'){g.grenade=.65;g.grenades--;actor.vx-=co*7;actor.vy-=si*7;}
       if(kind==='water'){g.jet=.055;g.water-=1.5;actor.vx-=co*1.8;actor.vy-=si*1.8;}
@@ -148,6 +149,7 @@
     projectileStep(p,dt){
       p.life-=dt;p.age+=dt;
       if(p.life<=0){if(p.kind==='grenade')this.detonate(p);else if(p.kind==='water')this.waterImpact(p);return false;}
+      if(p.stuck)return true;
       if(p.kind!=='pulse')p.vy+=dt*70;
       if(this.cell(p.x,p.y)===M.WATER){const drag=Math.exp(-dt*(p.kind==='grenade'?3:1));p.vx*=drag;p.vy*=drag;}
       const steps=Math.max(1,Math.ceil(Math.hypot(p.vx,p.vy)*dt/.45));
@@ -156,6 +158,9 @@
         const hitTerrain=solid(k)||(p.kind==='water'&&(k===M.LAVA||k===M.FIRE));
         if(hitTerrain){
           if(p.kind==='grenade'){
+            // Solo demolition charges attach at the swept contact point; the
+            // original fuse keeps running. Duel grenades retain their bounce.
+            if(p.sticky){p.stuck=true;p.vx=p.vy=0;return true;}
             const hitX=solid(this.cell(nx,oy)),hitY=solid(this.cell(ox,ny));
             if(hitX||!hitY)p.vx*=-.58;if(hitY)p.vy*=-.58;
             if(Math.abs(p.vy)<3&&hitY)p.vy=0;
