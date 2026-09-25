@@ -45,6 +45,7 @@
       }
     }
     active(){return this.enabled?this.actors:[this.player];}
+    sound(kind,actor,power=1){this.onSound?.({kind,x:actor.x,y:actor.y,power});}
     living(team){return this.active().filter(a=>a.team===team&&!a.dead);}
     finish(result){
       if(this.result)return;
@@ -86,6 +87,7 @@
       const target=this.blinkTarget(actor);
       if(!target)return false;
       this.effects.push({kind:'blink',x:actor.x,y:actor.y,life:.35,max:.35},{kind:'blink',...target,life:.35,max:.35});
+      this.sound('blink',actor);
       actor.x=target.x;actor.y=target.y;actor.gear.blink=4;return true;
     }
     prepare(actor,input,dt){
@@ -106,7 +108,7 @@
       if(!g.shield||(dx*Math.cos(actor.angle)+dy*Math.sin(actor.angle))/d<.35)return false;
       g.energy=Math.max(0,g.energy-cost);
       if(!g.energy){g.shield=false;g.shieldLock=1.5;}
-      this.effects.push({kind:'shield',x:actor.x,y:actor.y,life:.14,max:.14});return true;
+      this.effects.push({kind:'shield',x:actor.x,y:actor.y,life:.14,max:.14});this.sound('shield',actor);return true;
     }
     shoot(actor,kind){
       const g=actor.gear;if(actor.dead||g.shield)return false;
@@ -132,6 +134,7 @@
         g.charge=0;g.blasterCooldown=.6;g.blasterHeat=Math.min(1,g.blasterHeat+(full?.5:.12+.18*charge));g.blasterHot=g.blasterHeat>=1;
         const recoil=full?26:4+6*charge;actor.vx-=co*recoil;actor.vy-=si*recoil;
       }
+      this.sound(kind,actor,blast?.charge??1);
       return true;
     }
     waterImpact(p,x=p.x,y=p.y){

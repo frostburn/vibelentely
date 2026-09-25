@@ -77,3 +77,9 @@
 @media(max-width:780px){.menu-cards{grid-template-columns:1fr}.main-menu{width:min(520px,calc(100% - 32px))}}
 
 .loadout{margin:0 0 22px;padding:12px;border:1px solid var(--line);font-size:12px}.loadout legend{color:#dec69f;padding:0 6px}.loadout label{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;color:#b8c9c8}.loadout select{width:100%;min-height:36px}.loadout p{font-size:11px;line-height:1.5;color:var(--muted);margin:0}
+
+.sound-controls{display:flex;align-items:center;flex-wrap:wrap;gap:10px;color:var(--muted);font-size:12px}
+.sound-controls button{min-width:104px;font-size:12px}.sound-controls button[aria-pressed=true]{color:var(--accent);border-color:#a48757}
+.sound-controls input[type=range]{width:130px;max-width:35vw;height:24px;margin:0}
+.sound-controls output{min-width:36px;font-variant-numeric:tabular-nums}.game-sound{padding-top:14px}
+@media(max-width:680px){.sound-controls{gap:8px}.sound-controls label{font-size:11px}.sound-controls input[type=range]{width:100px}}
